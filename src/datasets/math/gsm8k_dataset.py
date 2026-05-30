@@ -8,13 +8,13 @@ import re
 
 class gsm8k_dataset(math_dataset_handler): 
 
-    def __init__(self, config):
+    def __init__(self, config: dataset_config) -> None:
         super().__init__(config)
         # self.dataset_id = "openai/gsm8k"
         self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/openai___gsm8k/main"
-        self.dataset = load_dataset(self.dataset_id, "")
-        self.train_dataset = self.dataset["train"]
-        self.test_dataset = self.dataset["test"]
+        self.dataset: Dataset = load_dataset(self.dataset_id, "")
+        self.train_dataset: Dataset = self.dataset["train"]
+        self.test_dataset: Dataset = self.dataset["test"]
         
         if config.get_ratio_test_dataset_size() is not None: 
             self.test_dataset = self.test_dataset.train_test_split(test_size=config.get_ratio_test_dataset_size(), seed=42, shuffle=True)['test']
@@ -22,13 +22,10 @@ class gsm8k_dataset(math_dataset_handler):
         self.instruction = self.prompt_config.get('Math', 'gsm8k')        
         self.force_generate_answer_text = '####'
 
-    def final_answer_extraction(self, prompt, solution_str, target):
+    def final_answer_extraction(self, prompt: str, solution: str, target: str) -> str :
         _SOLUTION_CLIP_CHARS = 300
-        # Optimization: Regular expression matching on very long strings can be slow.
-        # For math problems, the final answer is usually at the end.
-        # We only match on the last 300 characters, which is a safe approximation for 300 tokens.
-        if len(solution_str) > _SOLUTION_CLIP_CHARS:
-            solution_str = solution_str[-_SOLUTION_CLIP_CHARS:]
+        if len(solution) > _SOLUTION_CLIP_CHARS:
+            solution = solution[-_SOLUTION_CLIP_CHARS:]
 
         patterns = [
             r'(?i)####\s*(-?[0-9.,]+)',
@@ -37,7 +34,7 @@ class gsm8k_dataset(math_dataset_handler):
         ]
 
         for pattern in patterns:
-            matches = list(re.finditer(pattern, solution_str, re.IGNORECASE))
+            matches = list(re.finditer(pattern, solution, re.IGNORECASE))
             if not matches: continue
 
             last_match = matches[-1]
@@ -65,7 +62,7 @@ class gsm8k_dataset(math_dataset_handler):
                 }
 
 
-    def extract_number(self, text):
+    def extract_number(self, text: str) -> float:
         chars_to_remove = "\\!@#$%^&*(),/"
         table = str.maketrans('', '', chars_to_remove)
 

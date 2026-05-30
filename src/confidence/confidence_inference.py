@@ -19,12 +19,8 @@ class confidence_inference(ABC):
         if self.model_name is None:
             raise Exception('model name is required')
         
-        self.pipeline_type = llm_pipeline_type_enum.INFERENCE
         self.representation = llm_representation()
         self.dataset = None
-        config = self.get_dataset().get_config()
-        config.set_pipeline_type(llm_pipeline_type_enum.INFERENCE)
-
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = None
         self.iit_calculator_list = None
