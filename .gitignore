@@ -1,0 +1,6 @@
+
+*.pyc
+*.pyo
+pyphi.log
+live_logs/**
+.vscode/**

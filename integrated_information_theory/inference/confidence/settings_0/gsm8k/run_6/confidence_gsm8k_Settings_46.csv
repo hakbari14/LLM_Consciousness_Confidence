@@ -1,0 +1,36 @@
+ID,Split,Sample_ID,problem_id,Prompt,Target,Completion,Final_Answer,Accuracy,Token_Count,Token_Count_Reduced_Dimention,Reduced_Dimention,Phi_Reward,Phi_Reward_Raw,Phi_Reward_Raw_Actual,Completion_Embedding_Shape,Completion_Loss,Perplexity,Entropy,Tpm_Loss,Tpm_Entropy,Pass_at_k
+0,eval,0,0,"<｜begin▁of▁sentence｜><｜User｜>Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market? Lets think step by step and output the final answer after ""####"".",18.0,"<｜User｜>Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market? Lets think step by step and output the final answer after ""####"". 
+
+First, I need to determine how many eggs Janet's ducks lay each day.
+
+Then, I'll figure out how many eggs Janet uses for breakfast and how many she uses to bake muffins each day.
+
+After that, I'll subtract these amounts from the total number of eggs laid each day to find out how many eggs are left to sell.
+
+Finally, since Janet sells each remaining egg for \$2, I'll multiply the number of eggs sold by the price per egg to calculate her daily earnings.
+</think>
+
+Let's break down Janet's daily egg production and sales step by step:
+
+### **Step 1: Determine the Total Number of Eggs Laid Each Day**
+- **Total eggs laid per day**: 16 eggs
+
+### **Step 2: Calculate the Number of Eggs Used for Breakfast and Baking**
+- **Eggs eaten for breakfast**: 3 eggs
+- **Eggs used for baking muffins**: 4 eggs
+
+**Total eggs consumed for meals**: 
+\[ 3 \text{ (breakfast)} + 4 \text{ (muffins)} = 7 \text{ eggs} \]
+
+### **Step 3: Find the Remaining Eggs Available for Sale**
+\[ \text{Remaining eggs} = \text{Total eggs} - \text{Eggs consumed} \]
+\[ \text{Remaining eggs} = 16 - 7 = 9 \text{ eggs} \]
+
+### **Step 4: Calculate Daily Earnings from Egg Sales**
+- **Price per egg**: \$2
+\[ \text{Daily earnings} = \text{Remaining eggs} \times \text{Price per egg} \]
+\[ \text{Daily earnings} = 9 \times 2 = \$18 \]
+
+\[
+\boxed{18}
+\]",18.0,True,455,,5,0.12742027435686532,1.5144583664979185,0.47991136836070436,,0.8795082569122314,2.4097144545948552,0.5314604995403265,2.2995359532578297,0.2375255051164505,
