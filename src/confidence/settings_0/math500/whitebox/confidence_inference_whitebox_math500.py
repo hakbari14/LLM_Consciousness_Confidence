@@ -16,8 +16,8 @@ class confidence_inference_whitebox_math500(confidence_inference):
 for run_number in range(1,6):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
     t = confidence_inference_whitebox_math500(
-                                        whitebox_modelname='/home/hr_akbari/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60',
-                                        blackbox_modelname='/home/hr_akbari/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60'
+                                        whitebox_modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
+                                        blackbox_modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
                                         )
 
     t.calculate_confidence_blackbox_model(run_number = run_number)

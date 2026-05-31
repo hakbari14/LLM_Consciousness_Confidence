@@ -11,8 +11,8 @@ class countdown_dataset(countdown_dataset_handler):
 
     def __init__(self, config):
         super().__init__(config)
-        self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/datasets--Jiayi-Pan--Countdown-Tasks-3to4"
-        #self.dataset_id = "Jiayi-Pan/Countdown-Tasks-3to4"
+        # self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/datasets--Jiayi-Pan--Countdown-Tasks-3to4"
+        self.dataset_id = "Jiayi-Pan/Countdown-Tasks-3to4"
         self.dataset = load_dataset(self.dataset_id)["train"].train_test_split(test_size=0.001, seed=42)
         self.train_dataset = Dataset.from_dict({"prompt": [], "target": [], "problem_id" : []})
         self.test_dataset = self.dataset["test"]

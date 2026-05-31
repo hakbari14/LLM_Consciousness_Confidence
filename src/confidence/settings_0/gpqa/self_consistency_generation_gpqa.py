@@ -23,7 +23,7 @@ class self_consistency_generation_gpqa(self_consistency_generation):
 
 for run_number in range(1,6):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
-    t = self_consistency_generation_gpqa(modelname='/home/hr_akbari/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60')
+    t = self_consistency_generation_gpqa(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     t.generate_self_consistency(run_number = run_number)
     print(f'{'*' * 210}')
 

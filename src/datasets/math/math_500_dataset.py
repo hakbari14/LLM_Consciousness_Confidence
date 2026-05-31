@@ -11,8 +11,8 @@ class math_500_dataset(math_dataset_handler):
 
     def __init__(self, config):
         super().__init__(config)
-        #self.dataset_id = "HuggingFaceH4/MATH-500"
-        self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/datasets--HuggingFaceH4--MATH-500" 
+        self.dataset_id = "HuggingFaceH4/MATH-500"
+        # self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/datasets--HuggingFaceH4--MATH-500" 
         self.dataset = load_dataset(self.dataset_id)
         self.train_dataset = Dataset.from_dict({"prompt": [], "target": [], "problem_id" : []})
         self.test_dataset = self.dataset['test']
