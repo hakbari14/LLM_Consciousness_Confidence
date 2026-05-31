@@ -4,6 +4,7 @@ import re
 import gc
 import torch
 import numpy as np
+import torch.nn.functional as F
 
 
 class llm_representation: 
@@ -58,19 +59,47 @@ class llm_representation:
         # sample layers (you can tune this for speed)
         return np.mean(hidden[hidden.shape[0]-1], axis=0), loss
 
-    def extract_loss(self, text, model, tokenizer):
-        """Return hidden states from the given model (no gradients)."""
-        # model.eval()  
-        # with torch.no_grad():
+    def calculate_whitebox_confidence(self, text: str, model, tokenizer) -> tuple[float, float, float]:
+        device = next(model.parameters()).device
 
-        inputs = tokenizer(text, return_tensors='pt').to(model.device)
-        outputs = model(**inputs, labels=inputs["input_ids"])
-        loss = outputs.loss.cpu()
+        inputs = tokenizer(text, return_tensors="pt")
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        input_ids = inputs["input_ids"]
 
-        del outputs, inputs
+        with torch.no_grad():
+            outputs = model(input_ids, labels=input_ids)
+
+            logits = outputs.logits  # (batch, seq_len, vocab)
+            loss = outputs.loss
+
+        # shift for next-token prediction
+        shift_logits = logits[:, :-1, :]
+        shift_labels = input_ids[:, 1:]
+
+        log_probs = F.log_softmax(shift_logits, dim=-1)
+        probs = torch.exp(log_probs)
+
+        token_probs = []
+        token_entropy = []
+
+        for t in range(shift_labels.shape[1]):
+            true_token_id = shift_labels[0, t].item()
+
+            prob = probs[0, t, true_token_id].item()
+            token_probs.append(prob)
+
+            # entropy = -sum p log p
+            entropy = -(probs[0, t] * log_probs[0, t]).sum().item()
+            token_entropy.append(entropy)
+
+        sum_probs = sum(token_probs) 
+        avg_probs = sum_probs / len(token_probs)
+        avg_entropy = sum(token_entropy) / len(token_entropy)
+            
+        del outputs, inputs, input_ids, logits
         torch.cuda.empty_cache()
-
-        return loss
+       
+        return loss.item(), sum_probs, avg_probs, avg_entropy
 
     def calculate_entropy(self, text, model, tokenizer):
         with torch.no_grad():

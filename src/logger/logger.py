@@ -5,19 +5,12 @@ import csv
 
 class logger(ABC): 
 
-    def __init__(self, log_file_name, has_token_details = False):
+    def __init__(self, log_file_name: str) -> None:
         self.buffer = []
-
         self.log_file_name = log_file_name
-        self.has_token_details = has_token_details
         if self.log_file_name is None:
             raise Exception('logfile name is required')
-        self.token_log_file_name = log_file_name.replace('.csv', '_token.csv')
-
         self.create_and_prepare(self.log_file_name, self.get_fieldnames())
-        if self.has_token_details: 
-            self.create_and_prepare(self.token_log_file_name, self.get_token_fieldnames())
-
         
     def write_to_log_file(self): 
         if len(self.buffer) == 0:
@@ -35,22 +28,10 @@ class logger(ABC):
         self.clear_buffer()
         return None
 
-    def write_to_token_log_file(self): 
-        if len(self.buffer) == 0:
-            return 
-        
-        try:
-            with open(self.token_log_file_name, "a", newline="", encoding="utf-8") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames = self.get_token_fieldnames())
-                writer.writerows(self.convert_token_buffer())
-                csvfile.close()
-        except Exception as e:
-            print(f"[WARN] Could not logs to CSV: {e}")
 
-    def write_attachments(self): 
-        if self.has_token_details:
-            self.write_to_token_log_file()
-
+    def write_attachments(self) -> None: 
+        return None
+    
     def validate_log(self, log): 
         log.validate()
 
@@ -69,9 +50,18 @@ class logger(ABC):
                 writer.writeheader()
                 csvfile.close()
 
-    @abstractmethod
-    def add_to_buffer(self, log):
-        pass
+    def add_to_buffer(self, log): 
+        if self.buffer is None or log is None:
+            return
+        
+        self.validate_log(log)
+
+        filtered_list = list(filter(lambda x: x.equal(log) , self.buffer))
+        if filtered_list is None or len(filtered_list) == 0:
+            self.buffer.append(log)
+            return 
+        if len(filtered_list) > 1:
+            raise Exception(f'Duplicate log{log}')
 
     @abstractmethod
     def convert_buffer(self): 
@@ -80,33 +70,6 @@ class logger(ABC):
     @abstractmethod
     def get_fieldnames(self): 
         pass
-
-    def convert_token_buffer(self): 
-        list = []
-        for log in self.buffer:
-            for token_log in log.get_log_entity_list():
-                b = { 
-                    'ID': token_log.get_token_number(), 
-                    'Sample_ID': log.get_sample_ID(), 
-                    'Token': token_log.get_token(), 
-                    'State': token_log.get_state_index(), 
-                    'IIT_Value': token_log.get_iit_value(), 
-                    }
-                list.append(b)            
-        return list
-
-    def get_token_fieldnames(self): 
-        return [ 
-                'ID',
-                'Sample_ID', 
-                'Token', 
-                'State', 
-                'IIT_Value'
-                ]
-
-    def refine_log_filename(self, run_index):
-        new_log_file_name = self.get_log_file_name().replace('/run/', f'/run{run_index}/')
-        self.set_log_file_name(new_log_file_name)
 
     def get_log_file_name(self):
         return self.log_file_name

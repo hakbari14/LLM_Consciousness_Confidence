@@ -1,0 +1,26 @@
+from src.confidence.confidence_inference import confidence_inference
+from src.logger.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
+from src.logger.confidence.confidence_logger import confidence_logger
+
+class confidence_inference_blackbox_math500(confidence_inference): 
+
+    def __init__(self, whitebox_modelname, blackbox_modelname):
+        super().__init__(whitebox_modelname, blackbox_modelname)
+
+    def create_self_consistency_logger(self, run_number):
+        return self_consistency_inference_logger(log_file_name = f'src/confidence/settings_0/math500/run_{run_number}/self_consistency_math500.csv')
+
+    def create_confidence_logger(self, settings, run_number):
+        return confidence_logger(log_file_name = f'src/confidence/settings_0/math500/blackbox/run_{run_number}/confidence_blackbox_math500_{settings}.csv')
+
+
+for run_number in range(1,6):
+    print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
+    t = confidence_inference_blackbox_math500(
+                                            whitebox_modelname='/home/hr_akbari/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-Distill-Qwen-7B/snapshots/916b56a44061fd5cd7d6a8fb632557ed4f724f60',
+                                            blackbox_modelname='/home/hr_akbari/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1'
+                                            )
+    t.calculate_confidence_blackbox_model(run_number = run_number)
+    t.calculate_confidence_whitebox_model(run_number = run_number)
+    print(f'{'*' * 210}')
+

@@ -112,20 +112,21 @@ class iit_entity:
         return self.completion_concatenated_embedding is not None and self.completion_concatenated_embedding.shape is not None
 
     @staticmethod
-    def clone_list(entity_list: list[iit_token_entity]) -> list[iit_token_entity]: 
-        new_entity_list: list[iit_token_entity] = []
+    def clone_list(entity_list: list["iit_entity"]) -> list["iit_entity"]: 
+        new_entity_list: list[iit_entity] = []
         for entity in entity_list: 
             new_entity_list.append(iit_entity.clone(entity))
             
         return new_entity_list
 
     @staticmethod
-    def clone(entity) -> "iit_entity": 
+    def clone(entity: "iit_entity") -> "iit_entity": 
         new_entity = iit_entity()
         new_entity.key = entity.key
         new_entity.prompt_ID = entity.prompt_ID
         new_entity.prompt = entity.prompt
         new_entity.completion = entity.completion
+        new_entity.completion_embedding_shape = entity.completion_embedding_shape
         new_entity.token_count = entity.token_count
         
         if entity.prompt_embedding is not None: 
