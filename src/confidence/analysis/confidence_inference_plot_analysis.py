@@ -8,10 +8,10 @@ import re
 class confidence_inference_analysis(object):
 
     @staticmethod
-    def plot_auroc_entropy_iit_reward(to_run_number = 1):
+    def plot_auroc_entropy_iit_reward(confidence_type: str, to_run_number: int = 1) -> None:
         data_list = []
         for run_number in range(1, to_run_number + 1):
-            dir, csv_paths = confidence_inference_analysis.get_filenames()
+            dir, csv_paths = confidence_inference_analysis.get_filenames(confidence_type)
             for dataset, csv_paths_dataset in csv_paths.items():
                 fig, axes = plt.subplots(1, 3, figsize=(12, 6))
                 axes = axes.flatten()
@@ -142,9 +142,9 @@ class confidence_inference_analysis(object):
             
                 plt.tight_layout()
                 plt.plot()
-                save_path = f'integrated_information_theory/inference/confidence/analysis/{dataset}/run_{run_number}'
+                save_path = f'src/confidence/analysis/{dataset}/run_{run_number}'
                 Path(save_path).mkdir(parents=True, exist_ok=True)
-                plt.savefig(f'{save_path}/auroc.png')
+                plt.savefig(f'{save_path}/{confidence_type}_auroc.png')
         
         df_summary = pd.DataFrame(data_list)
         group_cols=['dataset', 'model', 'settings']        
@@ -155,8 +155,8 @@ class confidence_inference_analysis(object):
 
 
     @staticmethod
-    def scatterplot_entropy_iit_reward(run_number = 1):
-        dir, csv_paths = confidence_inference_analysis.get_filenames()
+    def scatterplot_entropy_iit_reward(confidence_type: str, run_number: int = 1) -> None:
+        dir, csv_paths = confidence_inference_analysis.get_filenames(confidence_type)
         for dataset, csv_paths_dataset in csv_paths.items():
             fig, axes = plt.subplots(2, 3, figsize=(12, 6))
             axes = axes.flatten()
@@ -201,9 +201,9 @@ class confidence_inference_analysis(object):
         
             plt.tight_layout()
             plt.plot()
-            save_path = f'integrated_information_theory/inference/confidence/analysis/{dataset}/run_{run_number}'
+            save_path = f'src/confidence/analysis/{dataset}/run_{run_number}'
             Path(save_path).mkdir(parents=True, exist_ok=True)
-            plt.savefig(f'{save_path}/scatterplot_entropy_iit_reward.png')
+            plt.savefig(f'{save_path}/{confidence_type}_scatterplot.png')
 
 
     @staticmethod
@@ -215,38 +215,38 @@ class confidence_inference_analysis(object):
         return None    
 
     @staticmethod
-    def get_filenames():
-        dir = './integrated_information_theory/inference/confidence'
+    def get_filenames(confidence_type: str) -> None:
+        dir = './src/confidence'
         csv_paths = {
-            "aime": 
-                        [
-                         "settings_0/aime/run_/confidence_aime_Settings_46.csv", 
-                         "settings_0/aime/run_/confidence_aime_Settings_64.csv", 
-                         "settings_0/aime/run_/confidence_aime_Settings_65.csv",
-                         ],
+            # "aime": 
+            #             [
+            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
+            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
+            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
+            #              ],
             "countdown": 
                         [
-                         "settings_0/countdown/run_/confidence_countdown_Settings_46.csv", 
-                         "settings_0/countdown/run_/confidence_countdown_Settings_64.csv", 
-                         "settings_0/countdown/run_/confidence_countdown_Settings_65.csv",
+                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_46.csv", 
+                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_64.csv", 
+                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_65.csv",
                          ],
-            "gsm8k": 
-                        [
-                         "settings_0/gsm8k/run_/confidence_gsm8k_Settings_46.csv", 
-                         "settings_0/gsm8k/run_/confidence_gsm8k_Settings_64.csv", 
-                         "settings_0/gsm8k/run_/confidence_gsm8k_Settings_65.csv",
-                         ],
+            # "gsm8k": 
+            #             [
+            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_46.csv", 
+            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_64.csv", 
+            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_65.csv",
+            #              ],
             "gpqa": 
                         [
-                         "settings_0/gpqa/run_/confidence_gpqa_Settings_46.csv", 
-                         "settings_0/gpqa/run_/confidence_gpqa_Settings_64.csv", 
-                         "settings_0/gpqa/run_/confidence_gpqa_Settings_65.csv",
+                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_46.csv", 
+                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_64.csv", 
+                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_65.csv",
                          ],
             "math500": 
                         [
-                         "settings_0/math500/run_/confidence_math500_Settings_46.csv", 
-                         "settings_0/math500/run_/confidence_math500_Settings_64.csv", 
-                         "settings_0/math500/run_/confidence_math500_Settings_65.csv",
+                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_46.csv", 
+                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_64.csv", 
+                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_65.csv",
                          ],
 
         }
@@ -278,5 +278,7 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_analysis.plot_auroc_entropy_iit_reward(to_run_number=5)
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', to_run_number=3)
+print()
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', to_run_number=3)
 # confidence_inference_analysis.scatterplot_entropy_iit_reward()
