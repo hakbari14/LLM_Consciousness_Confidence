@@ -27,19 +27,26 @@ class confidence_inference_analysis(object):
                         
                         file_path = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path}')
-                        required_cols = ["Accuracy", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]
+                        required_cols = ["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]
                         if iit_type == 'ii':
-                            required_cols = ["Accuracy", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]
+                            required_cols = ["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]
                         confidence_inference_analysis.check_columns(df, required_cols)
                         
                         accuracy = df['Accuracy'].mean()
                         if iit_type == 'ii':
-                            df = df[["Accuracy", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]].dropna()
+                            df = df[["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]].dropna()
                         else:
-                            df = df[["Accuracy", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]].dropna()
+                            df = df[["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]].dropna()
 
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
                         accuracy_list = df['Accuracy_Reward'].tolist()
+
+                        min_sum_probabilty_val = df['Sequence_Probability'].min()
+                        max_sum_probabilty_val = df['Sequence_Probability'].max()
+                        df['confidence_sum_probabilty'] = df['Sequence_Probability'] / (max_sum_probabilty_val - min_sum_probabilty_val)
+                        sum_probability_list = df['confidence_sum_probabilty'].tolist()
+
+                        norm_seq_prob_list = df['Length_Normalized_Sequence_Probability'].tolist()
 
                         min_entropy_val = df['Entropy'].min()
                         max_entropy_val = df['Entropy'].max()
@@ -76,13 +83,15 @@ class confidence_inference_analysis(object):
                         
                         y_true = np.array(accuracy_list)
                         accuracy = np.average(y_true)
-                        con_A = np.array(confidence_entropy_list)
-                        con_B = np.array(confidence_loss_list)
-                        con_C = np.array(confidence_iit_reward_list)
-                        con_D = np.array(iit_reward_tpm_loss_list)
-                        con_E = np.array(iit_reward_tpm_entropy_list)
+                        con_A = np.array(sum_probability_list)
+                        con_B = np.array(norm_seq_prob_list)
+                        con_C = np.array(confidence_entropy_list)
+                        con_D = np.array(confidence_loss_list)
+                        con_E = np.array(confidence_iit_reward_list)
+                        con_F = np.array(iit_reward_tpm_loss_list)
+                        con_G = np.array(iit_reward_tpm_entropy_list)
                         if iit_type == 'ii':
-                            con_F = np.array(confidence_iit_reward_actual_list)
+                            con_H = np.array(confidence_iit_reward_actual_list)
 
                         fpr1, tpr1, _ = roc_curve(y_true, con_A)
                         roc_auc1 = auc(fpr1, tpr1)
@@ -99,24 +108,32 @@ class confidence_inference_analysis(object):
                         fpr5, tpr5, _ = roc_curve(y_true, con_E)
                         roc_auc5 = auc(fpr5, tpr5)
                         
+                        fpr6, tpr6, _ = roc_curve(y_true, con_F)
+                        roc_auc6 = auc(fpr6, tpr6)
+
+                        fpr7, tpr7, _ = roc_curve(y_true, con_G)
+                        roc_auc7 = auc(fpr7, tpr7)
+                        
                         if iit_type == 'ii':
-                            fpr6, tpr6, _ = roc_curve(y_true, con_F)
-                            roc_auc6 = auc(fpr5, tpr5)
+                            fpr8, tpr8, _ = roc_curve(y_true, con_H)
+                            roc_auc8 = auc(fpr8, tpr8)
 
                         ax = axes[plot_idx]
                         plot_idx += 1
-                        ax.plot(fpr1, tpr1, linewidth=2, label=f"Entropy({roc_auc1:.3f})")
-                        ax.plot(fpr2, tpr2, linewidth=2, label=f"Loss({roc_auc2:.3f})")
-                        ax.plot(fpr3, tpr3, linewidth=2, label=f"IIT({roc_auc3:.3f})")
-                        ax.plot(fpr4, tpr4, linewidth=2, label=f"IIT_Loss({roc_auc4:.3f})")
-                        ax.plot(fpr5, tpr5, linewidth=2, label=f"IIT_Entropy({roc_auc5:.3f})")
+                        ax.plot(fpr1, tpr1, linewidth=2, label=f"Sum_Prob({roc_auc1:.3f})")
+                        ax.plot(fpr2, tpr2, linewidth=2, label=f"AVG_Prob({roc_auc2:.3f})")
+                        ax.plot(fpr3, tpr3, linewidth=2, label=f"Entropy({roc_auc3:.3f})")
+                        ax.plot(fpr4, tpr4, linewidth=2, label=f"Loss({roc_auc4:.3f})")
+                        ax.plot(fpr5, tpr5, linewidth=2, label=f"IIT({roc_auc5:.3f})")
+                        ax.plot(fpr6, tpr6, linewidth=2, label=f"IIT_Loss({roc_auc6:.3f})")
+                        ax.plot(fpr7, tpr7, linewidth=2, label=f"IIT_Entropy({roc_auc7:.3f})")
                         if iit_type == 'ii':
-                            ax.plot(fpr6, tpr6, linewidth=2, label=f"IIT Actual({roc_auc6:.3f})")
+                            ax.plot(fpr8, tpr8, linewidth=2, label=f"IIT Actual({roc_auc8:.3f})")
                             
                         if iit_type == 'ii':
-                            ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], linestyle="--", linewidth=1)
+                            ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], linestyle="--", linewidth=1)
                         else:
-                            ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1], linestyle="--", linewidth=1)
+                            ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1],[0, 1], [0, 1], linestyle="--", linewidth=1)
                             
                         ax.set_title(f"{base_model}_{iit_type}, Accuracy= {accuracy:.2f}")
                         ax.set_xlabel("False Positive Rate")
@@ -129,11 +146,13 @@ class confidence_inference_analysis(object):
                                         "model" : base_model, 
                                         "settings" : iit_type, 
                                         "accuracy": accuracy,
-                                        "roc_entropy": roc_auc1,
-                                        "roc_loss": roc_auc2,
-                                        "roc_iit": roc_auc3,
-                                        "roc_tpm_loss": roc_auc4,
-                                        "roc_tpm_entropy": roc_auc5,
+                                        "sum_prob": roc_auc1,
+                                        "avg_prob": roc_auc2,
+                                        "roc_entropy": roc_auc3,
+                                        "roc_loss": roc_auc4,
+                                        "roc_iit": roc_auc5,
+                                        "roc_tpm_loss": roc_auc6,
+                                        "roc_tpm_entropy": roc_auc7,
                                     }
                         data_list.append(data_item)
                     except Exception as e:
@@ -145,10 +164,11 @@ class confidence_inference_analysis(object):
                 save_path = f'src/confidence/analysis/{dataset}/run_{run_number}'
                 Path(save_path).mkdir(parents=True, exist_ok=True)
                 plt.savefig(f'{save_path}/{confidence_type}_auroc.png')
+                plt.close(fig) 
         
         df_summary = pd.DataFrame(data_list)
         group_cols=['dataset', 'model', 'settings']        
-        value_cols=['accuracy','roc_entropy', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
+        value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
         print(df_summary.to_string(index=False))        
@@ -204,6 +224,7 @@ class confidence_inference_analysis(object):
             save_path = f'src/confidence/analysis/{dataset}/run_{run_number}'
             Path(save_path).mkdir(parents=True, exist_ok=True)
             plt.savefig(f'{save_path}/{confidence_type}_scatterplot.png')
+            plt.close(fig) 
 
 
     @staticmethod
@@ -218,24 +239,24 @@ class confidence_inference_analysis(object):
     def get_filenames(confidence_type: str) -> None:
         dir = './src/confidence'
         csv_paths = {
-            # "aime": 
-            #             [
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
-            #              ],
+            "aime": 
+                        [
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
+                         ],
             "countdown": 
                         [
                          f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_46.csv", 
                          f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_64.csv", 
                          f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_65.csv",
                          ],
-            # "gsm8k": 
-            #             [
-            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_46.csv", 
-            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_64.csv", 
-            #              f"settings_0/gsm8k/run_/{confidence_type}/confidence_{confidence_type}_gsm8k_Settings_65.csv",
-            #              ],
+            "gsm8k": 
+                        [
+                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_46.csv", 
+                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_64.csv", 
+                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_65.csv",
+                         ],
             "gpqa": 
                         [
                          f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_46.csv", 
@@ -278,7 +299,7 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', to_run_number=3)
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', to_run_number=5)
 print()
-confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', to_run_number=3)
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', to_run_number=5)
 # confidence_inference_analysis.scatterplot_entropy_iit_reward()
