@@ -11,7 +11,6 @@ class self_consistency_generation_gpqa(self_consistency_generation):
     def get_dataset(self):
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_ratio_test_dataset_size(0.5)            
             self.dataset = gpqa_dataset(config)
         return self.dataset
 

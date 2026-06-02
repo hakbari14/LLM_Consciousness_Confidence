@@ -11,7 +11,6 @@ class self_consistency_generation_math500(self_consistency_generation):
     def get_dataset(self):
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_ratio_test_dataset_size(0.2)            
             self.dataset = math_500_dataset(config)
         return self.dataset
 

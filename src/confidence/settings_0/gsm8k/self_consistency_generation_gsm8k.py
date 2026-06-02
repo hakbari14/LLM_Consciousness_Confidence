@@ -11,7 +11,6 @@ class self_consistency_generation_gsm8k(self_consistency_generation):
     def get_dataset(self):
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_ratio_test_dataset_size(0.1)            
             self.dataset = gsm8k_dataset(config)
         return self.dataset
 
