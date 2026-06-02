@@ -8,13 +8,13 @@ class self_consistency_generation_math500(self_consistency_generation):
     def __init__(self, modelname):
         super().__init__(modelname)
 
-    def get_dataset(self):
+    def get_dataset(self) -> math_500_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
             self.dataset = math_500_dataset(config)
         return self.dataset
 
-    def create_self_consistency_logger(self, run_number):
+    def create_self_consistency_logger(self, run_number) -> self_consistency_inference_logger:
         return self_consistency_inference_logger(log_file_name = f'src/confidence/settings_0/math500/run_{run_number}/self_consistency_math500.csv')
 
 for run_number in range(1,6):

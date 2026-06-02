@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from src.logger.self_consistency.self_consistency_log_entity import self_consistency_log_entity
 from src.logger.self_consistency.self_consistency_log_detail_entity import self_consistency_log_detail_entity
 from src.logger.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
+from src.datasets.dataset_handler import dataset_handler
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 import torch
@@ -89,11 +90,11 @@ class self_consistency_generation(ABC):
         logger.write_to_log_file()
 
 
-    def get_max_new_tokens(self):
+    def get_max_new_tokens(self) -> int:
         return 5000
 
     @abstractmethod
-    def get_dataset(self):
+    def get_dataset(self) -> dataset_handler:
         pass
 
     @abstractmethod

@@ -5,16 +5,16 @@ from src.logger.self_consistency.self_consistency_inference_logger import self_c
 
 class self_consistency_generation_gsm8k(self_consistency_generation): 
 
-    def __init__(self, modelname):
+    def __init__(self, modelname: str) -> None:
         super().__init__(modelname)
 
-    def get_dataset(self):
+    def get_dataset(self) -> gsm8k_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
             self.dataset = gsm8k_dataset(config)
         return self.dataset
 
-    def create_self_consistency_logger(self, run_number):
+    def create_self_consistency_logger(self, run_number) -> self_consistency_inference_logger:
         return self_consistency_inference_logger(log_file_name = f'src/confidence/settings_0/gsm8k/run_{run_number}/self_consistency_gsm8k.csv')
 
 for run_number in range(1,6):
