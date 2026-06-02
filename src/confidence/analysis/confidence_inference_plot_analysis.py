@@ -171,6 +171,7 @@ class confidence_inference_analysis(object):
         value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
+        print(f'{confidence_type} Settings')
         print(df_summary.to_string(index=False))        
 
 

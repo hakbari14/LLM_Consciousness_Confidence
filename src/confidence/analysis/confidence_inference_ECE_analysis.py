@@ -69,6 +69,7 @@ class confidence_inference_ECE_analysis(object):
         value_cols=['accuracy', 'ece_sum_prob', 'ece_avg_prob', 'ece_entropy', 'ece_iit_reward', 'ece_iit_reward_loss', 'ece_iit_reward_entropy']
         df_summary = confidence_inference_ECE_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
+        print(f'{confidence_type} Settings')
         print(df_summary.to_string(index=False))        
 
 
@@ -102,12 +103,12 @@ class confidence_inference_ECE_analysis(object):
     def get_filenames(confidence_type: str) -> None:
         dir = './src/confidence'
         csv_paths = {
-            # "aime": 
-            #             [
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
-            #              f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
-            #              ],
+            "aime": 
+                        [
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
+                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
+                         ],
             "countdown": 
                         [
                          f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_46.csv", 
@@ -162,6 +163,6 @@ class confidence_inference_ECE_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_ECE_analysis.calculate('whitebox', to_run_number=3)
+confidence_inference_ECE_analysis.calculate('whitebox', to_run_number=5)
 print()
-confidence_inference_ECE_analysis.calculate('blackbox', to_run_number=3)
+confidence_inference_ECE_analysis.calculate('blackbox', to_run_number=5)
