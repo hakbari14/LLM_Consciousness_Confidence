@@ -35,7 +35,7 @@ class self_consistency_generation(ABC):
             )
         
         log_list: list[self_consistency_log_entity] = []
-        for i in tqdm(range(0, len(test_dataset), batch_size), desc="Processing atches", unit="step"):
+        for i in tqdm(range(0, len(test_dataset), batch_size), desc="Processing Batches", unit="step"):
             batch = test_dataset[i : i + batch_size]
             prompt_list = batch['prompt']
             sample_ID_list = batch['sample_id']

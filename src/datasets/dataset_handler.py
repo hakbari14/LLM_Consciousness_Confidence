@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from transformers import AutoTokenizer
 from datasets import Dataset
 import configparser
+import random
 
 class dataset_handler(ABC): 
 
@@ -34,6 +35,13 @@ class dataset_handler(ABC):
 
         return train_dataset, eval_dataset
 
+    def generate_model_prompt_permutation(self, x, num_choice_permutations: int) -> list[dict]:
+        data_list = []
+        for i in range(0, num_choice_permutations):
+            data_list.append(self.generate_model_prompt(x))
+            
+        return data_list
+
     def filter_by_required_criteria(self, x: dict, dataset_type: dataset_element_type_enum) -> bool:
         return True
 
@@ -47,6 +55,23 @@ class dataset_handler(ABC):
         
     def verify_final_answer(self, target: str, final_answer: str) -> tuple[bool, str]:
         return final_answer == target, final_answer
+
+    def permute_options(self, options: list[str], correct_index: int, num_permutations: int = 10) -> list[tuple[list[str], int]]:
+        results = []
+        for _ in range(num_permutations):
+            indexed_options = list(enumerate(options))
+
+            random.shuffle(indexed_options)
+            new_options = []
+            new_correct_index = None
+
+            for new_idx, (old_idx, opt) in enumerate(indexed_options):
+                new_options.append(opt)
+                if old_idx == correct_index:
+                    new_correct_index = new_idx
+
+            results.append((new_options, new_correct_index))
+        return results
 
     def get_config(self) -> dataset_config: 
         return self.config

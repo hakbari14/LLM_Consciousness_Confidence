@@ -16,6 +16,7 @@ class confidence_log_entity(log_entity):
     sequence_probability : Optional[float] = 0.0
     length_normalized_sequence_probability : Optional[float] = 0.0
     entropy : Optional[float] = 0.0
+    confidence_mc : Optional[float] = 0.0
 
     phi_reward : Optional[float] = 0.0
     phi_reward_raw : Optional[float] = 0.0

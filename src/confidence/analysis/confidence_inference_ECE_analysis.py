@@ -76,7 +76,7 @@ class confidence_inference_ECE_analysis(object):
     @staticmethod
     def calculate_ECE_MCE(df, confidence_column_name ,n_bins = 10):
         df['accuracy_reward'] = df['Accuracy'].map({True: 1, False: 0})        
-        df['binned_confidence'] = pd.qcut(df[confidence_column_name], q=n_bins)
+        df['binned_confidence'] = pd.qcut(df[confidence_column_name], q=n_bins, duplicates='drop')
         agg_perplexity = df.groupby('binned_confidence')[confidence_column_name].agg(['mean'])
         agg_accuracy = df.groupby('binned_confidence')['accuracy_reward'].agg(['mean'])
 
@@ -103,6 +103,12 @@ class confidence_inference_ECE_analysis(object):
     def get_filenames(confidence_type: str) -> None:
         dir = './src/confidence'
         csv_paths = {
+            "truthfulqa": 
+                        [
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_46.csv", 
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_64.csv", 
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_65.csv",
+                         ],
             "aime": 
                         [
                          f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 

@@ -240,6 +240,12 @@ class confidence_inference_analysis(object):
     def get_filenames(confidence_type: str) -> None:
         dir = './src/confidence'
         csv_paths = {
+            "truthfulqa": 
+                        [
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_46.csv", 
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_64.csv", 
+                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_65.csv",
+                         ],
             "aime": 
                         [
                          f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
