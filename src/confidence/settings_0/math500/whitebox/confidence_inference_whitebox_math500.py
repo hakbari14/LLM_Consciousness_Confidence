@@ -13,7 +13,7 @@ class confidence_inference_whitebox_math500(confidence_inference):
     def create_confidence_logger(self, settings, run_number):
         return confidence_logger(log_file_name = f'src/confidence/settings_0/math500/whitebox/run_{run_number}/confidence_whitebox_math500_{settings}.csv')
 
-for run_number in range(1,6):
+for run_number in range(6,11):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
     t = confidence_inference_whitebox_math500(
                                         whitebox_modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
