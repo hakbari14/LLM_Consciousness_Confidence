@@ -1,0 +1,1 @@
+ID,Settings,Split,Sample_ID,problem_id,Prompt,Target,Completion,Final_Answer,Accuracy,Token_Count,Completion_Loss,Sequence_Probability,Length_Normalized_Sequence_Probability,Entropy,Confidence_MultipleChoices,Phi_Reward,Phi_Reward_Raw,Phi_Reward_Raw_Actual,Tpm_Loss,Tpm_Entropy,Completion_Embedding_Shape

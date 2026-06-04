@@ -28,13 +28,13 @@ class confidence_inference_analysis(object):
                         file_path = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path}')
                         required_cols = ["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]
-                        if iit_type == 'ii':
-                            required_cols = ["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]
+                        if 'Confidence_MultipleChoices' in df.columns:
+                            required_cols.append('Confidence_MultipleChoices')
                         confidence_inference_analysis.check_columns(df, required_cols)
                         
                         accuracy = df['Accuracy'].mean()
-                        if iit_type == 'ii':
-                            df = df[["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy", "Phi_Reward_Raw_Actual"]].dropna()
+                        if 'Confidence_MultipleChoices' in df.columns:
+                            df = df[["Accuracy", "Confidence_MultipleChoices", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]].dropna()
                         else:
                             df = df[["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]].dropna()
 
@@ -45,7 +45,7 @@ class confidence_inference_analysis(object):
                         max_sum_probabilty_val = df['Sequence_Probability'].max()
                         df['confidence_sum_probabilty'] = df['Sequence_Probability'] / (max_sum_probabilty_val - min_sum_probabilty_val)
                         sum_probability_list = df['confidence_sum_probabilty'].tolist()
-
+                        
                         norm_seq_prob_list = df['Length_Normalized_Sequence_Probability'].tolist()
 
                         min_entropy_val = df['Entropy'].min()
@@ -77,9 +77,8 @@ class confidence_inference_analysis(object):
                         df['confidence_iit_reward_tpm_entropy'] = (1 + df['confidence_iit_reward'] - df['confidence_tpm_entropy']) / 2.0
                         iit_reward_tpm_entropy_list = df['confidence_iit_reward_tpm_entropy'].tolist()
 
-                        if iit_type == 'ii':
-                            df['confidence_iit_reward_actual'] = df['Phi_Reward_Raw_Actual'] / df['Phi_Reward_Raw']
-                            confidence_iit_reward_actual_list = df['confidence_iit_reward_actual'].tolist()
+                        if 'Confidence_MultipleChoices' in df.columns:
+                            confidence_list = df['Confidence_MultipleChoices'].tolist()
                         
                         y_true = np.array(accuracy_list)
                         accuracy = np.average(y_true)
@@ -90,8 +89,8 @@ class confidence_inference_analysis(object):
                         con_E = np.array(confidence_iit_reward_list)
                         con_F = np.array(iit_reward_tpm_loss_list)
                         con_G = np.array(iit_reward_tpm_entropy_list)
-                        if iit_type == 'ii':
-                            con_H = np.array(confidence_iit_reward_actual_list)
+                        if 'Confidence_MultipleChoices' in df.columns:
+                            con_H = np.array(confidence_list)
 
                         fpr1, tpr1, _ = roc_curve(y_true, con_A)
                         roc_auc1 = auc(fpr1, tpr1)
@@ -114,23 +113,25 @@ class confidence_inference_analysis(object):
                         fpr7, tpr7, _ = roc_curve(y_true, con_G)
                         roc_auc7 = auc(fpr7, tpr7)
                         
-                        if iit_type == 'ii':
+                        if 'Confidence_MultipleChoices' in df.columns:
                             fpr8, tpr8, _ = roc_curve(y_true, con_H)
                             roc_auc8 = auc(fpr8, tpr8)
+                        else: 
+                            roc_auc8 = 0
 
                         ax = axes[plot_idx]
                         plot_idx += 1
-                        ax.plot(fpr1, tpr1, linewidth=2, label=f"Sum_Prob({roc_auc1:.3f})")
+                        ax.plot(fpr1, tpr1, linewidth=2, label=f"Sum Prob({roc_auc1:.3f})")
                         ax.plot(fpr2, tpr2, linewidth=2, label=f"AVG_Prob({roc_auc2:.3f})")
                         ax.plot(fpr3, tpr3, linewidth=2, label=f"Entropy({roc_auc3:.3f})")
                         ax.plot(fpr4, tpr4, linewidth=2, label=f"Loss({roc_auc4:.3f})")
                         ax.plot(fpr5, tpr5, linewidth=2, label=f"IIT({roc_auc5:.3f})")
                         ax.plot(fpr6, tpr6, linewidth=2, label=f"IIT_Loss({roc_auc6:.3f})")
                         ax.plot(fpr7, tpr7, linewidth=2, label=f"IIT_Entropy({roc_auc7:.3f})")
-                        if iit_type == 'ii':
-                            ax.plot(fpr8, tpr8, linewidth=2, label=f"IIT Actual({roc_auc8:.3f})")
+                        if 'Confidence_MultipleChoices' in df.columns:
+                            ax.plot(fpr8, tpr8, linewidth=2, label=f"Confidence MC({roc_auc8:.3f})")
                             
-                        if iit_type == 'ii':
+                        if 'Confidence_MultipleChoices' in df.columns:
                             ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], linestyle="--", linewidth=1)
                         else:
                             ax.plot([0, 1], [0, 1], [0, 1], [0, 1], [0, 1],[0, 1], [0, 1], linestyle="--", linewidth=1)
@@ -139,7 +140,7 @@ class confidence_inference_analysis(object):
                         ax.set_xlabel("False Positive Rate")
                         ax.set_ylabel("True Positive Rate")
                         ax.legend()
-                    
+
                         data_item = {
                                         "run_number": run_number, 
                                         "dataset": dataset , 
@@ -153,6 +154,7 @@ class confidence_inference_analysis(object):
                                         "roc_iit": roc_auc5,
                                         "roc_tpm_loss": roc_auc6,
                                         "roc_tpm_entropy": roc_auc7,
+                                        "roc_multiplechoices": roc_auc8,
                                     }
                         data_list.append(data_item)
                     except Exception as e:
@@ -168,7 +170,7 @@ class confidence_inference_analysis(object):
         
         df_summary = pd.DataFrame(data_list)
         group_cols=['dataset', 'model', 'settings']        
-        value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
+        value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_multiplechoices', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
         print(f'{confidence_type} Settings')

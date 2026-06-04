@@ -19,7 +19,7 @@ class multiple_choices_generation(multiple_choices_generation):
         return multiple_choices_inference_logger(log_file_name = f'src/confidence/settings_0/truthfulqa/run_{run_number}/multiple_choices_truthfulqa.csv')
 
 
-for run_number in range(1,2):
+for run_number in range(1,6):
     print(f'{'*' * 100}  TruthfulQA : Run Number {run_number}  {'*' * 100}')
     t = multiple_choices_generation(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     t.generate_response(run_number = run_number)
