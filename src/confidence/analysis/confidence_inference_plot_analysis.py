@@ -8,9 +8,9 @@ import re
 class confidence_inference_analysis(object):
 
     @staticmethod
-    def plot_auroc_entropy_iit_reward(confidence_type: str, to_run_number: int = 1) -> None:
+    def plot_auroc_entropy_iit_reward(confidence_type: str, from_run_number: int = 1, to_run_number: int = 1) -> None:
         data_list = []
-        for run_number in range(1, to_run_number + 1):
+        for run_number in range(from_run_number, to_run_number + 1):
             dir, csv_paths = confidence_inference_analysis.get_filenames(confidence_type)
             for dataset, csv_paths_dataset in csv_paths.items():
                 fig, axes = plt.subplots(1, 3, figsize=(12, 6))
@@ -308,7 +308,7 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', to_run_number=5)
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', from_run_number = 1, to_run_number=5)
 print()
-confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', to_run_number=5)
+confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', from_run_number = 1, to_run_number=5)
 # confidence_inference_analysis.scatterplot_entropy_iit_reward()
