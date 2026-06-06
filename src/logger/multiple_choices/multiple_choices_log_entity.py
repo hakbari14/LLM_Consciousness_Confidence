@@ -3,6 +3,7 @@ from src.logger.multiple_choices.multiple_choices_log_detail_entity import multi
 from dataclasses import dataclass, field
 from typing import List
 from typing import Optional
+from collections import Counter
 
 @dataclass
 class multiple_choices_log_entity(log_entity):
@@ -19,12 +20,13 @@ class multiple_choices_log_entity(log_entity):
             raise Exception('permutation list empty')
 
     def calculate_confidence(self) -> float: 
-        correct = 0
-        for log_detail in self.permutation_list:
-            if log_detail.accuracy == True:
-                correct += 1
+        compared_final_answer_list: list[str] = set(map(lambda x: x.compared_final_answer, self.permutation_list))
+        counter = 0
+        if len(compared_final_answer_list) != 0:
+            counts = Counter(compared_final_answer_list)
+            counter = max(counts.values())            
                 
-        self.confidence = correct / len(self.permutation_list)
+        self.confidence = counter / len(self.permutation_list)
         return self.confidence
 
 
