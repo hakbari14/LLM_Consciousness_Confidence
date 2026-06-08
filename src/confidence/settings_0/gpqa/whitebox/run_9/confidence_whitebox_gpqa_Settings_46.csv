@@ -445,7 +445,7 @@ The problem involves a series of reactions starting with trans-cinnamaldehyde an
 
 Thus, the number of carbon atoms in product 3 is **11**. 
 
-ANSWER: 11",B,True,4874,inf,3536.752182304859,0.7257853852462259,0.738227029735245,0.181809103206989,2.229551104926284,2.190636384568907,0.0654647037770662,0.0102784957510149,"(13, 4874, 3584)"
+ANSWER: 11",B,True,4874,0,3536.752182304859,0.7257853852462259,0.738227029735245,0.181809103206989,2.229551104926284,2.190636384568907,0.0654647037770662,0.0102784957510149,"(13, 4874, 3584)"
 2,Settings_46,eval,2,2,"<｜begin▁of▁sentence｜><｜User｜>What is the correct answer to this question: What is the correct answer to this question: A spin-half particle is in a linear superposition 0.5|\uparrow\rangle+sqrt(3)/2|\downarrow\rangle of its spin-up and spin-down states. If |\uparrow\rangle and |\downarrow\rangle are the eigenstates of \sigma{z} , then what is the expectation value up to one decimal place, of the operator 10\sigma{z}+5\sigma_{x} ? Here, symbols have their usual meanings
 
 
