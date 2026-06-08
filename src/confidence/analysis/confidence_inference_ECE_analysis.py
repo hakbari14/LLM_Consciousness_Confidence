@@ -4,9 +4,9 @@ import re
 class confidence_inference_ECE_analysis(object):
 
     @staticmethod
-    def calculate(confidence_type: str, to_run_number: int = 1, n_bins: int = 10) -> None:
+    def calculate(confidence_type: str, from_run_number: int = 1, to_run_number: int = 1, n_bins: int = 10) -> None:
         data_list = []
-        for run_number in range(1, to_run_number + 1):
+        for run_number in range(from_run_number, to_run_number + 1):
             dir, csv_paths = confidence_inference_ECE_analysis.get_filenames(confidence_type)
             for dataset, csv_paths_dataset in csv_paths.items():
                 for file_path in csv_paths_dataset: 
@@ -169,6 +169,6 @@ class confidence_inference_ECE_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_ECE_analysis.calculate('whitebox', to_run_number=5)
+confidence_inference_ECE_analysis.calculate('whitebox', from_run_number = 1, to_run_number=5)
 print()
-confidence_inference_ECE_analysis.calculate('blackbox', to_run_number=5)
+confidence_inference_ECE_analysis.calculate('blackbox', from_run_number = 1, to_run_number=5)
