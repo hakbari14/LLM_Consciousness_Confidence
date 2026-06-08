@@ -22,17 +22,17 @@ class mmlu_pro_dataset(dataset_handler):
     
     def final_answer_extraction(self, prompt, solution, target):
         patterns = [
-            r'(?i)\bthe\s+correct\s+answer\s+is\s*[:\-\(]?\s*([ABCD])\b',
-            r'(?i)\\?oxed\s*\{\s*\**\s*\(?\s*([ABCD])\s*\)?\s*\**\s*\}',            
-            r'(?i)answer[\s:*()\[\]\-_=+\n\r\t]*(?:is[\s:*()\[\]\-_=+\n\r\t]*)?(?:option|choice)?[\s:*()\[\]\-_=+\n\r\t]*([ABCD])',
-            r'(?i)</think>\s+([ABCD])',
+            r'(?i)\bthe\s+correct\s+answer\s+is\s*[:\-\(]?\s*([ABCDEFGHIJ])\b', 
+            r'(?i)\\?oxed\s*\{\s*\**\s*\(?\s*([ABCDEFGHIJ])\s*\)?\s*\**\s*\}',            
+            r'(?i)answer[\s:*()\[\]\-_=+\n\r\t]*(?:is[\s:*()\[\]\-_=+\n\r\t]*)?(?:option|choice)?[\s:*()\[\]\-_=+\n\r\t]*([ABCDEFGHIJ])',
+            r'(?i)</think>\s+([ABCDEFGHIJ])',
         ]
 
         for pattern in patterns:
             match = re.search(pattern, solution, re.IGNORECASE)
             if not match: continue
             answer = match.group(1).upper()
-            if answer not in ['A', 'B', 'C', 'D']: continue
+            if answer not in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']: continue
             return answer
         
         return None
@@ -60,7 +60,7 @@ class mmlu_pro_dataset(dataset_handler):
         for item in result:
             permute_choices = item[0]
             permute_label_index = item[1]
-            prompt_list.append(self.generate_model_prompt_item(unique_id, problem_id, question, permute_choices, permute_label_index))
+            prompt_list.append(self.generate_model_prompt_item(unique_id, problem_id, question, permute_choices, permute_label_index, answer))
             
         return prompt_list
 
