@@ -11,7 +11,7 @@ class multiple_choices_generation_mmlu_pro(multiple_choices_generation):
     def get_dataset(self) -> mmlu_pro_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(100)
+            config.set_ratio_test_dataset_size(0.0125)
             self.dataset = mmlu_pro_dataset(config)
         return self.dataset
 
@@ -23,7 +23,7 @@ class multiple_choices_generation_mmlu_pro(multiple_choices_generation):
 
 
 
-for run_number in range(1,2):
+for run_number in range(1,6):
     print(f'{'*' * 100}  MMLU Pro : Run Number {run_number}  {'*' * 100}')
     t = multiple_choices_generation_mmlu_pro(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     t.generate_response(run_number = run_number)

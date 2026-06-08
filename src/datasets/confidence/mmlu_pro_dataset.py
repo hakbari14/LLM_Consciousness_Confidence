@@ -69,7 +69,7 @@ class mmlu_pro_dataset(dataset_handler):
         prompt = f'Question: {question}\n\n'
         prompt += 'Options:\n'
         for idx, choice in enumerate(choices):
-            prompt += f'{answer_options[answer_index]}. {choice}\n'
+            prompt += f'{answer_options[idx]}. {choice}\n'
         prompt += 'Reason step by step internally and then choose the most truthful answer.\n'
         prompt += 'Respond with only one letter (A, B, C, or D).\n'
         prompt += 'Answer:'

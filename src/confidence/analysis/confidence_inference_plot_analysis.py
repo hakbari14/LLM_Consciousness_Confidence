@@ -308,7 +308,7 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
+
 confidence_inference_analysis.plot_auroc_entropy_iit_reward('whitebox', from_run_number = 1, to_run_number=5)
 print()
 confidence_inference_analysis.plot_auroc_entropy_iit_reward('blackbox', from_run_number = 1, to_run_number=5)
-# confidence_inference_analysis.scatterplot_entropy_iit_reward()
