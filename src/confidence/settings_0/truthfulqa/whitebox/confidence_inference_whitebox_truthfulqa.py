@@ -14,7 +14,7 @@ class confidence_inference_whitebox_truthfulqa(multiple_choices_inference):
         return confidence_logger(log_file_name = f'src/confidence/settings_0/truthfulqa/whitebox/run_{run_number}/confidence_whitebox_truthfulqa_{settings}.csv')
 
 
-for run_number in range(1,6):
+for run_number in range(6,11):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
     t = confidence_inference_whitebox_truthfulqa(
                                             whitebox_modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
