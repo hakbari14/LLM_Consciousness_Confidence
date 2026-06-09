@@ -4,15 +4,18 @@ import re
 class confidence_inference_ECE_analysis(object):
 
     @staticmethod
-    def calculate(confidence_type: str, from_run_number: int = 1, to_run_number: int = 1, n_bins: int = 10) -> None:
+    def calculate(confidence_type: str, n_bins: int = 10) -> None:
         data_list = []
-        for run_number in range(from_run_number, to_run_number + 1):
-            dir, csv_paths = confidence_inference_ECE_analysis.get_filenames(confidence_type)
-            for dataset, csv_paths_dataset in csv_paths.items():
-                for file_path in csv_paths_dataset: 
+        dir, csv_paths = confidence_inference_ECE_analysis.get_filenames(confidence_type)
+        for dataset, csv_dataset in csv_paths.items():
+            file_paths = csv_dataset['file_paths']
+            from_run_number = csv_dataset['from_run_number']
+            to_run_number = csv_dataset['to_run_number']
+            for file_path in file_paths: 
+                for run_number in range(from_run_number, to_run_number):
                     try:
-                        file_path = file_path.replace('run_', f'run_{run_number}')
-                        df = pd.read_csv(f'{dir}/{file_path}')
+                        file_path_run_number = file_path.replace('run_', f'run_{run_number}')
+                        df = pd.read_csv(f'{dir}/{file_path_run_number}')
                         accuracy = df['Accuracy'].mean()
                         
                         min_sum_probabilty_val = df['Sequence_Probability'].min()
@@ -72,6 +75,16 @@ class confidence_inference_ECE_analysis(object):
         print(f'{confidence_type} Settings')
         print(df_summary.to_string(index=False))        
 
+        print()
+        
+        df_summary_dataset = pd.DataFrame(data_list)
+        group_cols=['settings', 'model']        
+        value_cols=['accuracy', 'ece_sum_prob', 'ece_avg_prob', 'ece_entropy', 'ece_iit_reward', 'ece_iit_reward_loss', 'ece_iit_reward_entropy']
+        df_summary_dataset = confidence_inference_ECE_analysis.aggregate_mean_pandas_rounded(df_summary_dataset, group_cols, value_cols)
+        df_summary_dataset = df_summary_dataset.sort_values(by=['settings', 'model'])        
+        print(f'{confidence_type} Settings')
+        print(df_summary_dataset.to_string(index=False))        
+
 
     @staticmethod
     def calculate_ECE_MCE(df, confidence_column_name ,n_bins = 10):
@@ -103,42 +116,60 @@ class confidence_inference_ECE_analysis(object):
     def get_filenames(confidence_type: str) -> None:
         dir = './src/confidence'
         csv_paths = {
-            "truthfulqa": 
-                        [
-                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_46.csv", 
-                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_64.csv", 
-                         f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_65.csv",
-                         ],
-            "aime": 
-                        [
-                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
-                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
-                         f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
-                         ],
-            "countdown": 
-                        [
-                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_46.csv", 
-                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_64.csv", 
-                         f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_65.csv",
-                         ],
-            "gsm8k": 
-                        [
-                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_46.csv", 
-                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_64.csv", 
-                         f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_65.csv",
-                         ],
-            "gpqa": 
-                        [
-                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_46.csv", 
-                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_64.csv", 
-                         f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_65.csv",
-                         ],
-            "math500": 
-                        [
-                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_46.csv", 
-                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_64.csv", 
-                         f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_65.csv",
-                         ],
+            "truthfulqa": {
+                            "file_paths" : [
+                                    f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_46.csv", 
+                                    f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_64.csv", 
+                                    f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_65.csv",
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 6,
+                        },
+            "aime": {
+                            "file_paths" : [
+                                    f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
+                                    f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_64.csv", 
+                                    f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_65.csv",
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 6,
+                        },
+            "countdown": {
+                            "file_paths" : [
+                                    f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_46.csv", 
+                                    f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_64.csv", 
+                                    f"settings_0/countdown/{confidence_type}/run_/confidence_{confidence_type}_countdown_Settings_65.csv",
+                            ],
+                            "from_run_number": 6,
+                            "to_run_number": 11,
+                        },
+            "gsm8k": {
+                            "file_paths" : [
+                                    f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_46.csv", 
+                                    f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_64.csv", 
+                                    f"settings_0/gsm8k/{confidence_type}/run_/confidence_{confidence_type}_gsm8k_Settings_65.csv",
+                            ],
+                            "from_run_number": 6,
+                            "to_run_number": 11,
+                        },
+            "gpqa": {
+                            "file_paths" : [
+                                    f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_46.csv", 
+                                    f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_64.csv", 
+                                    f"settings_0/gpqa/{confidence_type}/run_/confidence_{confidence_type}_gpqa_Settings_65.csv",
+                            ],
+                            "from_run_number": 6,
+                            "to_run_number": 11,
+                        },
+            "math500": {
+                            "file_paths" : [
+                                    f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_46.csv", 
+                                    f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_64.csv", 
+                                    f"settings_0/math500/{confidence_type}/run_/confidence_{confidence_type}_math500_Settings_65.csv",
+                            ],
+                            "from_run_number": 6,
+                            "to_run_number": 11,
+                        },
 
         }
         
@@ -169,6 +200,6 @@ class confidence_inference_ECE_analysis(object):
             result[col] = result[col].round(3)
         return result
 
-confidence_inference_ECE_analysis.calculate('whitebox', from_run_number = 1, to_run_number=5)
+confidence_inference_ECE_analysis.calculate('whitebox')
 print()
-confidence_inference_ECE_analysis.calculate('blackbox', from_run_number = 1, to_run_number=5)
+confidence_inference_ECE_analysis.calculate('blackbox')
