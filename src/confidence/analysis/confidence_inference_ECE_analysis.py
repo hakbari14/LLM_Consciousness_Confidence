@@ -125,6 +125,24 @@ class confidence_inference_ECE_analysis(object):
                             "from_run_number": 1,
                             "to_run_number": 6,
                         },
+            "mmlu": {
+                            "file_paths" : [
+                                    f"settings_0/mmlu/{confidence_type}/run_/confidence_{confidence_type}_mmlu_Settings_46.csv", 
+                                    f"settings_0/mmlu/{confidence_type}/run_/confidence_{confidence_type}_mmlu_Settings_64.csv", 
+                                    f"settings_0/mmlu/{confidence_type}/run_/confidence_{confidence_type}_mmlu_Settings_65.csv",
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 4,
+                        },
+            "mmlu_pro": {
+                            "file_paths" : [
+                                    f"settings_0/mmlu_pro/{confidence_type}/run_/confidence_{confidence_type}_mmlu_pro_Settings_46.csv", 
+                                    f"settings_0/mmlu_pro/{confidence_type}/run_/confidence_{confidence_type}_mmlu_pro_Settings_64.csv", 
+                                    f"settings_0/mmlu_pro/{confidence_type}/run_/confidence_{confidence_type}_mmlu_pro_Settings_65.csv",
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 2,
+                        },
             "aime": {
                             "file_paths" : [
                                     f"settings_0/aime/{confidence_type}/run_/confidence_{confidence_type}_aime_Settings_46.csv", 
