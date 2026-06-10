@@ -417,7 +417,7 @@ class confidence_inference_analysis(object):
                                     f"settings_0/mmlu_pro/{confidence_type}/run_/confidence_{confidence_type}_mmlu_pro_Settings_65.csv",
                             ],
                             "from_run_number": 1,
-                            "to_run_number": 4,
+                            "to_run_number": 6,
                         },
             "aime": {
                             "file_paths" : [
