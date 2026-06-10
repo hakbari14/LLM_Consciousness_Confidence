@@ -132,7 +132,7 @@ class confidence_inference_ECE_analysis(object):
                                     f"settings_0/mmlu/{confidence_type}/run_/confidence_{confidence_type}_mmlu_Settings_65.csv",
                             ],
                             "from_run_number": 1,
-                            "to_run_number": 4,
+                            "to_run_number": 5,
                         },
             "mmlu_pro": {
                             "file_paths" : [
@@ -141,7 +141,7 @@ class confidence_inference_ECE_analysis(object):
                                     f"settings_0/mmlu_pro/{confidence_type}/run_/confidence_{confidence_type}_mmlu_pro_Settings_65.csv",
                             ],
                             "from_run_number": 1,
-                            "to_run_number": 2,
+                            "to_run_number": 3,
                         },
             "aime": {
                             "file_paths" : [
