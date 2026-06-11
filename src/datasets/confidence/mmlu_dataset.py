@@ -1,9 +1,10 @@
 from src.datasets.dataset_handler import dataset_handler
 from src.datasets.dataset_config import dataset_config
 from datasets import Dataset
-import re
 from datasets import Dataset
 from datasets import load_dataset
+import re
+import random
 
 class mmlu_dataset(dataset_handler): 
 
@@ -13,8 +14,25 @@ class mmlu_dataset(dataset_handler):
         self.dataset_id = 'lighteval/mmlu'
         self.dataset: Dataset = load_dataset(self.dataset_id, "all")
         self.test_dataset: Dataset = self.dataset['test']
-        if config.get_ratio_test_dataset_size() is not None: 
-            self.test_dataset = self.test_dataset.train_test_split(test_size=config.get_ratio_test_dataset_size(), seed=42, shuffle=True)['test']
+
+        seed = 42
+        category_list = set(self.test_dataset["subject"])
+        selected_indices = []
+        for category in category_list:
+            indices = [
+                i for i, t in enumerate(self.test_dataset["subject"])
+                if t == category
+            ]
+
+            if len(indices) <= config.get_max_test_dataset_size_per_category():
+                selected_indices.extend(indices)
+            else:
+                rng = random.Random(seed)
+                selected_indices.extend(
+                    rng.sample(indices, config.get_max_test_dataset_size_per_category())
+                )
+
+        self.test_dataset = self.test_dataset.select(selected_indices)        
         
         self.train_dataset = Dataset.from_dict({"prompt": [], "target": [], "problem_id" : []})
         self.test_dataset = self.test_dataset.add_column('unique_id', range(len(self.test_dataset)))
@@ -88,6 +106,7 @@ class mmlu_dataset(dataset_handler):
 
 
 # config: dataset_config = dataset_config('Qwen/Qwen2.5-1.5B')
+# config.set_max_test_dataset_size_per_category(12)
 # d = mmlu_dataset(config)
 # train_dataset, test_dataset = d.preprocess_dataset()
 # print(len(train_dataset))

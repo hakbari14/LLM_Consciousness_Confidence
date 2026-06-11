@@ -6,6 +6,7 @@ class dataset_config:
         self.max_completion_length : int = None
         self.max_test_dataset_size : int = None
         self.ratio_test_dataset_size : float = None
+        self.max_test_dataset_size_per_category : int = None
     
     def validate(self) -> None: 
         if self.get_model_name() is None:
@@ -40,6 +41,12 @@ class dataset_config:
 
     def set_ratio_test_dataset_size(self, value: float) -> None: 
         self.ratio_test_dataset_size = value
+
+    def get_max_test_dataset_size_per_category(self) -> int : 
+        return self.max_test_dataset_size_per_category
+
+    def set_max_test_dataset_size_per_category(self, value: int) -> None: 
+        self.max_test_dataset_size_per_category = value
     
 
         
