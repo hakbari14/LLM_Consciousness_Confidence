@@ -398,8 +398,8 @@ class confidence_inference_analysis(object):
                                     f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_64.csv", 
                                     f"settings_0/truthfulqa/{confidence_type}/run_/confidence_{confidence_type}_truthfulqa_Settings_65.csv",
                             ],
-                            "from_run_number": 1,
-                            "to_run_number": 6,
+                            "from_run_number": 6,
+                            "to_run_number": 11,
                         },
             "mmlu": {
                             "file_paths" : [
