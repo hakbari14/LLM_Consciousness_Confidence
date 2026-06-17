@@ -202,10 +202,6 @@ class confidence_inference_ECE_analysis(object):
 
     @staticmethod
     def convert_into_probability(x, is_inverse = False):
-        lower = x.quantile(0.01)
-        upper = x.quantile(0.99)
-        x = x.clip(lower, upper)
-
         min = x.min()
         max = x.max()
         if not is_inverse:
