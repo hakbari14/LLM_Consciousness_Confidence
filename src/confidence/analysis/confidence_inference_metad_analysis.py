@@ -2,10 +2,8 @@ from scipy.stats import norm
 import pandas as pd
 import numpy as np 
 import re 
-from metadpy.utils import trials2counts
-from metadpy.mle import metad
 from tqdm import tqdm
-
+import json
 
 class confidence_inference_metad_analysis(object):
 
@@ -42,35 +40,21 @@ class confidence_inference_metad_analysis(object):
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
                         accuracy_list = df['Accuracy_Reward'].tolist()
 
-                        min_sum_probabilty_val = df['Sequence_Probability'].min()
-                        max_sum_probabilty_val = df['Sequence_Probability'].max()
-                        df['confidence_sum_probabilty'] = df['Sequence_Probability'] / (max_sum_probabilty_val - min_sum_probabilty_val)
+                        df['confidence_sum_probabilty'] = confidence_inference_metad_analysis.convert_into_probability(df['Sequence_Probability'])
                         sum_probability_list = df['confidence_sum_probabilty'].tolist()
-                        
                         norm_seq_prob_list = df['Length_Normalized_Sequence_Probability'].tolist()
 
-                        min_entropy_val = df['Entropy'].min()
-                        max_entropy_val = df['Entropy'].max()
-                        df['confidence_entropy'] = (max_entropy_val - df['Entropy']) / (max_entropy_val - min_entropy_val)
+                        df['confidence_entropy'] = confidence_inference_metad_analysis.convert_into_probability(df['Entropy'], is_inverse=True)
                         confidence_entropy_list = df['confidence_entropy'].tolist()
 
-                        min_loss_val = df['Completion_Loss'].min()
-                        max_loss_val = df['Completion_Loss'].max()
-                        df['confidence_loss'] = (max_entropy_val - df['Completion_Loss']) / (max_loss_val - min_loss_val)
+                        df['confidence_loss'] = confidence_inference_metad_analysis.convert_into_probability(df['Completion_Loss'], is_inverse=True)
                         confidence_loss_list = df['confidence_loss'].tolist()
 
-                        min_iit_reward_val = df['Phi_Reward_Raw'].min()
-                        max_iit_reward_val = df['Phi_Reward_Raw'].max()
-                        df['confidence_iit_reward'] = (df['Phi_Reward_Raw']) / (max_iit_reward_val - min_iit_reward_val)
+                        df['confidence_iit_reward'] = confidence_inference_metad_analysis.convert_into_probability(df['Phi_Reward_Raw'])
                         confidence_iit_reward_list = df['confidence_iit_reward'].tolist()
 
-                        min_tpm_loss_val = df['Tpm_Loss'].min()
-                        max_tpm_loss_val = df['Tpm_Loss'].max()
-                        df['confidence_tpm_loss'] = (max_tpm_loss_val - df['Tpm_Loss']) / (max_tpm_loss_val - min_tpm_loss_val)
-
-                        min_tpm_entropy_val = df['Tpm_Entropy'].min()
-                        max_tpm_entropy_val = df['Tpm_Entropy'].max()
-                        df['confidence_tpm_entropy'] = (max_tpm_entropy_val - df['Tpm_Entropy']) / (max_tpm_entropy_val - min_tpm_entropy_val)
+                        df['confidence_tpm_loss'] = confidence_inference_metad_analysis.convert_into_probability(df['Tpm_Loss'], is_inverse=True)
+                        df['confidence_tpm_entropy'] = confidence_inference_metad_analysis.convert_into_probability(df['Tpm_Entropy'], is_inverse=True)
                         
                         df['confidence_iit_reward_tpm_loss'] = (1 + df['confidence_iit_reward'] - df['confidence_tpm_loss']) / 2.0
                         iit_reward_tpm_loss_list = df['confidence_iit_reward_tpm_loss'].tolist()
@@ -83,13 +67,13 @@ class confidence_inference_metad_analysis(object):
                         
                         accuracy = np.average(accuracy_list)
                         
-                        meta_d_prime_sum_prob = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, sum_probability_list)
-                        meta_d_prime_avg_prob = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, norm_seq_prob_list)
-                        meta_d_prime_entropy = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, confidence_entropy_list)
-                        meta_d_prime_loss = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, confidence_loss_list)
-                        meta_d_prime_iit = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, confidence_iit_reward_list)
-                        meta_d_prime_tpm_loss = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, iit_reward_tpm_loss_list)
-                        meta_d_prime_tpm_entropy = confidence_inference_metad_analysis.compute_meta_d_prime_ratio(accuracy_list, iit_reward_tpm_entropy_list)
+                        meta_d_prime_sum_prob, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, sum_probability_list)
+                        meta_d_prime_avg_prob, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, norm_seq_prob_list)
+                        meta_d_prime_entropy, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, confidence_entropy_list)
+                        meta_d_prime_loss, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, confidence_loss_list)
+                        meta_d_prime_iit, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, confidence_iit_reward_list)
+                        meta_d_prime_tpm_loss, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, iit_reward_tpm_loss_list)
+                        meta_d_prime_tpm_entropy, _, _ = confidence_inference_metad_analysis.compute_meta_d_ratio(accuracy_list, iit_reward_tpm_entropy_list)
                        
 
                         data_item = {
@@ -108,16 +92,19 @@ class confidence_inference_metad_analysis(object):
                                         "roc_multiplechoices": 0,
                                     }
                         data_list.append(data_item)
+                        
                     except Exception as e:
                         print(f"[WARN] {e}")
-        
-        df_summary = pd.DataFrame(data_list)
-        group_cols=['dataset', 'model', 'settings']        
-        value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_multiplechoices', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
-        df_summary = confidence_inference_metad_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
-        df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
-        print(f'{confidence_type} Settings')
-        print(df_summary.to_string(index=False))        
+
+        # print(json.dumps(data_list, indent=4, ensure_ascii=False))        
+
+        # df_summary = pd.DataFrame(data_list)
+        # group_cols=['dataset', 'model', 'settings']        
+        # value_cols=['accuracy','sum_prob','avg_prob','roc_entropy', 'roc_multiplechoices', 'roc_loss', 'roc_iit', 'roc_tpm_loss', 'roc_tpm_entropy']
+        # df_summary = confidence_inference_metad_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
+        # df_summary = df_summary.sort_values(by=['settings', 'dataset', 'model'])        
+        # print(f'{confidence_type} Settings')
+        # print(df_summary.to_string(index=False))        
 
         print()
         
@@ -245,6 +232,17 @@ class confidence_inference_metad_analysis(object):
         return result
 
     @staticmethod
+    def convert_into_probability(x, is_inverse = False):
+        min = x.min()
+        max = x.max()
+        if not is_inverse:
+            x = x / (max - min)
+        else:
+            x = (max - x) / (max - min)
+
+        return x
+
+    @staticmethod
     def make_rating_bins(confidence, n_bins):
         edges = np.quantile(confidence, np.linspace(0, 1, n_bins + 1))
         edges = np.unique(edges)
@@ -254,28 +252,51 @@ class confidence_inference_metad_analysis(object):
         ratings = np.digitize(confidence, edges[1:-1]) + 1
         return ratings, edges
 
-    @staticmethod
-    def compute_meta_d_prime_ratio(accuracy_list: list[int], confidence_list: list[float]) -> float:
-        n_bins = 20
-        ratings, _ = confidence_inference_metad_analysis.make_rating_bins(confidence_list, n_bins)
+    def compute_meta_d_ratio(accuracy_list: list[int], confidence_list: list[float]) -> float:
+        hit_count: int = 0
+        false_alaram_count: int = 0
+        hit_conf_count: int = 0
+        false_alaram_conf_count: int = 0
+        total_conf: int = 0
+       
+        threashold = np.median(confidence_list)
+        for accuracy, confidence in zip(accuracy_list, confidence_list):
+            if accuracy == 1:
+                hit_count += 1
+            if accuracy == 0:
+                false_alaram_count += 1
 
-        response_list = accuracy_list.copy()
-        nR_S1, nR_S2 = trials2counts(
-            stimuli=accuracy_list,  
-            responses=response_list,
-            confidence=ratings,
-            nRatings=len(np.unique(ratings))
-        )
+            if confidence < threashold: continue
+            total_conf += 1
+            if accuracy == 1:
+                hit_conf_count += 1
+            if accuracy == 0:
+                false_alaram_conf_count += 1
+        
+        hit_prob:float = hit_count / len(accuracy_list)
+        false_alaram_prob:float = false_alaram_count / len(accuracy_list)
+        d_prime = confidence_inference_metad_analysis.compute_d_prime(hit_prob, false_alaram_prob)
 
-        # =========================
-        # 3. Fit meta-d'
-        # =========================
-        fit = metad(
-            nR_S1=nR_S1,
-            nR_S2=nR_S2
-        )
+        hit_conf_prob:float = hit_conf_count / total_conf
+        false_alaram_conf_prob:float = false_alaram_conf_count / total_conf
+        metad_prime = confidence_inference_metad_analysis.compute_d_prime(hit_conf_prob, false_alaram_conf_prob)
+        
+        m_ratio: float = None
+        if metad_prime >= 0 and d_prime > 0:
+            m_ratio = metad_prime / d_prime
+        
+        return m_ratio, metad_prime, d_prime
 
-        return fit["m_ratio"].values[0]
+    def compute_d_prime(hit_rate: float, false_alarm_rate: float) -> float:
+        eps = 1e-10
+        hit_rate = min(max(hit_rate, eps), 1 - eps)
+        false_alarm_rate = min(max(false_alarm_rate, eps), 1 - eps)
+
+        z_hit = norm.ppf(hit_rate)
+        z_fa = norm.ppf(false_alarm_rate)
+
+        d_prime = z_hit - z_fa
+        return d_prime
 
 
 confidence_inference_metad_analysis.calculate_metad_entropy_iit_reward('whitebox')
