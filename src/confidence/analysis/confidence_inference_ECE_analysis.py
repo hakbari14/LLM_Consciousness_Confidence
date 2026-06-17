@@ -90,8 +90,8 @@ class confidence_inference_ECE_analysis(object):
     def calculate_ECE_MCE(df, confidence_column_name ,n_bins = 10):
         df['accuracy_reward'] = df['Accuracy'].map({True: 1, False: 0})        
         df['binned_confidence'] = pd.qcut(df[confidence_column_name], q=n_bins, duplicates='drop')
-        agg_perplexity = df.groupby('binned_confidence')[confidence_column_name].agg(['mean'])
-        agg_accuracy = df.groupby('binned_confidence')['accuracy_reward'].agg(['mean'])
+        agg_perplexity = df.groupby('binned_confidence', observed=False)[confidence_column_name].agg(['mean'])
+        agg_accuracy = df.groupby('binned_confidence', observed=False)['accuracy_reward'].agg(['mean'])
 
         expected_calibration_error = 0
         maximum_calibration_error = 0
