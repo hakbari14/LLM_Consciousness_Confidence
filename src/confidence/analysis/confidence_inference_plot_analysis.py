@@ -40,36 +40,23 @@ class confidence_inference_analysis(object):
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
                         accuracy_list = df['Accuracy_Reward'].tolist()
 
-                        min_sum_probabilty_val = df['Sequence_Probability'].min()
-                        max_sum_probabilty_val = df['Sequence_Probability'].max()
-                        df['confidence_sum_probabilty'] = df['Sequence_Probability'] / (max_sum_probabilty_val - min_sum_probabilty_val)
+                        df['confidence_sum_probabilty'] = confidence_inference_analysis.convert_into_probability(df['Sequence_Probability'])
                         sum_probability_list = df['confidence_sum_probabilty'].tolist()
                         
                         norm_seq_prob_list = df['Length_Normalized_Sequence_Probability'].tolist()
 
-                        min_entropy_val = df['Entropy'].min()
-                        max_entropy_val = df['Entropy'].max()
-                        df['confidence_entropy'] = (max_entropy_val - df['Entropy']) / (max_entropy_val - min_entropy_val)
+                        df['confidence_entropy'] = confidence_inference_analysis.convert_into_probability(df['Entropy'], is_inverse=True)
                         confidence_entropy_list = df['confidence_entropy'].tolist()
 
-                        min_loss_val = df['Completion_Loss'].min()
-                        max_loss_val = df['Completion_Loss'].max()
-                        df['confidence_loss'] = (max_entropy_val - df['Completion_Loss']) / (max_loss_val - min_loss_val)
+                        df['confidence_loss'] = confidence_inference_analysis.convert_into_probability(df['Completion_Loss'], is_inverse=True)
                         confidence_loss_list = df['confidence_loss'].tolist()
 
-                        min_iit_reward_val = df['Phi_Reward_Raw'].min()
-                        max_iit_reward_val = df['Phi_Reward_Raw'].max()
-                        df['confidence_iit_reward'] = (df['Phi_Reward_Raw']) / (max_iit_reward_val - min_iit_reward_val)
+                        df['confidence_iit_reward'] = confidence_inference_analysis.convert_into_probability(df['Phi_Reward_Raw'])
                         confidence_iit_reward_list = df['confidence_iit_reward'].tolist()
 
-                        min_tpm_loss_val = df['Tpm_Loss'].min()
-                        max_tpm_loss_val = df['Tpm_Loss'].max()
-                        df['confidence_tpm_loss'] = (max_tpm_loss_val - df['Tpm_Loss']) / (max_tpm_loss_val - min_tpm_loss_val)
+                        df['confidence_tpm_loss'] = confidence_inference_analysis.convert_into_probability(df['Tpm_Loss'], is_inverse=True)
+                        df['confidence_tpm_entropy'] = confidence_inference_analysis.convert_into_probability(df['Tpm_Entropy'], is_inverse=True)
 
-                        min_tpm_entropy_val = df['Tpm_Entropy'].min()
-                        max_tpm_entropy_val = df['Tpm_Entropy'].max()
-                        df['confidence_tpm_entropy'] = (max_tpm_entropy_val - df['Tpm_Entropy']) / (max_tpm_entropy_val - min_tpm_entropy_val)
-                        
                         df['confidence_iit_reward_tpm_loss'] = (1 + df['confidence_iit_reward'] - df['confidence_tpm_loss']) / 2.0
                         iit_reward_tpm_loss_list = df['confidence_iit_reward_tpm_loss'].tolist()
 
@@ -486,6 +473,21 @@ class confidence_inference_analysis(object):
             return None
         
         return int(match.group(1))
+
+    @staticmethod
+    def convert_into_probability(x, is_inverse = False):
+        lower = x.quantile(0.01)
+        upper = x.quantile(0.99)
+        x = x.clip(lower, upper)
+
+        min = x.min()
+        max = x.max()
+        if not is_inverse:
+            x = x / (max - min)
+        else:
+            x = (max - x) / (max - min)
+
+        return x
 
     @staticmethod
     def aggregate_mean_pandas_rounded(df, group_cols, value_cols) -> pd.DataFrame:
