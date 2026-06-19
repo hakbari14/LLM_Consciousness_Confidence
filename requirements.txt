@@ -11,3 +11,4 @@ bitsandbytes
 deepspeed
 math-verify
 matplotlib 
+vllm
