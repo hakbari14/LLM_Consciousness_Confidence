@@ -11,4 +11,3 @@ bitsandbytes
 deepspeed
 math-verify
 matplotlib 
-test
