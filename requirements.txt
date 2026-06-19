@@ -1,0 +1,13 @@
+transformers 
+datasets 
+jinja2
+trl
+git+https://github.com/wmayner/pyphi.git@feature/iit-4.0
+peft 
+scikit-learn
+tensorboard
+torch-tb-profiler
+bitsandbytes 
+deepspeed
+math-verify
+matplotlib
