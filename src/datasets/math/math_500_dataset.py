@@ -25,6 +25,10 @@ class math_500_dataset(math_dataset_handler):
 
     
     def final_answer_extraction(self, prompt, solution, target):
+        return math_500_dataset.math500_answer_extraction(solution)
+
+    @staticmethod
+    def math500_answer_extraction(solution):
         pattern = re.compile(r"\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}", re.DOTALL)
     
         matches = pattern.findall(solution)

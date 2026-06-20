@@ -23,25 +23,7 @@ class gsm8k_dataset(math_dataset_handler):
         self.force_generate_answer_text = '####'
 
     def final_answer_extraction(self, prompt: str, solution: str, target: str) -> str :
-        _SOLUTION_CLIP_CHARS = 300
-        if len(solution) > _SOLUTION_CLIP_CHARS:
-            solution = solution[-_SOLUTION_CLIP_CHARS:]
-
-        patterns = [
-            r'(?i)####\s*(-?[0-9.,]+)',
-            r'(?i)\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}',            
-            r'(?i)\*[^*]*?(\d+(?:\.\d+)?)[^*]*?\*',            
-        ]
-
-        for pattern in patterns:
-            matches = list(re.finditer(pattern, solution, re.IGNORECASE))
-            if not matches: continue
-
-            last_match = matches[-1]
-            final_answer = self.extract_number(last_match.group(1))
-            return final_answer
-
-        return None
+        return gsm8k_dataset.gsm8k_answer_extraction(solution)
 
     def generate_model_prompt(self, x):
         question = x['question']
@@ -62,7 +44,30 @@ class gsm8k_dataset(math_dataset_handler):
                 }
 
 
-    def extract_number(self, text: str) -> float:
+    @staticmethod
+    def gsm8k_answer_extraction(solution: str) -> str :
+        _SOLUTION_CLIP_CHARS = 300
+        if len(solution) > _SOLUTION_CLIP_CHARS:
+            solution = solution[-_SOLUTION_CLIP_CHARS:]
+
+        patterns = [
+            r'(?i)####\s*(-?[0-9.,]+)',
+            r'(?i)\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}',            
+            r'(?i)\*[^*]*?(\d+(?:\.\d+)?)[^*]*?\*',            
+        ]
+
+        for pattern in patterns:
+            matches = list(re.finditer(pattern, solution, re.IGNORECASE))
+            if not matches: continue
+
+            last_match = matches[-1]
+            final_answer = gsm8k_dataset.extract_number(last_match.group(1))
+            return final_answer
+
+        return None
+
+    @staticmethod
+    def extract_number(text: str) -> float:
         chars_to_remove = "\\!@#$%^&*(),/"
         table = str.maketrans('', '', chars_to_remove)
 
