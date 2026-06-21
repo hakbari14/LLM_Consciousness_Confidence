@@ -1,0 +1,21 @@
+[project]
+name = "llm-consciousness-confidence"
+version = "0.1.0"
+description = "LLM metacognitive confidence project"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "transformers",
+    "datasets",
+    "peft",
+    "trl",
+    "pyphi @ git+https://github.com/wmayner/pyphi.git@feature/iit-4.0",
+    "scikit-learn",
+    "tensorboard",
+    "torch-tb-profiler",
+    "bitsandbytes",
+    "deepspeed",
+    "math-verify",
+    "matplotlib",
+]

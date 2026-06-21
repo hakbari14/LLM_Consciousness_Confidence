@@ -61,7 +61,7 @@ class metacognitive_creation:
         seed = 42
         category_list = set(test_dataset["subject"])
         selected_indices = []
-        dataset_size_per_category: int = 12
+        dataset_size_per_category: int = 10
         for category in category_list:
             indices = [
                 i for i, t in enumerate(test_dataset["subject"])
@@ -105,7 +105,7 @@ class metacognitive_creation:
         test_dataset: Dataset = dataset['test']
         
         seed = 42
-        dataset_size_per_category: int = 50
+        dataset_size_per_category: int = 40
         category_list = set(test_dataset["category"])
         selected_indices = []
         for category in category_list:
@@ -148,7 +148,7 @@ class metacognitive_creation:
 
     def extract_truthfulqa_dataset(self) -> Dataset:
         df = pd.read_parquet("data/EleutherAI_truthful_qa_mc.parquet")
-        truthfulqa_dataset = Dataset.from_pandas(df.sample(frac=1.0, random_state=42))
+        truthfulqa_dataset = Dataset.from_pandas(df.sample(frac=0.75, random_state=42))
 
         truthfulqa_dataset = truthfulqa_dataset.map(self.format_truthfulqa)
         truthfulqa_dataset = self.filter_remove_columns_cast(truthfulqa_dataset)
@@ -206,7 +206,7 @@ class metacognitive_creation:
         dataset_id = "openai/gsm8k"
         dataset: Dataset = load_dataset(dataset_id, "main")
         gsm8k_dataset: Dataset = dataset["test"]
-        gsm8k_dataset = gsm8k_dataset.train_test_split(test_size=0.8, seed=42, shuffle=True)['test']
+        gsm8k_dataset = gsm8k_dataset.train_test_split(test_size=0.4, seed=42, shuffle=True)['test']
 
         gsm8k_dataset = gsm8k_dataset.map(self.format_gsm8k)
         gsm8k_dataset = self.filter_remove_columns_cast(gsm8k_dataset)
@@ -255,7 +255,7 @@ class metacognitive_creation:
         dataset_id = "di-zhang-fdu/AIME_1983_2024" 
         dataset = load_dataset(dataset_id)
         aime_dataset = dataset['train']
-        aime_dataset = aime_dataset.train_test_split(test_size=0.5, seed=42, shuffle=True)['test']
+        aime_dataset = aime_dataset.train_test_split(test_size=0.6, seed=42, shuffle=True)['test']
 
         aime_dataset = aime_dataset.map(self.format_aime)
         aime_dataset = self.filter_remove_columns_cast(aime_dataset)
@@ -282,7 +282,7 @@ class metacognitive_creation:
 
     def extract_countdown_dataset(self) -> Dataset:
         dataset_id = "Jiayi-Pan/Countdown-Tasks-3to4"
-        dataset = load_dataset(dataset_id)["train"].train_test_split(test_size=0.001, seed=42)
+        dataset = load_dataset(dataset_id)["train"].train_test_split(test_size=0.00125, seed=42)
         countdown_dataset = dataset["test"]
 
         countdown_dataset = countdown_dataset.map(self.format_countdown)

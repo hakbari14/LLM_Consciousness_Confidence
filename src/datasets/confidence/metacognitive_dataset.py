@@ -44,14 +44,14 @@ class metacognitive_dataset(dataset_handler):
         
         correct_prompt = f'Question: {question}\n\n'
         correct_prompt += f'Proposed Answer: {correct_answer}\n'
-        correct_prompt += 'Step-by-step determine whether the proposed answer correctly answers the question. '
-        correct_prompt += 'Answer: Yes or No'
+        correct_prompt += 'Evaluate whether the Proposed Answer is correct. Do not generate a new answer.\n'
+        correct_prompt += 'Answer: Yes/No'
         correct_target = 'Yes'
 
         incorrect_prompt = f'Question: {question}\n\n'
         incorrect_prompt += f'Proposed Answer: {incorrect_answer}\n'
-        incorrect_prompt += 'Step-by-step determine whether the proposed answer correctly answers the question.'
-        incorrect_prompt += 'Answer: Yes or No'
+        incorrect_prompt += 'Evaluate whether the Proposed Answer is correct. Do not generate a new answer.\n'
+        incorrect_prompt += 'Answer: Yes/No'
         incorrect_target = 'No'
         
         correct_prefix = [

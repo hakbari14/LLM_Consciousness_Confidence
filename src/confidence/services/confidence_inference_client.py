@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from src.logger.inference.self_consistency.self_consistency_log_entity import self_consistency_log_entity
-from src.logger.inference.self_consistency.self_consistency_log_detail_entity import self_consistency_log_detail_entity
+from src.logger.self_consistency.self_consistency_log_entity import self_consistency_log_entity
+from src.logger.self_consistency.self_consistency_log_detail_entity import self_consistency_log_detail_entity
 from src.utils.enums_class import llm_pipeline_type_enum, iit_layer_type_enum
 from confidence.services.iit_calculation_services_entity import self_consistency_log_api_entity, self_consistency_log_res_api_entity, self_consistency_log_detail_api_entity
 from vllm import LLM, SamplingParams

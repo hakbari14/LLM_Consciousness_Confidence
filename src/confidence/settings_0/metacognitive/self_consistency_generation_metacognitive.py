@@ -8,6 +8,7 @@ from src.datasets.confidence.metacognitive_dataset import metacognitive_dataset
 from src.datasets.dataset_config import dataset_config
 from src.logger.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
 
+
 class self_consistency_generation_metacognitive(self_consistency_generation): 
 
     def __init__(self, modelname):
@@ -28,6 +29,7 @@ class self_consistency_generation_metacognitive(self_consistency_generation):
             )
         
         log_list: list[self_consistency_log_entity] = []
+        idx: int = 0
         for i in tqdm(range(0, len(test_dataset), batch_size), desc="Processing Batches", unit="step"):
             batch = test_dataset[i : i + batch_size]
 
@@ -37,22 +39,23 @@ class self_consistency_generation_metacognitive(self_consistency_generation):
 
             correct_prompt_list = batch['correct_prompt']
             correct_target_list = batch['correct_target']
-            log_list.extend(self.generate(model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, correct_prompt_list, correct_target_list))
-
+            log_list.extend(self.generate(model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, correct_prompt_list, correct_target_list, idx))
+            idx += len(log_list)
+            
             incorrect_prompt_list = batch['incorrect_prompt']
             incorrect_target_list = batch['incorrect_target']
-            log_list.extend(self.generate(model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, incorrect_prompt_list, incorrect_target_list))
+            log_list.extend(self.generate(model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, incorrect_prompt_list, incorrect_target_list, idx))
+            idx += len(log_list)
 
         logger = self.create_self_consistency_logger(run_number)
         logger.add_to_buffer_list(log_list)
         logger.write_to_log_file()
 
-    def generate(self, model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, prompt_list, target_list) -> list[self_consistency_log_entity]: 
+    def generate(self, model, sampling_params, num_sequences, sample_ID_list, problem_id_list, split_list, prompt_list, target_list, idx) -> list[self_consistency_log_entity]: 
         log_list: list[self_consistency_log_entity] = []
         try:
             outputs = model.generate(prompt_list, sampling_params)
             for j, output in enumerate(outputs):
-                idx = i + j
                 prompt = prompt_list[j]
                 sample_ID = sample_ID_list[j]
                 split = split_list[j]
@@ -86,7 +89,8 @@ class self_consistency_generation_metacognitive(self_consistency_generation):
                         print(f"[WARN] generate failed: {e}")
                         
                     log.add_consistency_list(log_detail)
-                    
+
+                idx += 1
                 log_list.append(log)    
         except Exception as e:
             print(f"[WARN] generate failed: {e}")
@@ -100,15 +104,15 @@ class self_consistency_generation_metacognitive(self_consistency_generation):
     def get_dataset(self) -> metacognitive_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(1)
             self.dataset = metacognitive_dataset(config)
         return self.dataset
 
     def create_self_consistency_logger(self, run_number) -> self_consistency_inference_logger:
         return self_consistency_inference_logger(log_file_name = f'src/confidence/settings_0/metacognitive/run_{run_number}/self_consistency_metacognitive.csv')
 
-for run_number in range(1,6):
+for run_number in range(4,5):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
     t = self_consistency_generation_metacognitive(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     t.generate_self_consistency(run_number = run_number)
     print(f'{'*' * 210}')
+
