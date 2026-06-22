@@ -110,7 +110,7 @@ class self_consistency_generation_metacognitive(self_consistency_generation):
     def create_self_consistency_logger(self, run_number) -> self_consistency_inference_logger:
         return self_consistency_inference_logger(log_file_name = f'src/confidence/settings_0/metacognitive/run_{run_number}/self_consistency_metacognitive.csv')
 
-for run_number in range(4,5):
+for run_number in range(5,6):
     print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
     t = self_consistency_generation_metacognitive(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     t.generate_self_consistency(run_number = run_number)
