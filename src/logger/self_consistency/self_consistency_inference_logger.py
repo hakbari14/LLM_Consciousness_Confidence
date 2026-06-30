@@ -57,6 +57,7 @@ class self_consistency_inference_logger(logger):
                 b = { 
                     'Index': sample_log.index, 
                     'Sample_ID': log.sample_ID, 
+                    'Parent_ID': log.ID, 
                     'Completion': sample_log.completion, 
                     'Token_Count': sample_log.token_count, 
                     'Final_Answer': sample_log.final_answer, 
@@ -70,6 +71,7 @@ class self_consistency_inference_logger(logger):
         return [ 
                 'Index', 
                 'Sample_ID', 
+                'Parent_ID', 
                 'Completion', 
                 'Token_Count', 
                 'Final_Answer', 
