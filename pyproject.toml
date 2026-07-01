@@ -3,7 +3,7 @@ name = "llm-consciousness-confidence"
 version = "0.1.0"
 description = "LLM metacognitive confidence project"
 readme = "README.md"
-requires-python = "==3.12.13"
+requires-python = "==3.12.10"
 
 dependencies = [
     "transformers",
@@ -20,5 +20,8 @@ dependencies = [
     "matplotlib",
     "huggingface-hub",
     "torch",
-    "vllm==0.13",
+    "trl",
+    "vllm",
+    "metadpy",
+    "arviz",
 ]

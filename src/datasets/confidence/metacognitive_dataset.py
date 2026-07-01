@@ -67,6 +67,9 @@ class metacognitive_dataset(dataset_handler):
         ]
         
         return {
+                "question": question, 
+                "correct_answer": correct_answer, 
+                "incorrect_answer": incorrect_answer, 
                 "correct_prompt": self.tokenizer.apply_chat_template(correct_prefix, tokenize=False, continue_final_message=True), 
                 "correct_target": correct_target,
                 "incorrect_prompt": self.tokenizer.apply_chat_template(incorrect_prefix, tokenize=False, continue_final_message=True), 
