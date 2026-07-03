@@ -1,27 +1,30 @@
 [project]
-name = "llm-consciousness-confidence"
+name = "confidence"
 version = "0.1.0"
 description = "LLM metacognitive confidence project"
 readme = "README.md"
-requires-python = "==3.12.10"
+requires-python = "==3.11.*"
 
 dependencies = [
+    "vllm==0.23.0",
+    "trl==1.7.*",
+
+    "deepspeed",
     "transformers",
+    "accelerate",
     "datasets",
     "peft",
-    "trl",
     "pyphi @ git+https://github.com/wmayner/pyphi.git@feature/iit-4.0",
+
     "scikit-learn",
     "tensorboard",
     "torch-tb-profiler",
     "bitsandbytes",
-    "deepspeed",
     "math-verify",
     "matplotlib",
     "huggingface-hub",
-    "torch",
-    "trl",
-    "vllm",
     "metadpy",
     "arviz",
+    "opencv-python-headless>=4.10,<5",
 ]
+

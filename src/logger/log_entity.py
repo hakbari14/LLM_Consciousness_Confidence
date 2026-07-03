@@ -4,10 +4,11 @@ from typing import Optional
 @dataclass
 class log_entity:
 
-    ID : Optional[int] = None
+    ID : Optional[str] = None
     sample_ID : Optional[str] = None
     problem_id : Optional[str] = None
     split : Optional[str] = None
+    question : Optional[str] = None
     prompt : Optional[str] = None
     target : Optional[str] = None
 

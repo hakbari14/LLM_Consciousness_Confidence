@@ -3,14 +3,13 @@ from src.datasets.dataset_config import dataset_config
 from src.utils.enums_class import llm_pipeline_type_enum
 from datasets import Dataset
 from datasets import load_dataset
-from src.datasets.math.utils.evaluate_utils import extract_boxed_answer, use_math_verify
+from src.datasets.math.utils.evaluate_utils import extract_last_boxed, use_math_verify
 
 class open_thoughts_dataset(math_dataset_handler): 
 
     def __init__(self, config):
         super().__init__(config)
-        # self.dataset_id = "anonym-submit-paper/Orig-R1-Thoughts-correct"  # "open-r1/OpenThoughts-114k-math" 
-        self.dataset_id = "/opt/huggingface/hub/datasets--anonym-submit-paper--Orig-R1-Thoughts-correct/snapshots/2bc7ec5a5cfcc6a230af76d24bea4922c0d25e25/math" 
+        self.dataset_id = "anonym-submit-paper/Orig-R1-Thoughts-correct"
         self.dataset = load_dataset(self.dataset_id)
         correct_dataset = self.dataset.filter(lambda x: self.filter_dataset(x))
         
@@ -33,11 +32,12 @@ class open_thoughts_dataset(math_dataset_handler):
         return {
                 "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
                 "target": final_answer,
-                "problem_id": problem_id
+                "problem_id": problem_id,
+                "question": question,
                 }
 
     def final_answer_extraction(self, prompt, completion, target):
-        return extract_boxed_answer(completion)
+        return extract_last_boxed(completion)
 
     def filter_dataset(self, x):
         if x['correct'] != True:

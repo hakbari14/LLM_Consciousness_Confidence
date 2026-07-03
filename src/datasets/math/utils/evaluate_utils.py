@@ -156,3 +156,31 @@ def normalize_answer(final_answer):
     final_answer = final_answer.strip()
     return final_answer
 
+def extract_last_boxed(text):
+    if text is None: 
+        return None
+    
+    pattern = r'oxed\s*{'
+    
+    matches = list(re.finditer(pattern, text))
+    if len(matches) == 0:
+        return None
+    
+    # Start from last \boxed{
+    start = matches[-1].end()
+
+    brace_count = 1
+    i = start
+
+    while i < len(text):
+        if text[i] == "{":
+            brace_count += 1
+        elif text[i] == "}":
+            brace_count -= 1
+
+        if brace_count == 0:
+            return normalize_answer(text[start:i])
+
+        i += 1
+
+    return None
