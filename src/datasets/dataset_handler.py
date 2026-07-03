@@ -25,11 +25,12 @@ class dataset_handler(ABC):
         train_dataset = train_dataset.add_column("split", [dataset_element_type_enum.TRAIN] * len(train_dataset))
         train_dataset = train_dataset.add_column("sample_id", list(range(len(train_dataset))))
 
-        test_dataset_size = len(test_dataset)
         if self.config.get_max_test_dataset_size() is not None: 
-            test_dataset_size = self.config.get_max_test_dataset_size()
+            rng = random.Random(42)            
+            indices = rng.sample(range(len(test_dataset)), self.config.get_max_test_dataset_size())
+            test_dataset = test_dataset.select(indices)
 
-        eval_dataset = test_dataset.select(range(test_dataset_size))
+        eval_dataset = test_dataset
         eval_dataset = eval_dataset.add_column("split", [dataset_element_type_enum.EVAL] * len(eval_dataset))
         eval_dataset = eval_dataset.add_column("sample_id", list(range(len(eval_dataset))))
 

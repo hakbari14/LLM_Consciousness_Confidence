@@ -13,6 +13,7 @@ class grpo_trainer_settings_2(grpo_trainer):
     def get_dataset(self) -> open_thoughts_dataset:
         if self.dataset is None:
             config = dataset_config(self.model_name)
+            config.set_max_test_dataset_size(160)
             self.dataset = open_thoughts_dataset(config)
         return self.dataset
 
@@ -22,8 +23,8 @@ class grpo_trainer_settings_2(grpo_trainer):
                 model_name_or_path = self.model_name,
                 attn_implementation="flash_attention_2",
                 use_peft=True,
-                lora_r=2560,
-                lora_alpha=1280,
+                lora_r=2048,
+                lora_alpha=1024,
                 load_in_4bit=True,
             )
         return self.model_config
