@@ -8,11 +8,12 @@ class grpo_trainer_settings_1(grpo_trainer):
 
     def __init__(self):
         model_name = 'Qwen/Qwen3-4B'
-        super().__init__(model_name)
+        super().__init__(model_name, has_confidence_reward = True)
 
     def get_dataset(self) -> open_thoughts_dataset:
         if self.dataset is None:
             config = dataset_config(self.model_name)
+            config.set_max_test_dataset_size(160)
             self.dataset = open_thoughts_dataset(config)
         return self.dataset
 

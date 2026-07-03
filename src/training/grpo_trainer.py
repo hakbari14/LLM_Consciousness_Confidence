@@ -7,8 +7,9 @@ import re
 
 class grpo_trainer(ABC): 
 
-    def __init__(self, model_name):
+    def __init__(self, model_name: str, has_confidence_reward: bool) -> None:
         self.model_name = model_name
+        self.has_confidence_reward = has_confidence_reward
         if self.model_name is None:
             raise Exception('model name is required')
 
@@ -42,6 +43,9 @@ class grpo_trainer(ABC):
         return self.trainer
 
     def get_reward_funcs(self):
+        if self.has_confidence_reward is None or not self.has_confidence_reward: 
+            return [self.accuracy_reward]
+        
         return [self.accuracy_reward, self.calculate_confidence_reward]
 
     @torch.inference_mode()
@@ -116,6 +120,9 @@ class grpo_trainer(ABC):
                 rewards.append(0.0)
             
             self.get_logger().add_to_buffer(log)
+
+        if self.has_confidence_reward is not None and not self.has_confidence_reward:
+            self.get_logger().write_to_log_file()
 
         return rewards
 
