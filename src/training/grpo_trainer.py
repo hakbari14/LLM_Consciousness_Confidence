@@ -2,14 +2,15 @@ from trl import GRPOTrainer, get_peft_config
 from abc import ABC, abstractmethod
 from src.logger.training.training_log_entity import training_log_entity
 from src.utils.llm_representation import llm_representation
+from src.utils.enums_class import training_type_enum
 import torch
 import re
 
 class grpo_trainer(ABC): 
 
-    def __init__(self, model_name: str, has_confidence_reward: bool) -> None:
+    def __init__(self, model_name: str, training_type: training_type_enum) -> None:
         self.model_name = model_name
-        self.has_confidence_reward = has_confidence_reward
+        self.training_type = training_type
         if self.model_name is None:
             raise Exception('model name is required')
 
@@ -43,19 +44,33 @@ class grpo_trainer(ABC):
         return self.trainer
 
     def get_reward_funcs(self):
-        if self.has_confidence_reward is None or not self.has_confidence_reward: 
+        if training_type_enum.ACCURACY_REWARD == self.training_type: 
             return [self.accuracy_reward]
+
+        if training_type_enum.CONFIDENCE == self.training_type or training_type_enum.CONFIDENCE_WITH_CRITERAI == self.training_type: 
+            return [self.calculate_confidence_reward]
+
+        if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.training_type: 
+            return [self.accuracy_reward, self.calculate_confidence_reward]
         
-        return [self.accuracy_reward, self.calculate_confidence_reward]
+        return []
 
     @torch.inference_mode()
     def calculate_confidence_reward(self, completions, target=None, tokenizer=None, **kwargs):
+        split_list = kwargs.get("split")     
+        sample_ids = kwargs.get("sample_id") 
+        problem_ids = kwargs.get("problem_id", None)
+        prompts = kwargs.get("prompts") or kwargs.get("prompt") or kwargs.get("inputs")
+        questions = kwargs.get("question")     
         trainer_state = kwargs.get("trainer_state", None)
         trainer_global_step = trainer_state.global_step
         
-        log_list: list[training_log_entity] = self.get_logger().get_log_list(trainer_global_step)
-        log_list = self.generate_self_criteria(log_list)
-        log_list = self.generate_confidence(log_list)
+        log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
+        if training_type_enum.CONFIDENCE == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.training_type:
+            log_list = self.generate_confidence(log_list)
+        if training_type_enum.CONFIDENCE_WITH_CRITERAI == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.training_type:
+            log_list = self.generate_self_criteria(log_list)
+            log_list = self.generate_confidence_in_criteria_mode(log_list)
 
         rewards = []
         for log in log_list:
@@ -83,48 +98,32 @@ class grpo_trainer(ABC):
         prompts = kwargs.get("prompts") or kwargs.get("prompt") or kwargs.get("inputs")
         questions = kwargs.get("question")     
         trainer_state = kwargs.get("trainer_state", None)
+        trainer_global_step = trainer_state.global_step
 
-        for i, (completion, gt, question) in enumerate(zip(completions, target, questions)):
-            split = split_list[i]
-            sample_ID = sample_ids[i]
-            problem_id = problem_ids[i] if problem_ids is not None else None
-            prompt = prompts[i]
-            trainer_global_step = trainer_state.global_step
+        log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
+        for log in log_list: 
+            rewards.append(log.accuracy_reward)
 
-            log = training_log_entity()
-            log.ID = f'{sample_ID}_{i}' 
-            log.sample_ID = sample_ID
-            log.problem_id = problem_id
-            log.split = split
-            log.trainer_global_step = trainer_global_step
-            log.question = question
-            log.prompt = prompt
-            log.target = gt
-            log.completion = completion
-
-            try:
-                answer, target_answer_equal, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, completion, gt)
-                if answer is None:
-                    acc_reward = 0.0
-                else:
-                    acc_reward = 1.0 if target_answer_equal else 0.0
-
-                rewards.append(acc_reward)
-                log.final_answer = answer
-                log.compared_final_answer = compared_final_answer
-                log.accuracy_reward = acc_reward
-                log.accuracy = acc_reward == 1.0
-            except Exception:
-                log.accuracy = False
-                log.accuracy_reward = 0.0
-                rewards.append(0.0)
-            
-            self.get_logger().add_to_buffer(log)
-
-        if self.has_confidence_reward is not None and not self.has_confidence_reward:
+        if training_type_enum.ACCURACY_REWARD == self.training_type:
             self.get_logger().write_to_log_file()
 
         return rewards
+
+    def generate_confidence(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
+        log_list, prompt_ID_list = self.generate_prompt_confidence(log_list)
+    
+        trainer = self.get_trainer()
+        tokenizer = trainer.processing_class
+
+        _, completion_ids, _, _ = trainer.vllm_generation.generate(prompts=prompt_ID_list, images=[], num_generations=1)
+        completion_confidence_list = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+        for completion_confidence, log in zip(completion_confidence_list, log_list):
+            log.completion_confidence = completion_confidence
+        
+        for log in log_list:
+            log.confidence = self.extract_confidence(log.completion_confidence)
+        
+        return log_list
 
     def generate_self_criteria(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
         log_list, prompt_ID_list = self.generate_prompt_self_criteria(log_list)
@@ -142,8 +141,8 @@ class grpo_trainer(ABC):
         
         return log_list
 
-    def generate_confidence(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
-        log_list, prompt_ID_list = self.generate_prompt_confidence(log_list)
+    def generate_confidence_in_criteria_mode(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
+        log_list, prompt_ID_list = self.generate_prompt_confidence_in_criteria_mode(log_list)
     
         trainer = self.get_trainer()
         tokenizer = trainer.processing_class
@@ -158,6 +157,28 @@ class grpo_trainer(ABC):
         
         return log_list
         
+    def generate_prompt_confidence(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
+        trainer = self.get_trainer()
+        tokenizer = trainer.processing_class
+        prompt_list : list[list[int]] = []
+        for log in log_list:        
+        
+            prompt = f'[Question]: {log.question}\n\n'
+            prompt += f'[Answer]: {log.final_answer}\n\n'
+            prompt += 'Determine the confidence level for the above question and answer by performing a step-by-step evaluation.\n'
+            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
+            prompt += 'Confidence:<integer between 0 and 100>\n'
+
+            log.prompt_confidence = prompt
+            prefix = [
+                {"role": "user",
+                    "content": prompt
+                    },
+            ]
+            prompt_list.append(tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids'])
+        
+        return log_list, prompt_list        
+
     def generate_prompt_self_criteria(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
         trainer = self.get_trainer()
         tokenizer = trainer.processing_class
@@ -186,7 +207,8 @@ class grpo_trainer(ABC):
         
         return log_list, prompt_list        
 
-    def generate_prompt_confidence(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
+
+    def generate_prompt_confidence_in_criteria_mode(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
         trainer = self.get_trainer()
         tokenizer = trainer.processing_class
         prompt_list : list[list[int]] = []
@@ -209,6 +231,7 @@ class grpo_trainer(ABC):
             prompt_list.append(tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids'])
         
         return log_list, prompt_list        
+
 
     def extract_confidence(self, solution):
         patterns = [
@@ -249,6 +272,49 @@ class grpo_trainer(ABC):
 
         return ""
 
+    def get_log_list(self, trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target) -> list[training_log_entity]:
+        log_list = self.get_logger().get_log_list(trainer_global_step)
+        
+        if len(log_list) > 0:
+            return log_list
+
+        log_list: list[training_log_entity] = []
+        for i, (completion, gt, question) in enumerate(zip(completions, target, questions)):
+            split = split_list[i]
+            sample_ID = sample_ids[i]
+            problem_id = problem_ids[i] if problem_ids is not None else None
+            prompt = prompts[i]
+
+            log = training_log_entity()
+            log.ID = f'{sample_ID}_{i}' 
+            log.sample_ID = sample_ID
+            log.problem_id = problem_id
+            log.split = split
+            log.trainer_global_step = trainer_global_step
+            log.question = question
+            log.prompt = prompt
+            log.target = gt
+            log.completion = completion
+            try:
+                answer, target_answer_equal, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, completion, gt)
+                if answer is None:
+                    acc_reward = 0.0
+                else:
+                    acc_reward = 1.0 if target_answer_equal else 0.0
+
+                log.final_answer = answer
+                log.compared_final_answer = compared_final_answer
+                log.accuracy_reward = acc_reward
+                log.accuracy = acc_reward == 1.0
+            except Exception:
+                log.accuracy = False
+                log.accuracy_reward = 0.0
+            
+            log_list.append(log)
+            self.get_logger().add_to_buffer(log)
+        
+        return log_list
+    
     @abstractmethod
     def get_dataset(self):
         pass

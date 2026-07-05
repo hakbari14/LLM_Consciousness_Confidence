@@ -3,12 +3,13 @@ from src.logger.training.training_logger import training_logger
 from trl import GRPOConfig, ModelConfig
 from src.datasets.math.open_thoughts_dataset import open_thoughts_dataset
 from src.datasets.dataset_config import dataset_config
+from src.utils.enums_class import training_type_enum
 
 class grpo_trainer_settings_1(grpo_trainer): 
 
     def __init__(self):
-        model_name = 'Qwen/Qwen3-4B'
-        super().__init__(model_name, has_confidence_reward = True)
+        model_name = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
+        super().__init__(model_name, training_type=training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI)
 
     def get_dataset(self) -> open_thoughts_dataset:
         if self.dataset is None:
@@ -23,8 +24,8 @@ class grpo_trainer_settings_1(grpo_trainer):
                 model_name_or_path = self.model_name,
                 attn_implementation="flash_attention_2",
                 use_peft=True,
-                lora_r=1024,
-                lora_alpha=512,
+                lora_r=2048,
+                lora_alpha=1024,
                 load_in_4bit=True,
             )
         return self.model_config
@@ -38,9 +39,9 @@ class grpo_trainer_settings_1(grpo_trainer):
                 lr_scheduler_type="cosine",
                 logging_steps=10,
                 max_steps=1200,
-                per_device_train_batch_size=4,      
-                per_device_eval_batch_size=8,
-                gradient_accumulation_steps=4,
+                per_device_train_batch_size=2,      
+                per_device_eval_batch_size=4,
+                gradient_accumulation_steps=2,
                 gradient_checkpointing=True,
                 gradient_checkpointing_kwargs={"use_reentrant": False},
                 bf16=True,
@@ -58,7 +59,7 @@ class grpo_trainer_settings_1(grpo_trainer):
                 logging_dir='live_logs/settings_1/tb_logs',  
                 eval_strategy="steps",  
                 eval_steps=50,
-                save_steps=50,
+                save_steps=50
             )
 
         return self.training_args

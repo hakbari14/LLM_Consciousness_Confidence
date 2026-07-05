@@ -40,9 +40,11 @@ class granularity_enum(StrEnum):
     TOKEN = 'token'
 
 class training_type_enum(StrEnum):
-    BASELINE = 'baseline'
-    IIT = 'iit'
-    ENTROPY = 'entropy'
+    ACCURACY_REWARD = 'accuracy_reward'
+    CONFIDENCE = 'confidence'
+    CONFIDENCE_WITH_CRITERAI = 'confidence_with_criteria'
+    ACCURACY_REWARD_CONFIDENCE = 'accuracy_reward_confidence'
+    ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI = 'accuracy_reward_confidence_with_criteria'
 
 class llm_pipeline_type_enum(StrEnum):
     TRAINING = 'training'
