@@ -9,7 +9,7 @@ import torch
 import re
 
 
-class llm_generation_metacognitive(llm_generation): 
+class llm_generation_metacognitive_no_training(llm_generation): 
 
     def __init__(self, modelname):
         super().__init__(modelname)
@@ -253,13 +253,13 @@ class llm_generation_metacognitive(llm_generation):
         return self.dataset
 
     def create_llm_response_logger(self, run_number) -> llm_response_inference_logger:
-        return llm_response_inference_logger(log_file_name = f'src/confidence/deepSeek_r1_distill_qwen_7b/metacognitive/run_{run_number}/llm_generation_metacognitive.csv')
+        return llm_response_inference_logger(log_file_name = f'src/confidence/deepSeek_r1_distill_qwen_7b/no_training/run_{run_number}/llm_generation_metacognitive_no_training.csv')
 
     def get_max_new_tokens(self) -> int:
         return 15000
 
 
-t = llm_generation_metacognitive(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
+t = llm_generation_metacognitive_no_training(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
 # t.run(from_run_number=5, to_run_number=6)
 # t.run(from_run_number=6, to_run_number=7)
 # t.run(from_run_number=7, to_run_number=8)
