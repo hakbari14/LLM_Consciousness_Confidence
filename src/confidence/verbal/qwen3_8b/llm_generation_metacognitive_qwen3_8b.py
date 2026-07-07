@@ -17,7 +17,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
     def generate_response(self, batch_size = 128, run_number = 0): 
         _, test_dataset = self.get_dataset().preprocess_dataset()
 
-        print(f'{'*' * 90}  Generate Response Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Response Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -230,8 +230,8 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
             
         patterns = [
             r"^\s*\**\s*Step\s+\d+\s*[:\.\-]?\s*(.+)$", 
-            r"^\s*(?:\d+\s*[\.:]?|-[\.:]?)\s*(.+)$",
             r"^\s*(?:\[\s*\d+\s*\]|\d+\s*[\.:]?|-[\.:]?)\s*(.+)$",
+            r"^\s*(?:\d+\s*[\.:]?|-[\.:]?)\s*(.+)$",
         ]
 
         for pattern in patterns:

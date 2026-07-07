@@ -11,8 +11,8 @@ class llm_generation_metacognitive_settings_2(llm_generation_metacognitive_qwen3
         return llm_response_inference_logger(log_file_name = f'src/confidence/verbal/qwen3_8b/settings_2/run_{run_number}/llm_generation_metacognitive_settings_2.csv')
 
 
-t = llm_generation_metacognitive_settings_2(modelname='./live_logs/settings_2/checkpoint-600-HF')
-t.run(from_run_number=5, to_run_number=6)
-# t.run(from_run_number=6, to_run_number=7)
-# t.run(from_run_number=7, to_run_number=8)
-# t.run(from_run_number=8, to_run_number=9)
+t = llm_generation_metacognitive_settings_2(modelname='/home/hr_akbari/research/LLM_Consciousness_Confidence/live_logs/settings_2/checkpoint-600-HF')
+# t.run(from_run_number=1, to_run_number=2)
+# t.run(from_run_number=2, to_run_number=3)
+# t.run(from_run_number=3, to_run_number=4)
+t.run(from_run_number=4, to_run_number=5)

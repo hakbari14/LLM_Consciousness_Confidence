@@ -22,7 +22,7 @@ class llm_generation(ABC):
 
     def run(self, from_run_number: int , to_run_number: int) -> None:
         for run_number in range(from_run_number,to_run_number):
-            print(f'{'*' * 100}  Run Number {run_number}  {'*' * 100}')
+            print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
             
             self.generate_response(run_number = run_number)
             self.generate_confidence(run_number = run_number)
@@ -31,13 +31,13 @@ class llm_generation(ABC):
             self.generate_self_criteria_with_solution(run_number = run_number)
             self.generate_confidence_self_criteria_with_solution(run_number = run_number)
             
-            print(f'{'*' * 210}')
+            print(f"{'*' * 210}")
 
     @torch.inference_mode()
     def generate_response(self, batch_size = 128, run_number = 0): 
         _, test_dataset = self.get_dataset().preprocess_dataset()
 
-        print(f'{'*' * 90}  Generate Response Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Response Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -116,7 +116,7 @@ class llm_generation(ABC):
         if 'Confidence_Level' not in df.columns:
             df['Confidence_Level'] = pd.Series(dtype="float64")
         
-        print(f'{'*' * 90}  Generate Confidence Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Confidence Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -168,7 +168,7 @@ class llm_generation(ABC):
         if 'Self_Criteria' not in df.columns:
             df['Self_Criteria'] = pd.Series(dtype="string")
         
-        print(f'{'*' * 90}  Generate Self Criteria Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Self Criteria Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -222,7 +222,7 @@ class llm_generation(ABC):
         if 'Confidence_Level_Self_Criteria' not in df.columns:
             df['Confidence_Level_Self_Criteria'] = pd.Series(dtype="float64")
         
-        print(f'{'*' * 90}  Generate Confidence with Self_Criteria Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Confidence with Self_Criteria Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -275,7 +275,7 @@ class llm_generation(ABC):
         if 'Self_Criteria_With_Solution' not in df.columns:
             df['Self_Criteria_With_Solution'] = pd.Series(dtype="string")
         
-        print(f'{'*' * 90}  Generate Self Criteria With Solution Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Self Criteria With Solution Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
@@ -329,7 +329,7 @@ class llm_generation(ABC):
         if 'Confidence_Level_Self_Criteria_With_Solution' not in df.columns:
             df['Confidence_Level_Self_Criteria_With_Solution'] = pd.Series(dtype="float64")
         
-        print(f'{'*' * 90}  Generate Confidence with Self_Criteria With Solution Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Confidence with Self_Criteria With Solution Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
