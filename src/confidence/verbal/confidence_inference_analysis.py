@@ -217,7 +217,14 @@ class confidence_inference_analysis(object):
         csv_paths = {
             "metacognitive": {
                             "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/metacognitive/run_/llm_generation_metacognitive.csv", 
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive.csv", 
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
+            "qwen3_8b_no_training": {
+                            "file_paths" : [
+                                    f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
                             ],
                             "from_run_number": 1,
                             "to_run_number": 5,
