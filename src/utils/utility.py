@@ -104,3 +104,6 @@ class my_utils(object):
         result["accuracy_percent"] = 100 * (result["correct"] / result["total"])
         print(result)
 
+# my_utils.split_csv_file('src/training/logs/settings_1/settings_1.csv', 2)
+# my_utils.merge_csv_files('src/training/logs/settings_1', 'settings_1.csv')
+my_utils.calculate_accuracy_training_log('src/training/logs/settings_1/settings_1.csv')
