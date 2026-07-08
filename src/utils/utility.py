@@ -90,18 +90,17 @@ class my_utils(object):
         merged_df.to_csv(f'{directory_full_path}/{file_name}', index=False)
 
     @staticmethod
-    def merge_csv_files(file_full_path: str) -> None: 
+    def calculate_accuracy_training_log(file_full_path: str) -> None: 
         df = pd.read_csv(file_full_path)
         df = df[df["Split"] == "eval"]        
         result = (
             df.groupby("Trainer_Global_Step")["Accuracy"]
             .agg(
-                correct="sum",   # تعداد True ها
-                total="count"    # تعداد کل
+                correct="sum",  
+                total="count"  
             )
         )
 
         result["accuracy_percent"] = 100 * (result["correct"] / result["total"])
         print(result)
 
-my_utils.merge_csv_files('live_logs/settings_3/settings_3.csv')
