@@ -5,11 +5,11 @@ from src.datasets.math.open_thoughts_dataset import open_thoughts_dataset
 from src.datasets.dataset_config import dataset_config
 from src.utils.enums_class import training_type_enum
 
-class grpo_trainer_settings_1(grpo_trainer): 
+class grpo_trainer_settings_5(grpo_trainer): 
 
     def __init__(self):
         model_name = 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B'
-        super().__init__(model_name, training_type=training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI)
+        super().__init__(model_name, training_type=training_type_enum.CONFIDENCE)
 
     def get_dataset(self) -> open_thoughts_dataset:
         if self.dataset is None:
@@ -24,8 +24,8 @@ class grpo_trainer_settings_1(grpo_trainer):
                 model_name_or_path = self.model_name,
                 attn_implementation="flash_attention_2",
                 use_peft=True,
-                lora_r=2048,
-                lora_alpha=1024,
+                lora_r=4096,
+                lora_alpha=2048,
                 load_in_4bit=True,
             )
         return self.model_config
@@ -34,7 +34,7 @@ class grpo_trainer_settings_1(grpo_trainer):
         
         if self.training_args is None:
             self.training_args = GRPOConfig(
-                output_dir="live_logs/settings_1",
+                output_dir="live_logs/settings_5",
                 learning_rate=3e-6,
                 lr_scheduler_type="cosine",
                 logging_steps=10,
@@ -56,7 +56,7 @@ class grpo_trainer_settings_1(grpo_trainer):
                 warmup_ratio=0.0,
 
                 report_to=['tensorboard'],
-                logging_dir='live_logs/settings_1/tb_logs',  
+                logging_dir='live_logs/settings_5/tb_logs',  
                 eval_strategy="steps",  
                 eval_steps=50,
                 save_steps=50
@@ -66,10 +66,10 @@ class grpo_trainer_settings_1(grpo_trainer):
     
     def get_logger(self):
         if self.logger is None:
-            self.logger = training_logger(log_file_name = 'live_logs/settings_1/settings_1.csv')
+            self.logger = training_logger(log_file_name = 'live_logs/settings_5/settings_5.csv')
 
         return self.logger
 
 
-t = grpo_trainer_settings_1()
+t = grpo_trainer_settings_5()
 t.train()
