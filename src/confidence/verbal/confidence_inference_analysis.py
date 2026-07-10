@@ -236,6 +236,13 @@ class confidence_inference_analysis(object):
                             "from_run_number": 1,
                             "to_run_number": 5,
                         },
+            "qwen3_8b_ar_confidence": {
+                            "file_paths" : [
+                                    f"verbal/qwen3_8b/settings_1/run_/llm_generation_metacognitive_settings_1.csv", 
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
             "qwen3_8b_ar_confidence_wc": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
