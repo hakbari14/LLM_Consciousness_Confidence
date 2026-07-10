@@ -215,7 +215,7 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            "metacognitive": {
+            "deepseek_r1_7b_no_training": {
                             "file_paths" : [
                                     f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive.csv", 
                             ],
@@ -229,16 +229,23 @@ class confidence_inference_analysis(object):
                             "from_run_number": 1,
                             "to_run_number": 5,
                         },
-            "settings_0": {
+            "qwen3_8b_ar": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
                             ],
                             "from_run_number": 1,
                             "to_run_number": 5,
                         },
-            "settings_2": {
+            "qwen3_8b_ar_confidence_wc": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
+            "qwen3_8b_confidence": {
+                            "file_paths" : [
+                                    f"verbal/qwen3_8b/settings_3/run_/llm_generation_metacognitive_settings_3.csv", 
                             ],
                             "from_run_number": 1,
                             "to_run_number": 5,
@@ -259,5 +266,5 @@ class confidence_inference_analysis(object):
 confidence_inference_analysis.calculate_auroc()
 print()
 confidence_inference_analysis.calculate_ece()
-print()
-confidence_inference_analysis.calculate_m_ratio()
+# print()
+# confidence_inference_analysis.calculate_m_ratio()
