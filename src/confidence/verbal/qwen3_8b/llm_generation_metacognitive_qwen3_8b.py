@@ -116,16 +116,17 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
                 prompt += 'Return only:\n'
                 prompt += 'Confidence:<integer between 0 and 100>\n'
                 
-            elif confidence_type_enum.LEVEL == self.confidence_type:
+            elif confidence_type_enum.LEVEL == confidence_type:
                 prompt = f'[Question]: {question}\n\n'
                 prompt += f'[Answer]: {answer}\n\n'
 
                 prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
                 prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
                 prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
-                prompt += 'Select exactly one confidence level that best reflects how likely the answer is to be correct.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
+                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
                 prompt += 'Return only in the following format:\n'
-                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'            
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
             
             prefix = [
                 {"role": "user",
@@ -266,7 +267,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         return prompt_list        
 
 
-    def extract_confidence(self, confidence_type: confidence_type_enum, solution):
+    def extract_confidence(self, confidence_type: confidence_type_enum, solution) -> str:
         if confidence_type_enum.PROBABILITY == confidence_type: 
             return self.extract_confidence_prbability(solution)
         elif confidence_type_enum.LEVEL == confidence_type:
@@ -285,7 +286,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
             if not match: continue
             answer = float(match.group(1))
             if answer > 100 or answer < 0: continue
-            return answer
+            return str(answer)
         
         return None
 
@@ -343,7 +344,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
     def get_dataset(self) -> metacognitive_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(3)
+            config.set_max_test_dataset_size(128)
             self.dataset = metacognitive_dataset(config)
         return self.dataset
 

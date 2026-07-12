@@ -118,7 +118,7 @@ class llm_generation(ABC):
         if 'Confidence_Completion' not in df.columns:
             df['Confidence_Completion'] = pd.Series(dtype="string")
         if 'Confidence_Level' not in df.columns:
-            df['Confidence_Level'] = pd.Series(dtype="float64")
+            df['Confidence_Level'] = pd.Series(dtype="string")
         
         print(f"{'*' * 90}  Generate Confidence Run Number {run_number} {'*' * 90}")
         sampling_params = SamplingParams(
@@ -222,7 +222,7 @@ class llm_generation(ABC):
         if 'Confidence_Completion_Self_Criteria' not in df.columns:
             df['Confidence_Completion_Self_Criteria'] = pd.Series(dtype="string")
         if 'Confidence_Level_Self_Criteria' not in df.columns:
-            df['Confidence_Level_Self_Criteria'] = pd.Series(dtype="float64")
+            df['Confidence_Level_Self_Criteria'] = pd.Series(dtype="string")
         
         print(f"{'*' * 90}  Generate Confidence with Self_Criteria Run Number {run_number} {'*' * 90}")
         sampling_params = SamplingParams(
@@ -327,7 +327,7 @@ class llm_generation(ABC):
         if 'Confidence_Completion_Self_Criteria_With_Solution' not in df.columns:
             df['Confidence_Completion_Self_Criteria_With_Solution'] = pd.Series(dtype="string")
         if 'Confidence_Level_Self_Criteria_With_Solution' not in df.columns:
-            df['Confidence_Level_Self_Criteria_With_Solution'] = pd.Series(dtype="float64")
+            df['Confidence_Level_Self_Criteria_With_Solution'] = pd.Series(dtype="string")
         
         print(f"{'*' * 90}  Generate Confidence with Self_Criteria With Solution Run Number {run_number} {'*' * 90}")
         sampling_params = SamplingParams(
@@ -391,7 +391,7 @@ class llm_generation(ABC):
         pass
 
     @abstractmethod
-    def extract_confidence(self, confidence_type: confidence_type_enum, solution) -> float:
+    def extract_confidence(self, confidence_type: confidence_type_enum, solution) -> str:
         pass
 
     @abstractmethod
