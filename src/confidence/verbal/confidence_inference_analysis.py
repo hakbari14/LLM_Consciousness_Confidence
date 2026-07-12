@@ -218,13 +218,13 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            # "deepseek_r1_7b_no_training": {
-            #                 "file_paths" : [
-            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive.csv", 
-            #                 ],
-            #                 "from_run_number": 1,
-            #                 "to_run_number": 5,
-            #             },
+            "deepseek_r1_7b_no_training": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+                            ],
+                            "from_run_number": 5,
+                            "to_run_number": 9,
+                        },
             "qwen3_8b_no_training": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
@@ -338,5 +338,5 @@ print()
 confidence_inference_analysis.calculate_m_ratio()
 
 
-# df = pd.read_csv('src/confidence/verbal/qwen3_8b/no_training/run_7/llm_generation_metacognitive_no_training.csv')
-# confidence_inference_analysis.plot_histogram_per_group(df, 'Confidence_Level')
+# df = pd.read_csv('src/confidence/verbal/deepSeek_r1_distill_qwen_7b/no_training/run_5/llm_generation_metacognitive_no_training.csv')
+# confidence_inference_analysis.plot_histogram_per_group(df, 'Confidence_Level_Self_Criteria')
