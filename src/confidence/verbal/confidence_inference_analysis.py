@@ -230,7 +230,7 @@ class confidence_inference_analysis(object):
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
                             ],
                             "from_run_number": 5,
-                            "to_run_number": 8,
+                            "to_run_number": 9,
                         },
             # "qwen3_8b_ar": {
             #                 "file_paths" : [
@@ -302,7 +302,7 @@ class confidence_inference_analysis(object):
 
         plt.grid(alpha=0.3)
         plt.savefig(
-            "histogram.png",
+            "src/confidence/verbal/histogram.png",
             dpi=300,              
             bbox_inches="tight"   
         )
@@ -324,7 +324,7 @@ class confidence_inference_analysis(object):
         plt.tight_layout()
 
         plt.savefig(
-            "src/utils/histogram.png",
+            "src/confidence/verbal/histogram.png",
             dpi=300,              
             bbox_inches="tight"   
         )

@@ -200,17 +200,17 @@ class grpo_trainer(ABC):
         prompt_list : list[list[int]] = []
         for log in log_list:        
         
-            prompt = f'[Question]: {log.question}\n\n'
-            prompt += f'[Answer]: {log.final_answer}\n\n'
-            prompt += f'[Reasoning Process]: {log.completion}\n\n'
+            prompt = f'Question: {log.question}\n\n'
+            prompt += f'Answer: {log.final_answer}\n'
             
-            prompt += 'A question, its answer, and the reasoning process used to reach the answer are provided.\n'
-            prompt += 'Based on the question, answer, and reasoning process, generate a list of up to five criteria for assessing confidence in the correctness of the answer.\n'
+            prompt += 'A question and its answer are provided.\n'
+            prompt += 'Based on the question and answer, generate a list of up to five distinct criteria for assessing confidence in the correctness of the answer.\n'
+            
             prompt += 'Output requirements:\n'
             prompt += 'Return only the criteria and nothing else.\n'
             prompt += 'Format the output strictly as a list using either number or - (e.g., "1. criterion" or "- criterion" or "[1] criterion").\n'
             prompt += 'Each criterion must appear on a separate line.\n'
-            
+
             log.prompt_self_criteria = prompt
             prefix = [
                 {"role": "user",
@@ -232,12 +232,11 @@ class grpo_trainer(ABC):
             if confidence_type_enum.PROBABILITY == self.confidence_type: 
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
-                prompt += f'[Reasoning Process]: {log.completion}\n\n'
                 prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
 
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
                 prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Consider all available information before estimating the confidence score.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question, the answer, and the evaluation criteria.\n'
                 prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
                 prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
                 prompt += 'Return only:\n'
@@ -246,12 +245,11 @@ class grpo_trainer(ABC):
             elif confidence_type_enum.LEVEL == self.confidence_type:
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
-                prompt += f'[Reasoning Process]: {log.completion}\n\n'
                 prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
 
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
                 prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Base your confidence assessment on the consistency between the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Base your confidence assessment on the consistency between the question, the answer, and the evaluation criteria.\n'
                 prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
                 prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
                 prompt += 'Return only in the following format:\n'
