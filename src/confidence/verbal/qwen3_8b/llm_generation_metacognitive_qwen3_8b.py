@@ -344,7 +344,6 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
     def get_dataset(self) -> metacognitive_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(128)
             self.dataset = metacognitive_dataset(config)
         return self.dataset
 

@@ -269,9 +269,53 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
+    @staticmethod
+    def plot_histogram(df, column_name, bins=100):
+
+        plt.figure(figsize=(8, 5))
+        plt.hist(df[column_name].dropna(), bins=bins, edgecolor='black')
+
+        plt.title(f"Histogram of {column_name}")
+        plt.xlabel(column_name)
+        plt.ylabel("Frequency")
+
+        plt.grid(alpha=0.3)
+        plt.savefig(
+            "histogram.png",
+            dpi=300,              
+            bbox_inches="tight"   
+        )
+
+        plt.show()
+        plt.close()
+
+    @staticmethod
+    def plot_histogram_per_group(df, column_name):
+        counts = df[column_name].value_counts()
+
+        plt.figure(figsize=(10, 6))
+        counts.plot(kind="bar")
+
+        plt.xlabel(column_name)
+        plt.ylabel("Frequency")
+        plt.title(f"Frequency of each value in '{column_name}'")
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+
+        plt.savefig(
+            "src/utils/histogram.png",
+            dpi=300,              
+            bbox_inches="tight"   
+        )
+        plt.close()
+
 
 confidence_inference_analysis.calculate_auroc()
 print()
 confidence_inference_analysis.calculate_ece()
 # print()
 # confidence_inference_analysis.calculate_m_ratio()
+
+
+# df = pd.read_csv('src/confidence/verbal/qwen3_8b/no_training/run_6/llm_generation_metacognitive_no_training.csv')
+# confidence_inference_analysis.plot_histogram_per_group(df, 'Confidence_Level_Self_Criteria_With_Solution')
