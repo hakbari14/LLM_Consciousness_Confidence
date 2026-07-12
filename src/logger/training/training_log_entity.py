@@ -19,7 +19,7 @@ class training_log_entity(log_entity):
 
     prompt_confidence : Optional[str] = None
     completion_confidence : Optional[str] = None
-    confidence : Optional[float] = None
+    confidence : Optional[str] = None
     
     confidence_reward : Optional[float] = None
 

@@ -31,13 +31,13 @@ class confidence_inference_analysis(object):
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
                         accuracy_list = df['Accuracy_Reward'].tolist()
 
-                        df['Confidence'] = df['Confidence_Level'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level', 'Confidence')
                         confidence_level_list = df['Confidence'].tolist()
 
-                        df['Confidence_Self_Criteria'] = df['Confidence_Level_Self_Criteria'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level_Self_Criteria', 'Confidence_Self_Criteria')
                         confidence_level_self_criteria_list = df['Confidence_Self_Criteria'].tolist()
 
-                        df['Confidence_Self_Criteria_With_Solution'] = df['Confidence_Level_Self_Criteria_With_Solution'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level_Self_Criteria_With_Solution', 'Confidence_Self_Criteria_With_Solution')
                         confidence_level_self_criteria_with_solution_list = df['Confidence_Self_Criteria_With_Solution'].tolist()
 
                         y_true = np.array(accuracy_list)
@@ -90,13 +90,13 @@ class confidence_inference_analysis(object):
                         df = pd.read_csv(f'{dir}/{file_path_run_number}')
                         accuracy = df['Accuracy'].mean()
                         
-                        df['Confidence'] = df['Confidence_Level'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level', 'Confidence')
                         confidence, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence', n_bins)
                         
-                        df['Confidence_Self_Criteria'] = df['Confidence_Level_Self_Criteria'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level_Self_Criteria', 'Confidence_Self_Criteria')
                         confidence_self_criteria, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence_Self_Criteria', n_bins)
 
-                        df['Confidence_Self_Criteria_With_Solution'] = df['Confidence_Level_Self_Criteria_With_Solution'] / 100.0
+                        confidence_inference_analysis.calculate_confidence_level_map(df, 'Confidence_Level_Self_Criteria_With_Solution', 'Confidence_Self_Criteria_With_Solution')
                         confidence_self_criteria_with_solution, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence_Self_Criteria_With_Solution', n_bins)
 
                         data_item = {
@@ -138,7 +138,7 @@ class confidence_inference_analysis(object):
         return expected_calibration_error, maximum_calibration_error
 
     @staticmethod
-    def calculate_m_ratio(n_bins = 20) -> None:
+    def calculate_m_ratio() -> None:
         data_list = []
         dir, csv_paths = confidence_inference_analysis.get_filenames()
         for dataset, csv_dataset in csv_paths.items():
@@ -153,9 +153,9 @@ class confidence_inference_analysis(object):
                         df = df[["Target", "Final_Answer" , "Accuracy", "Confidence_Level", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
                         accuracy = df['Accuracy'].mean()
                         
-                        d_prime_c, meta_d_prime_c, m_ratio_c = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level', n_bins)
-                        d_prime_csc, meta_d_prime_csc, m_ratio_csc = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria', n_bins)
-                        d_prime_csc_ws, meta_d_prime_csc_ws, m_ratio_csc_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria_With_Solution', n_bins)
+                        d_prime_c, meta_d_prime_c, m_ratio_c = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level')
+                        d_prime_csc, meta_d_prime_csc, m_ratio_csc = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria')
+                        d_prime_csc_ws, meta_d_prime_csc_ws, m_ratio_csc_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria_With_Solution')
             
                         data_item = {
                                         "run_number": run_number, 
@@ -183,20 +183,23 @@ class confidence_inference_analysis(object):
         print(df_summary.to_string(index=False))        
 
     @staticmethod
-    def calculate_metad_dprime(df, confidence_column_name ,n_bins = 2):
+    def calculate_metad_dprime(df, confidence_column_name):
         df['Stimuli'] = df['Target'].map({'Yes': 1, 'No': 0})        
         df['Response'] = (df['Target'] == df['Final_Answer']).astype(int)        
         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0}) 
         
-        confidence_bin_column_name = f'{confidence_column_name}_bin'
-        df[confidence_bin_column_name] = (np.floor(df[confidence_column_name] / (100 / n_bins)).astype(int) + 1).clip(1, n_bins)
+
+        confidence_bin_column_name = f"{confidence_column_name}_bin"
+        unique_values = sorted(df[confidence_column_name].dropna().unique())
+        value_to_bin = {value: i + 1 for i, value in enumerate(unique_values)}
+        df[confidence_bin_column_name] = df[confidence_column_name].map(value_to_bin)
         
         fit = metad(
             data=df,
             stimuli = "Stimuli",
             accuracy = "Accuracy_Reward",
             confidence = confidence_bin_column_name,
-            nRatings = n_bins)
+            nRatings = len(unique_values))
         
         d_prime = fit["dprime"][0]
         meta_d = fit["meta_d"][0]
@@ -215,48 +218,48 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            "deepseek_r1_7b_no_training": {
-                            "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive.csv", 
-                            ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
+            # "deepseek_r1_7b_no_training": {
+            #                 "file_paths" : [
+            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive.csv", 
+            #                 ],
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
             "qwen3_8b_no_training": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
                             ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
+                            "from_run_number": 5,
+                            "to_run_number": 8,
                         },
-            "qwen3_8b_ar": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
-                            ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_ar_confidence": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_1/run_/llm_generation_metacognitive_settings_1.csv", 
-                            ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_ar_confidence_wc": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
-                            ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_confidence": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_3/run_/llm_generation_metacognitive_settings_3.csv", 
-                            ],
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
+            # "qwen3_8b_ar": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
+            #                 ],
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_ar_confidence": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_1/run_/llm_generation_metacognitive_settings_1.csv", 
+            #                 ],
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_ar_confidence_wc": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
+            #                 ],
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_confidence": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_3/run_/llm_generation_metacognitive_settings_3.csv", 
+            #                 ],
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
 
         }
         
@@ -269,6 +272,24 @@ class confidence_inference_analysis(object):
             result[col] = result[col].round(3)
         return result
 
+    @staticmethod
+    def calculate_confidence_level_map(df, confidence_column_name, confidence_value_column_name):
+        confidence_values = {
+            "very low": 0.1,
+            "low": 0.3,
+            "medium": 0.5,
+            "high": 0.7,
+            "very high": 0.9,
+        }
+
+        df[confidence_value_column_name] = (
+            df[confidence_column_name]
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .map(confidence_values)
+        )
+        
     @staticmethod
     def plot_histogram(df, column_name, bins=100):
 
@@ -313,9 +334,9 @@ class confidence_inference_analysis(object):
 confidence_inference_analysis.calculate_auroc()
 print()
 confidence_inference_analysis.calculate_ece()
-# print()
-# confidence_inference_analysis.calculate_m_ratio()
+print()
+confidence_inference_analysis.calculate_m_ratio()
 
 
-# df = pd.read_csv('src/confidence/verbal/qwen3_8b/no_training/run_6/llm_generation_metacognitive_no_training.csv')
-# confidence_inference_analysis.plot_histogram_per_group(df, 'Confidence_Level_Self_Criteria_With_Solution')
+# df = pd.read_csv('src/confidence/verbal/qwen3_8b/no_training/run_7/llm_generation_metacognitive_no_training.csv')
+# confidence_inference_analysis.plot_histogram_per_group(df, 'Confidence_Level')

@@ -2,15 +2,16 @@ from trl import GRPOTrainer, get_peft_config
 from abc import ABC, abstractmethod
 from src.logger.training.training_log_entity import training_log_entity
 from src.utils.llm_representation import llm_representation
-from src.utils.enums_class import training_type_enum
+from src.utils.enums_class import training_type_enum, confidence_type_enum
 import torch
 import re
 
 class grpo_trainer(ABC): 
 
-    def __init__(self, model_name: str, training_type: training_type_enum) -> None:
+    def __init__(self, model_name: str, training_type: training_type_enum, confidence_type : confidence_type_enum) -> None:
         self.model_name = model_name
-        self.training_type = training_type
+        self.training_type  = training_type
+        self.confidence_type  = confidence_type
         if self.model_name is None:
             raise Exception('model name is required')
 
@@ -79,11 +80,7 @@ class grpo_trainer(ABC):
                 rewards.append(log.confidence_reward)
                 continue
             
-            if log.accuracy: 
-                confidence_reward = log.confidence / 100                
-            else:
-                confidence_reward = 1.0 - log.confidence / 100                
-
+            confidence_reward = self.calculate_confidence_reward_on_log(log)
             log.confidence_reward = confidence_reward
             rewards.append(confidence_reward)
 
@@ -163,11 +160,29 @@ class grpo_trainer(ABC):
         prompt_list : list[list[int]] = []
         for log in log_list:        
         
-            prompt = f'[Question]: {log.question}\n\n'
-            prompt += f'[Answer]: {log.final_answer}\n\n'
-            prompt += 'Determine the confidence level for the above question and answer by performing a step-by-step evaluation.\n'
-            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
-            prompt += 'Confidence:<integer between 0 and 100>\n'
+            if confidence_type_enum.PROBABILITY == self.confidence_type: 
+                prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Answer]: {log.final_answer}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
+                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
+                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only:\n'
+                prompt += 'Confidence:<integer between 0 and 100>\n'
+                
+            elif confidence_type_enum.LEVEL == self.confidence_type:
+                prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Answer]: {log.final_answer}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
+                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only in the following format:\n'
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
 
             log.prompt_confidence = prompt
             prefix = [
@@ -214,13 +229,34 @@ class grpo_trainer(ABC):
         prompt_list : list[list[int]] = []
         for log in log_list:        
         
-            prompt = f'[Question]: {log.question}\n\n'
-            prompt += f'[Answer]: {log.final_answer}\n\n'
-            prompt += f'[Reasoning Process]: {log.completion}\n\n'
-            prompt += f'[Criteria]:\n {log.self_criteria}\n\n'
-            prompt += 'Determine the confidence level for the above question, answer and reasoning process based on the criteria by performing a step-by-step evaluation.\n'
-            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
-            prompt += 'Confidence:<integer between 0 and 100>\n'
+            if confidence_type_enum.PROBABILITY == self.confidence_type: 
+                prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Answer]: {log.final_answer}\n\n'
+                prompt += f'[Reasoning Process]: {log.completion}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Consider all available information before estimating the confidence score.\n'
+                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
+                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only:\n'
+                prompt += 'Confidence:<integer between 0 and 100>\n'
+                
+            elif confidence_type_enum.LEVEL == self.confidence_type:
+                prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Answer]: {log.final_answer}\n\n'
+                prompt += f'[Reasoning Process]: {log.completion}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence assessment on the consistency between the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
+                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only in the following format:\n'
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
+
 
             log.prompt_confidence = prompt
             prefix = [
@@ -233,7 +269,15 @@ class grpo_trainer(ABC):
         return log_list, prompt_list        
 
 
-    def extract_confidence(self, solution):
+    def extract_confidence(self, solution) -> str:
+        if confidence_type_enum.PROBABILITY == self.confidence_type: 
+            return self.extract_confidence_prbability(solution)
+        elif confidence_type_enum.LEVEL == self.confidence_type:
+            return self.extract_confidence_level(solution)
+        
+        return None
+
+    def extract_confidence_prbability(self, solution):
         patterns = [
             r"Confidence[\s*]*:[\s*]*(\d+(?:\.\d+)?)",
             r"Confidence\s*Score[\s*\n:]*([0-9]+(?:\.[0-9]+)?)",
@@ -244,7 +288,61 @@ class grpo_trainer(ABC):
             if not match: continue
             answer = float(match.group(1))
             if answer > 100 or answer < 0: continue
-            return answer
+            return str(answer)
+        
+        return None
+
+    def extract_confidence_level(self, solution):
+        levels = [
+            "Very Low",
+            "Low",
+            "Medium",
+            "High",
+            "Very High"
+        ]
+        lookup = {item.lower(): item for item in levels}
+
+        patterns = [
+            r"confidence\s*[:=\-]?\s*(very\s+low|low|medium|high|very\s+high)\b",
+            r"\b(very\s+low|low|medium|high|very\s+high)\b",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, solution, re.IGNORECASE)
+            if not match: continue
+
+            confidence_level = match.group(1)
+            if not confidence_level: continue
+            
+            return lookup.get(confidence_level.lower())            
+        
+        return None
+
+    def calculate_confidence_reward_on_log(self, log):
+        if confidence_type_enum.PROBABILITY == self.confidence_type: 
+            if log.accuracy: 
+                return float(log.confidence) / 100
+            else:
+                return 1.0 - float(log.confidence) / 100
+            
+        elif confidence_type_enum.LEVEL == self.confidence_type:
+
+            confidence_values = {
+                "very low": 0.1,
+                "low": 0.3,
+                "medium": 0.5,
+                "high": 0.7,
+                "very high": 0.9,
+            }
+
+            confidence_reward = confidence_values.get(log.confidence.strip().casefold(), None)            
+            if confidence_reward is None:
+                return None
+             
+            if log.accuracy: 
+                return confidence_reward
+            else:
+                return 1.0 - confidence_reward
         
         return None
 
