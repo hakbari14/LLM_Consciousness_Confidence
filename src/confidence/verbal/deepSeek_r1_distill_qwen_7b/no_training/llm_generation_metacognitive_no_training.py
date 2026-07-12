@@ -17,8 +17,9 @@ t = llm_generation_metacognitive_no_training(modelname='deepseek-ai/DeepSeek-R1-
 # t.run(from_run_number=2, to_run_number=3, confidence_type = confidence_type_enum.PROBABILITY)
 # t.run(from_run_number=3, to_run_number=4, confidence_type = confidence_type_enum.PROBABILITY)
 # t.run(from_run_number=4, to_run_number=5, confidence_type = confidence_type_enum.PROBABILITY)
-t.run(from_run_number=5, to_run_number=6, confidence_type = confidence_type_enum.LEVEL)
-t.run(from_run_number=6, to_run_number=7, confidence_type = confidence_type_enum.LEVEL)
-t.run(from_run_number=7, to_run_number=8, confidence_type = confidence_type_enum.LEVEL)
+
+# t.run(from_run_number=5, to_run_number=6, confidence_type = confidence_type_enum.LEVEL)
+# t.run(from_run_number=6, to_run_number=7, confidence_type = confidence_type_enum.LEVEL)
+# t.run(from_run_number=7, to_run_number=8, confidence_type = confidence_type_enum.LEVEL)
 t.run(from_run_number=8, to_run_number=9, confidence_type = confidence_type_enum.LEVEL)
 
