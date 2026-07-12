@@ -4,13 +4,14 @@ from vllm import LLM, SamplingParams
 from src.confidence.llm_generation import llm_generation
 from src.datasets.confidence.metacognitive_dataset import metacognitive_dataset
 from src.datasets.dataset_config import dataset_config
+from src.utils.enums_class import confidence_type_enum
 import torch
 import re
 
 
 class llm_generation_metacognitive_qwen3_8b(llm_generation): 
 
-    def __init__(self, modelname):
+    def __init__(self, modelname) -> None:
         super().__init__(modelname)
 
     @torch.inference_mode()
@@ -18,7 +19,6 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         _, test_dataset = self.get_dataset().preprocess_dataset()
 
         print(f"{'*' * 90}  Generate Response Run Number {run_number} {'*' * 90}")
-        model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
                 temperature=0.7, 
@@ -41,13 +41,13 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
             correct_prompt_list = batch['correct_prompt']
             correct_answer_list = batch['correct_answer']
             correct_target_list = batch['correct_target']
-            log_list.extend(self.generate(model, sampling_params, sample_ID_list, problem_id_list, split_list, question_list, correct_prompt_list, correct_answer_list, correct_target_list, idx))
+            log_list.extend(self.generate(self.model, sampling_params, sample_ID_list, problem_id_list, split_list, question_list, correct_prompt_list, correct_answer_list, correct_target_list, idx))
             idx += len(log_list)
             
             incorrect_prompt_list = batch['incorrect_prompt']
             incorrect_answer_list = batch['incorrect_answer']
             incorrect_target_list = batch['incorrect_target']
-            log_list.extend(self.generate(model, sampling_params, sample_ID_list, problem_id_list, split_list, question_list, incorrect_prompt_list, incorrect_answer_list, incorrect_target_list, idx))
+            log_list.extend(self.generate(self.model, sampling_params, sample_ID_list, problem_id_list, split_list, question_list, incorrect_prompt_list, incorrect_answer_list, incorrect_target_list, idx))
             idx += len(log_list)
 
         logger = self.create_llm_response_logger(run_number)
@@ -100,15 +100,33 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         return log_list
 
 
-    def generate_model_prompt_confidence(self, question_list, answer_list) -> list[str]:
+    def generate_model_prompt_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list) -> list[str]:
         prompt_list : list[str] = []
         for question, answer in zip(question_list, answer_list):        
-        
-            prompt = f'Question: {question}\n\n'
-            prompt += f'Answer: {answer}\n'
-            prompt += 'Determine the confidence level for the above question and answer by performing a step-by-step evaluation.\n'
-            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
-            prompt += 'Confidence:<integer between 0 and 100>\n'
+            
+            if confidence_type_enum.PROBABILITY == confidence_type: 
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
+                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
+                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only:\n'
+                prompt += 'Confidence:<integer between 0 and 100>\n'
+                
+            elif confidence_type_enum.LEVEL == self.confidence_type:
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the answer is to be correct.\n'
+                prompt += 'Return only in the following format:\n'
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'            
+            
             prefix = [
                 {"role": "user",
                     "content": prompt
@@ -141,16 +159,36 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         
         return prompt_list        
 
-    def generate_model_prompt_self_criteria_confidence(self, question_list, answer_list, self_criteria_list) -> list[str]:
+    def generate_model_prompt_self_criteria_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list, self_criteria_list) -> list[str]:
         prompt_list : list[str] = []
         for question, answer, self_criteria in zip(question_list, answer_list, self_criteria_list):        
         
-            prompt = f'Question: {question}\n\n'
-            prompt += f'Answer: {answer}\n\n'
-            prompt += f'Criteria:\n {self_criteria}\n\n'
-            prompt += 'Determine the confidence level for the above question and answer based on the criteria by performing a step-by-step evaluation.\n'
-            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
-            prompt += 'Confidence:<integer between 0 and 100>\n'
+            if confidence_type_enum.PROBABILITY == confidence_type: 
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence estimate on the consistency between the question, the answer, and the evaluation criteria.\n'
+                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
+                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only:\n'
+                prompt += 'Confidence:<integer between 0 and 100>\n'
+                
+            elif confidence_type_enum.LEVEL == confidence_type:
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence assessment on the consistency between the question, the answer, and the evaluation criteria.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
+                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only in the following format:\n'
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
+
 
             prefix = [
                 {"role": "user",
@@ -160,6 +198,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
             prompt_list.append(self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True))
         
         return prompt_list        
+
 
     def generate_model_prompt_self_criteria_with_solution(self, question_list, answer_list, completion_list, accuracy_list) -> list[str]:
         prompt_list : list[str] = []
@@ -185,17 +224,37 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         
         return prompt_list        
 
-    def generate_model_prompt_self_criteria_with_solution_confidence(self, question_list, answer_list, completion_list, self_criteria_list) -> list[str]:
+    def generate_model_prompt_self_criteria_with_solution_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list, completion_list, self_criteria_list) -> list[str]:
         prompt_list : list[str] = []
         for question, answer, completion, self_criteria in zip(question_list, answer_list, completion_list, self_criteria_list):        
         
-            prompt = f'[Question]: {question}\n\n'
-            prompt += f'[Answer]: {answer}\n\n'
-            prompt += f'[Reasoning Process]: {completion}\n\n'
-            prompt += f'[Criteria]:\n {self_criteria}\n\n'
-            prompt += 'Determine the confidence level for the above question, answer and reasoning process based on the criteria by performing a step-by-step evaluation.\n'
-            prompt += 'Rate your confidence as an integer between 0 and 100, where 0 means no confidence at all and 100 means absolute certainty. Use only the following format:\n'
-            prompt += 'Confidence:<integer between 0 and 100>\n'
+            if confidence_type_enum.PROBABILITY == confidence_type: 
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+                prompt += f'[Reasoning Process]: {completion}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Consider all available information before estimating the confidence score.\n'
+                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
+                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only:\n'
+                prompt += 'Confidence:<integer between 0 and 100>\n'
+                
+            elif confidence_type_enum.LEVEL == confidence_type:
+                prompt = f'[Question]: {question}\n\n'
+                prompt += f'[Answer]: {answer}\n\n'
+                prompt += f'[Reasoning Process]: {completion}\n\n'
+                prompt += f'[Evaluation Criteria]:\n{self_criteria}\n\n'
+
+                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
+                prompt += 'Base your confidence assessment on the consistency between the question, the answer, the reasoning process, and the evaluation criteria.\n'
+                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
+                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
+                prompt += 'Return only in the following format:\n'
+                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
 
             prefix = [
                 {"role": "user",
@@ -206,7 +265,16 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         
         return prompt_list        
 
-    def extract_confidence(self, solution):
+
+    def extract_confidence(self, confidence_type: confidence_type_enum, solution):
+        if confidence_type_enum.PROBABILITY == confidence_type: 
+            return self.extract_confidence_prbability(solution)
+        elif confidence_type_enum.LEVEL == confidence_type:
+            return self.extract_confidence_level(solution)
+        
+        return None
+
+    def extract_confidence_prbability(self, solution):
         patterns = [
             r"Confidence[\s*]*:[\s*]*(\d+(?:\.\d+)?)",
             r"Confidence\s*Score[\s*\n:]*([0-9]+(?:\.[0-9]+)?)",
@@ -218,6 +286,32 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
             answer = float(match.group(1))
             if answer > 100 or answer < 0: continue
             return answer
+        
+        return None
+
+    def extract_confidence_level(self, solution):
+        levels = [
+            "Very Low",
+            "Low",
+            "Medium",
+            "High",
+            "Very High"
+        ]
+        lookup = {item.lower(): item for item in levels}
+
+        patterns = [
+            r"confidence\s*[:=\-]?\s*(very\s+low|low|medium|high|very\s+high)\b",
+            r"\b(very\s+low|low|medium|high|very\s+high)\b",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, solution, re.IGNORECASE)
+            if not match: continue
+
+            confidence_level = match.group(1)
+            if not confidence_level: continue
+            
+            return lookup.get(confidence_level.lower())            
         
         return None
 
@@ -237,6 +331,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
         for pattern in patterns:
             matches = re.findall(pattern, content, flags=re.MULTILINE | re.IGNORECASE)
             if not matches or len(matches) == 0: continue
+            matches = list(set(matches))            
             result = "\n".join(
                 f"{i}. {item.strip()}"
                 for i, item in enumerate(matches, start=1)
@@ -248,6 +343,7 @@ class llm_generation_metacognitive_qwen3_8b(llm_generation):
     def get_dataset(self) -> metacognitive_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
+            config.set_max_test_dataset_size(3)
             self.dataset = metacognitive_dataset(config)
         return self.dataset
 

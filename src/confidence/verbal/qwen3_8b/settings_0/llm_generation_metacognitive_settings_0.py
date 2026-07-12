@@ -1,6 +1,6 @@
 from src.logger.llm_response.llm_response_inference_logger import llm_response_inference_logger
 from src.confidence.verbal.qwen3_8b.llm_generation_metacognitive_qwen3_8b import llm_generation_metacognitive_qwen3_8b
-
+from src.utils.enums_class import confidence_type_enum
 
 class llm_generation_metacognitive_settings_0(llm_generation_metacognitive_qwen3_8b): 
 
@@ -12,7 +12,7 @@ class llm_generation_metacognitive_settings_0(llm_generation_metacognitive_qwen3
 
 
 t = llm_generation_metacognitive_settings_0(modelname='/home/hr_akbari/research/LLM_Consciousness_Confidence/live_logs/settings_0/checkpoint-550-HF')
-# t.run(from_run_number=1, to_run_number=2)
-# t.run(from_run_number=2, to_run_number=3)
-# t.run(from_run_number=3, to_run_number=4)
-t.run(from_run_number=4, to_run_number=5)
+# t.run(from_run_number=1, to_run_number=2, confidence_type = confidence_type_enum.PROBABILITY)
+# t.run(from_run_number=2, to_run_number=3, confidence_type = confidence_type_enum.PROBABILITY)
+# t.run(from_run_number=3, to_run_number=4, confidence_type = confidence_type_enum.PROBABILITY)
+t.run(from_run_number=4, to_run_number=5, confidence_type = confidence_type_enum.PROBABILITY)

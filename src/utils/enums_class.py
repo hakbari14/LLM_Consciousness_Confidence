@@ -50,3 +50,7 @@ class llm_pipeline_type_enum(StrEnum):
     TRAINING = 'training'
     INFERENCE = 'inference'
 
+class confidence_type_enum(StrEnum):
+    PROBABILITY = 'probability'
+    LEVEL = 'level'
+

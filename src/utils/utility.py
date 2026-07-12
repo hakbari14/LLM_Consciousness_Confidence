@@ -1,5 +1,6 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
+import matplotlib.pyplot as plt
 import torch
 import pandas as pd
 import torch.nn.functional as F
@@ -103,4 +104,25 @@ class my_utils(object):
 
         result["accuracy_percent"] = 100 * (result["correct"] / result["total"])
         print(result)
+
+
+    @staticmethod
+    def plot_histogram(df, column_name, bins=100):
+
+        plt.figure(figsize=(8, 5))
+        plt.hist(df[column_name].dropna(), bins=bins, edgecolor='black')
+
+        plt.title(f"Histogram of {column_name}")
+        plt.xlabel(column_name)
+        plt.ylabel("Frequency")
+
+        plt.grid(alpha=0.3)
+        plt.savefig(
+            "histogram.png",
+            dpi=300,              
+            bbox_inches="tight"   
+        )
+
+        plt.show()
+        plt.close()
 
