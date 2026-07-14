@@ -3,17 +3,27 @@ from src.logger.training.training_logger import training_logger
 from trl import GRPOConfig, ModelConfig
 from src.datasets.math.open_thoughts_dataset import open_thoughts_dataset
 from src.datasets.dataset_config import dataset_config
-from src.utils.enums_class import training_type_enum, confidence_type_enum
+from src.utils.enums_class import training_type_enum, confidence_type_enum, confidence_reward_calculation_type_enum
+from src.training.training_config import training_config
 
 class grpo_trainer_settings_1(grpo_trainer): 
 
     def __init__(self):
-        model_name = 'Qwen/Qwen3-8B'
-        super().__init__(model_name, training_type=training_type_enum.ACCURACY_REWARD_CONFIDENCE, confidence_type=confidence_type_enum.PROBABILITY)
+        config = training_config(
+            
+            model_name="Qwen/Qwen3-8B",
+            training_type = training_type_enum.ACCURACY_REWARD_CONFIDENCE, 
+            confidence_type = confidence_type_enum.PROBABILITY,
+            confidence_reward_type = confidence_reward_calculation_type_enum.linear,
+            acurray_reward_coefficient = 1.0,
+            confidence_reward_coefficient = 1.0,
+        )
+        
+        super().__init__(config)
 
     def get_dataset(self) -> open_thoughts_dataset:
         if self.dataset is None:
-            config = dataset_config(self.model_name)
+            config = dataset_config(self.config.model_name)
             config.set_max_test_dataset_size(160)
             self.dataset = open_thoughts_dataset(config)
         return self.dataset
@@ -21,7 +31,7 @@ class grpo_trainer_settings_1(grpo_trainer):
     def get_model_config(self):
         if self.model_config is None:
             self.model_config = ModelConfig(
-                model_name_or_path = self.model_name,
+                model_name_or_path = self.config.model_name,
                 attn_implementation="flash_attention_2",
                 use_peft=True,
                 lora_r=2048,

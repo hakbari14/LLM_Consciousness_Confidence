@@ -46,6 +46,10 @@ class training_type_enum(StrEnum):
     ACCURACY_REWARD_CONFIDENCE = 'accuracy_reward_confidence'
     ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI = 'accuracy_reward_confidence_with_criteria'
 
+class confidence_reward_calculation_type_enum(StrEnum):
+    linear = 'linear'
+    brier_score = 'brier_score'
+
 class llm_pipeline_type_enum(StrEnum):
     TRAINING = 'training'
     INFERENCE = 'inference'

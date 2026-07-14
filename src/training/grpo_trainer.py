@@ -2,19 +2,15 @@ from trl import GRPOTrainer, get_peft_config
 from abc import ABC, abstractmethod
 from src.logger.training.training_log_entity import training_log_entity
 from src.utils.llm_representation import llm_representation
-from src.utils.enums_class import training_type_enum, confidence_type_enum
+from src.utils.enums_class import training_type_enum, confidence_type_enum, confidence_reward_calculation_type_enum
+from src.training.training_config import training_config
 import torch
 import re
 
 class grpo_trainer(ABC): 
 
-    def __init__(self, model_name: str, training_type: training_type_enum, confidence_type : confidence_type_enum) -> None:
-        self.model_name = model_name
-        self.training_type  = training_type
-        self.confidence_type  = confidence_type
-        if self.model_name is None:
-            raise Exception('model name is required')
-
+    def __init__(self, config: training_config) -> None:
+        self.config = config
         self.representation = llm_representation()
         self.dataset = None
         self.model_config = None
@@ -33,7 +29,7 @@ class grpo_trainer(ABC):
             model_config = self.get_model_config()
             
             self.trainer = GRPOTrainer(
-                model = self.model_name,
+                model = self.config.model_name,
                 reward_funcs = self.get_reward_funcs(),
                 args = self.get_training_args(),
                 train_dataset = train_dataset,
@@ -45,13 +41,13 @@ class grpo_trainer(ABC):
         return self.trainer
 
     def get_reward_funcs(self):
-        if training_type_enum.ACCURACY_REWARD == self.training_type: 
+        if training_type_enum.ACCURACY_REWARD == self.config.training_type: 
             return [self.accuracy_reward]
 
-        if training_type_enum.CONFIDENCE == self.training_type or training_type_enum.CONFIDENCE_WITH_CRITERAI == self.training_type: 
+        if training_type_enum.CONFIDENCE == self.config.training_type or training_type_enum.CONFIDENCE_WITH_CRITERAI == self.config.training_type: 
             return [self.calculate_confidence_reward]
 
-        if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.training_type: 
+        if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.config.training_type: 
             return [self.accuracy_reward, self.calculate_confidence_reward]
         
         return []
@@ -67,9 +63,9 @@ class grpo_trainer(ABC):
         trainer_global_step = trainer_state.global_step
         
         log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
-        if training_type_enum.CONFIDENCE == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.training_type:
+        if training_type_enum.CONFIDENCE == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type:
             log_list = self.generate_confidence(log_list)
-        if training_type_enum.CONFIDENCE_WITH_CRITERAI == self.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.training_type:
+        if training_type_enum.CONFIDENCE_WITH_CRITERAI == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.config.training_type:
             log_list = self.generate_self_criteria(log_list)
             log_list = self.generate_confidence_in_criteria_mode(log_list)
 
@@ -80,7 +76,7 @@ class grpo_trainer(ABC):
                 rewards.append(log.confidence_reward)
                 continue
             
-            confidence_reward = self.calculate_confidence_reward_on_log(log)
+            confidence_reward = self.config.confidence_reward_coefficient * self.calculate_confidence_reward_on_log(log)
             log.confidence_reward = confidence_reward
             rewards.append(confidence_reward)
 
@@ -101,7 +97,7 @@ class grpo_trainer(ABC):
         for log in log_list: 
             rewards.append(log.accuracy_reward)
 
-        if training_type_enum.ACCURACY_REWARD == self.training_type:
+        if training_type_enum.ACCURACY_REWARD == self.config.training_type:
             self.get_logger().write_to_log_file()
 
         return rewards
@@ -160,7 +156,7 @@ class grpo_trainer(ABC):
         prompt_list : list[list[int]] = []
         for log in log_list:        
         
-            if confidence_type_enum.PROBABILITY == self.confidence_type: 
+            if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
 
@@ -172,7 +168,7 @@ class grpo_trainer(ABC):
                 prompt += 'Return only:\n'
                 prompt += 'Confidence:<integer between 0 and 100>\n'
                 
-            elif confidence_type_enum.LEVEL == self.confidence_type:
+            elif confidence_type_enum.LEVEL == self.config.confidence_type:
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
 
@@ -229,7 +225,7 @@ class grpo_trainer(ABC):
         prompt_list : list[list[int]] = []
         for log in log_list:        
         
-            if confidence_type_enum.PROBABILITY == self.confidence_type: 
+            if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
                 prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
@@ -242,7 +238,7 @@ class grpo_trainer(ABC):
                 prompt += 'Return only:\n'
                 prompt += 'Confidence:<integer between 0 and 100>\n'
                 
-            elif confidence_type_enum.LEVEL == self.confidence_type:
+            elif confidence_type_enum.LEVEL == self.config.confidence_type:
                 prompt = f'[Question]: {log.question}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
                 prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
@@ -268,9 +264,9 @@ class grpo_trainer(ABC):
 
 
     def extract_confidence(self, solution) -> str:
-        if confidence_type_enum.PROBABILITY == self.confidence_type: 
+        if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
             return self.extract_confidence_prbability(solution)
-        elif confidence_type_enum.LEVEL == self.confidence_type:
+        elif confidence_type_enum.LEVEL == self.config.confidence_type:
             return self.extract_confidence_level(solution)
         
         return None
@@ -317,13 +313,9 @@ class grpo_trainer(ABC):
         return None
 
     def calculate_confidence_reward_on_log(self, log):
-        if confidence_type_enum.PROBABILITY == self.confidence_type: 
-            if log.accuracy: 
-                return float(log.confidence) / 100
-            else:
-                return 1.0 - float(log.confidence) / 100
-            
-        elif confidence_type_enum.LEVEL == self.confidence_type:
+        if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
+            confidence_reward = float(log.confidence) / 100
+        elif confidence_type_enum.LEVEL == self.config.confidence_type:
 
             confidence_values = {
                 "very low": 0.1,
@@ -332,15 +324,14 @@ class grpo_trainer(ABC):
                 "high": 0.7,
                 "very high": 0.9,
             }
-
             confidence_reward = confidence_values.get(log.confidence.strip().casefold(), None)            
-            if confidence_reward is None:
-                return None
-             
-            if log.accuracy: 
-                return confidence_reward
-            else:
-                return 1.0 - confidence_reward
+
+        if confidence_reward_calculation_type_enum.linear == self.config.confidence_reward_type:
+            return confidence_reward if log.accuracy else 1.0 - confidence_reward
+        
+        elif confidence_reward_calculation_type_enum.brier_score == self.config.confidence_reward_type:
+            y = 1 if log.accuracy else 0 
+            return 1 - pow(confidence_reward - y, 2)
         
         return None
 
@@ -395,13 +386,14 @@ class grpo_trainer(ABC):
                 answer, target_answer_equal, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, completion, gt)
                 if answer is None:
                     acc_reward = 0.0
+                    log.accuracy = False
                 else:
                     acc_reward = 1.0 if target_answer_equal else 0.0
+                    log.accuracy = target_answer_equal
 
                 log.final_answer = answer
                 log.compared_final_answer = compared_final_answer
-                log.accuracy_reward = acc_reward
-                log.accuracy = acc_reward == 1.0
+                log.accuracy_reward = self.config.acurray_reward_coefficient * acc_reward
             except Exception:
                 log.accuracy = False
                 log.accuracy_reward = 0.0

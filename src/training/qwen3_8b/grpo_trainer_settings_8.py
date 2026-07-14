@@ -6,17 +6,17 @@ from src.datasets.dataset_config import dataset_config
 from src.utils.enums_class import training_type_enum, confidence_type_enum, confidence_reward_calculation_type_enum
 from src.training.training_config import training_config
 
-class grpo_trainer_settings_4(grpo_trainer): 
+class grpo_trainer_settings_8(grpo_trainer): 
 
     def __init__(self):
         config = training_config(
             
             model_name="Qwen/Qwen3-8B",
-            training_type = training_type_enum.CONFIDENCE_WITH_CRITERAI, 
-            confidence_type = confidence_type_enum.PROBABILITY,
-            confidence_reward_type = confidence_reward_calculation_type_enum.linear,
-            acurray_reward_coefficient = 1.0,
-            confidence_reward_coefficient = 1.0,
+            training_type = training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI, 
+            confidence_type = confidence_type_enum.LEVEL,
+            confidence_reward_type = confidence_reward_calculation_type_enum.brier_score,
+            acurray_reward_coefficient = 0.7,
+            confidence_reward_coefficient = 0.3,
         )
         
         super().__init__(config)
@@ -44,7 +44,7 @@ class grpo_trainer_settings_4(grpo_trainer):
         
         if self.training_args is None:
             self.training_args = GRPOConfig(
-                output_dir="live_logs/settings_4",
+                output_dir="live_logs/settings_8",
                 learning_rate=3e-6,
                 lr_scheduler_type="cosine",
                 logging_steps=10,
@@ -66,7 +66,7 @@ class grpo_trainer_settings_4(grpo_trainer):
                 warmup_ratio=0.0,
 
                 report_to=['tensorboard'],
-                logging_dir='live_logs/settings_4/tb_logs',  
+                logging_dir='live_logs/settings_8/tb_logs',  
                 eval_strategy="steps",  
                 eval_steps=50,
                 save_steps=50
@@ -76,10 +76,10 @@ class grpo_trainer_settings_4(grpo_trainer):
     
     def get_logger(self):
         if self.logger is None:
-            self.logger = training_logger(log_file_name = 'live_logs/settings_4/settings_4.csv')
+            self.logger = training_logger(log_file_name = 'live_logs/settings_8/settings_8.csv')
 
         return self.logger
 
 
-t = grpo_trainer_settings_4()
+t = grpo_trainer_settings_8()
 t.train()
