@@ -12,7 +12,7 @@ class grpo_trainer_settings_9(grpo_trainer):
         config = training_config(
             
             model_name = "Qwen/Qwen3-8B",
-            training_type = training_type_enum.ACCURACY_REWARD_CONFIDENCE, 
+            training_type = training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI, 
             confidence_type = confidence_type_enum.PROBABILITY,
             confidence_reward_type = confidence_reward_calculation_type_enum.brier_score,
             acurray_reward_coefficient = 0.7,
