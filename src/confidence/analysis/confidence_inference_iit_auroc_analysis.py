@@ -4,6 +4,9 @@ import numpy as np
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
 import re 
+from sklearn.feature_selection import mutual_info_regression
+from scipy.special import digamma
+from sklearn.neighbors import NearestNeighbors
 
 class confidence_inference_analysis(object):
 
@@ -132,6 +135,111 @@ class confidence_inference_analysis(object):
         print(f'{confidence_type} Settings')
         print(df_summary_dataset.to_string(index=False))        
 
+
+    @staticmethod
+    def calculate_mutual_information_iit_reward(confidence_type: str) -> None:
+        data_list = []
+        dir, csv_paths = confidence_inference_analysis.get_filenames(confidence_type)
+        for dataset, csv_dataset in csv_paths.items():
+            file_paths = csv_dataset['file_paths']
+            from_run_number = csv_dataset['from_run_number']
+            to_run_number = csv_dataset['to_run_number']
+            for file_path in file_paths: 
+                for run_number in range(from_run_number, to_run_number):
+                    try:
+                        iit_type = confidence_inference_analysis.extract_iit_type(file_path)
+                        if iit_type is None: continue
+
+                        file_path_run_number = file_path.replace('run_', f'run_{run_number}')
+                        df = pd.read_csv(f'{dir}/{file_path_run_number}')
+                        required_cols = ["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss", "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]
+                        confidence_inference_analysis.check_columns(df, required_cols)
+                        
+                        accuracy = df['Accuracy'].mean()
+                        df = df[["Accuracy", "Sequence_Probability", "Length_Normalized_Sequence_Probability", "Entropy", "Completion_Loss" , "Phi_Reward_Raw", "Tpm_Loss", "Tpm_Entropy"]].dropna()
+
+                        df['confidence_iit_reward'] = confidence_inference_analysis.convert_into_probability(df['Phi_Reward_Raw'])
+                        x_list = df['confidence_iit_reward'].tolist()
+
+                        df['confidence_tpm_entropy'] = confidence_inference_analysis.convert_into_probability(df['Tpm_Entropy'], is_inverse=True)
+                        y_list = df['confidence_tpm_entropy'].tolist()
+
+                        x = np.asarray(x_list, dtype=float)
+                        y = np.asarray(y_list, dtype=float)
+
+                        n_neighbors = 5
+                        mi = mutual_info_regression(
+                            x.reshape(-1, 1),
+                            y,
+                            discrete_features=False,
+                            n_neighbors=n_neighbors,
+                            random_state=42
+                        )[0]
+
+                        hx = confidence_inference_analysis.differential_entropy(x, n_neighbors)
+                        hy = confidence_inference_analysis.differential_entropy(y, n_neighbors)
+
+                        if hx <= 0 or hy <= 0:
+                            nmi = np.nan
+                        else:
+                            nmi = mi / np.sqrt(hx * hy)
+
+                       
+                        data_item = {
+                                        "run_number": run_number, 
+                                        "dataset": dataset , 
+                                        "settings" : iit_type, 
+                                        "accuracy": accuracy,
+                                        "mutual_information": mi,
+                                        "normalized_mutual_information": nmi,
+                                    }
+                        data_list.append(data_item)
+                    except Exception as e:
+                        print(f"[WARN] {e}")
+        
+        df_summary = pd.DataFrame(data_list)
+        group_cols=['dataset', 'settings']        
+        value_cols=['accuracy','mutual_information', 'normalized_mutual_information']
+        df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
+        df_summary = df_summary.sort_values(by=['settings', 'dataset'])        
+        print(f'{confidence_type} Settings')
+        print(df_summary.to_string(index=False))        
+
+        print()
+        
+        df_summary_dataset = pd.DataFrame(data_list)
+        group_cols=['settings']        
+        value_cols=['accuracy','mutual_information', 'normalized_mutual_information']
+        df_summary_dataset = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary_dataset, group_cols, value_cols)
+        df_summary_dataset = df_summary_dataset.sort_values(by=['settings'])        
+        print(f'{confidence_type} Settings')
+        print(df_summary_dataset.to_string(index=False))        
+
+    @staticmethod
+    def differential_entropy(x, k=5):
+        x = np.asarray(x, dtype=float).reshape(-1, 1)
+
+        n, d = x.shape
+
+        nbrs = NearestNeighbors(
+            n_neighbors=k + 1,
+            metric="chebyshev"
+        ).fit(x)
+
+        distances, _ = nbrs.kneighbors(x)
+
+        eps = distances[:, -1]
+
+        volume_unit_ball = 2.0      # d=1
+
+        H = (
+            digamma(n)
+            - digamma(k)
+            + np.log(volume_unit_ball)
+            + d * np.mean(np.log(eps + 1e-15))
+        )
+
+        return H
 
     @staticmethod
     def plot_auroc_entropy_iit_reward(confidence_type: str, from_run_number: int = 1, to_run_number: int = 1) -> None:
@@ -469,6 +577,6 @@ class confidence_inference_analysis(object):
         return result
 
 
-confidence_inference_analysis.calculate_auroc_entropy_iit_reward('whitebox')
+confidence_inference_analysis.calculate_mutual_information_iit_reward('whitebox')
 print()
-confidence_inference_analysis.calculate_auroc_entropy_iit_reward('blackbox')
+confidence_inference_analysis.calculate_mutual_information_iit_reward('blackbox')
