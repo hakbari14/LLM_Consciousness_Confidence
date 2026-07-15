@@ -24,7 +24,7 @@ class self_consistency_generation(ABC):
     def generate_self_consistency(self, batch_size = 25, num_sequences = 5, run_number = 0): 
         _, test_dataset = self.get_dataset().preprocess_dataset()
 
-        print(f'{'*' * 90}  Generate Self Consistency Run Number {run_number} {'*' * 90}')
+        print(f"{'*' * 90}  Generate Self Consistency Run Number {run_number} {'*' * 90}")
         model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
