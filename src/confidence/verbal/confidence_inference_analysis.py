@@ -218,13 +218,13 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            "deepseek_r1_7b_no_training": {
-                            "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "from_run_number": 5,
-                            "to_run_number": 9,
-                        },
+            # "deepseek_r1_7b_no_training": {
+            #                 "file_paths" : [
+            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "from_run_number": 5,
+            #                 "to_run_number": 9,
+            #             },
             "qwen3_8b_no_training": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
@@ -260,6 +260,13 @@ class confidence_inference_analysis(object):
             #                 "from_run_number": 1,
             #                 "to_run_number": 5,
             #             },
+            "qwen3_8b_settings_8": {
+                            "file_paths" : [
+                                    f"verbal/qwen3_8b/settings_8/run_/llm_generation_metacognitive_settings_8.csv", 
+                            ],
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
 
         }
         
