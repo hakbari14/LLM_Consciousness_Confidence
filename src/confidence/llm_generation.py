@@ -30,6 +30,7 @@ class llm_generation(ABC):
             
             self.generate_response(run_number = run_number)
             self.generate_confidence(confidence_type=confidence_type, run_number = run_number)
+            self.generate_confidence_with_solution(confidence_type=confidence_type, run_number = run_number)
             self.generate_self_criteria(run_number = run_number)
             self.generate_confidence_self_criteria(confidence_type=confidence_type, run_number = run_number)
             self.generate_self_criteria_with_solution(run_number = run_number)
@@ -122,7 +123,7 @@ class llm_generation(ABC):
         
         print(f"{'*' * 90}  Generate Confidence Run Number {run_number} {'*' * 90}")
         sampling_params = SamplingParams(
-                max_tokens=self.get_max_new_tokens(), 
+                max_tokens= self.get_max_new_tokens(), 
                 temperature=0.7, 
                 n = 1, 
                 top_p= 0.9, 
@@ -131,9 +132,7 @@ class llm_generation(ABC):
         
         for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
             batch = df[i : i + batch_size]
-            question_list = batch['Question']
-            answer_list = batch['Answer']
-            prompt_list = self.generate_model_prompt_confidence(confidence_type, question_list, answer_list)
+            prompt_list = self.generate_model_prompt_confidence(confidence_type, batch)
 
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -151,6 +150,55 @@ class llm_generation(ABC):
                     try:
                         confidence_level = self.extract_confidence(confidence_type, confidence_completion)
                         df.at[idx, "Confidence_Level"] = confidence_level
+                    except Exception as e:
+                        print(f"[WARN] generate failed: {e}")
+
+            except Exception as e:
+                print(f"[WARN] generate failed: {e}")
+                
+        df.to_csv(logger.get_log_file_name(), index=False)
+
+    @torch.inference_mode()
+    def generate_confidence_with_solution(self, confidence_type: confidence_type_enum, batch_size = 128, run_number = 0): 
+        logger = self.create_llm_response_logger(run_number)
+        df = pd.read_csv(logger.get_log_file_name())
+        
+        if 'Confidence_Prompt_With_Solution' not in df.columns:
+            df['Confidence_Prompt_With_Solution'] = pd.Series(dtype="string")
+        if 'Confidence_Completion_With_Solution' not in df.columns:
+            df['Confidence_Completion_With_Solution'] = pd.Series(dtype="string")
+        if 'Confidence_Level_With_Solution' not in df.columns:
+            df['Confidence_Level_With_Solution'] = pd.Series(dtype="string")
+        
+        print(f"{'*' * 90}  Generate Confidence With Solution Run Number {run_number} {'*' * 90}")
+        sampling_params = SamplingParams(
+                max_tokens= int(1.5 * self.get_max_new_tokens()), 
+                temperature=0.7, 
+                n = 1, 
+                top_p= 0.9, 
+                top_k=50
+            )
+        
+        for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
+            batch = df[i : i + batch_size]
+            prompt_list = self.generate_model_prompt_confidence_with_solution(confidence_type, batch)
+
+            try:
+                outputs = self.model.generate(prompt_list, sampling_params)
+                for j, output in enumerate(outputs):
+                    idx = i + j
+                    prompt = prompt_list[j]
+                    df.at[idx, "Confidence_Prompt_With_Solution"] = prompt
+                    
+                    if output.outputs is None: continue
+                    
+                    response = output.outputs[0]
+                    confidence_completion = response.text
+                    df.at[idx, "Confidence_Completion_With_Solution"] = confidence_completion
+                    
+                    try:
+                        confidence_level = self.extract_confidence(confidence_type, confidence_completion)
+                        df.at[idx, "Confidence_Level_With_Solution"] = confidence_level
                     except Exception as e:
                         print(f"[WARN] generate failed: {e}")
 
@@ -182,10 +230,7 @@ class llm_generation(ABC):
         
         for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
             batch = df[i : i + batch_size]
-            question_list = batch['Question']
-            answer_list = batch['Answer']
-            accuracy_list = batch['Accuracy']
-            prompt_list = self.generate_model_prompt_self_criteria(question_list, answer_list, accuracy_list)
+            prompt_list = self.generate_model_prompt_self_criteria(batch)
 
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -235,10 +280,7 @@ class llm_generation(ABC):
         
         for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
             batch = df[i : i + batch_size]
-            question_list = batch['Question']
-            answer_list = batch['Answer']
-            self_criteria_list = batch['Self_Criteria']
-            prompt_list = self.generate_model_prompt_self_criteria_confidence(confidence_type, question_list, answer_list, self_criteria_list)
+            prompt_list = self.generate_model_prompt_self_criteria_confidence(confidence_type, batch)
 
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -278,7 +320,7 @@ class llm_generation(ABC):
         
         print(f"{'*' * 90}  Generate Self Criteria With Solution Run Number {run_number} {'*' * 90}")
         sampling_params = SamplingParams(
-                max_tokens=self.get_max_new_tokens(), 
+                max_tokens= int(1.5 * self.get_max_new_tokens()), 
                 temperature=0.7, 
                 n = 1, 
                 top_p= 0.9, 
@@ -287,11 +329,7 @@ class llm_generation(ABC):
         
         for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
             batch = df[i : i + batch_size]
-            question_list = batch['Question']
-            answer_list = batch['Answer']
-            completion_list = batch['Completion']
-            accuracy_list = batch['Accuracy']
-            prompt_list = self.generate_model_prompt_self_criteria_with_solution(question_list, answer_list, completion_list, accuracy_list)
+            prompt_list = self.generate_model_prompt_self_criteria_with_solution(batch)
 
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -340,11 +378,7 @@ class llm_generation(ABC):
         
         for i in tqdm(range(0, len(df), batch_size), desc="Processing Batches", unit="step"):
             batch = df[i : i + batch_size]
-            question_list = batch['Question']
-            answer_list = batch['Answer']
-            completion_list = batch['Completion']
-            self_criteria_list = batch['Self_Criteria']
-            prompt_list = self.generate_model_prompt_self_criteria_with_solution_confidence(confidence_type, question_list, answer_list, completion_list, self_criteria_list)
+            prompt_list = self.generate_model_prompt_self_criteria_with_solution_confidence(confidence_type, batch)
 
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -371,23 +405,27 @@ class llm_generation(ABC):
         df.to_csv(logger.get_log_file_name(), index=False)            
 
     @abstractmethod
-    def generate_model_prompt_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list) -> list[str]:
+    def generate_model_prompt_confidence(self, confidence_type: confidence_type_enum, batch) -> list[str]:
         pass
 
     @abstractmethod
-    def generate_model_prompt_self_criteria(self, question_list, answer_list, accuracy_list) -> list[str]:
+    def generate_model_prompt_confidence_with_solution(self, confidence_type: confidence_type_enum, batch) -> list[str]:
         pass
 
     @abstractmethod
-    def generate_model_prompt_self_criteria_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list, self_criteria_list) -> list[str]:
+    def generate_model_prompt_self_criteria(self, batch) -> list[str]:
         pass
 
     @abstractmethod
-    def generate_model_prompt_self_criteria_with_solution(self, question_list, answer_list, accuracy_list) -> list[str]:
+    def generate_model_prompt_self_criteria_confidence(self, confidence_type: confidence_type_enum, batch) -> list[str]:
         pass
 
     @abstractmethod
-    def generate_model_prompt_self_criteria_with_solution_confidence(self, confidence_type: confidence_type_enum, question_list, answer_list, completion_list, self_criteria_list) -> list[str]:
+    def generate_model_prompt_self_criteria_with_solution(self, batch) -> list[str]:
+        pass
+
+    @abstractmethod
+    def generate_model_prompt_self_criteria_with_solution_confidence(self, confidence_type: confidence_type_enum, batch) -> list[str]:
         pass
 
     @abstractmethod

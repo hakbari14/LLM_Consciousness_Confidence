@@ -5,8 +5,7 @@ from typing import List, Optional
 @dataclass
 class llm_response_log_entity(log_entity):
 
-    question : Optional[str] = None
-    answer : Optional[str] = None
+    proposed_answer : Optional[str] = None
     completion : Optional[str] = None
     token_count : Optional[int] = None
     final_answer : Optional[str] = None
@@ -15,10 +14,6 @@ class llm_response_log_entity(log_entity):
 
     def validate(self): 
         super().validate()
-        if self.question is None:
-            raise Exception('question is required')
-        if self.answer is None:
-            raise Exception('answer is required')
         if self.completion is None:
             raise Exception('completion is required')
         if self.token_count is None:
