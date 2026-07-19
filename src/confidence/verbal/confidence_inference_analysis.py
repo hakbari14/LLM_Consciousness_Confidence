@@ -23,17 +23,20 @@ class confidence_inference_analysis(object):
                     try:
                         file_path_run_number = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path_run_number}')
-                        required_cols = ["Accuracy", "Confidence_Level", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]
-                        confidence_inference_analysis.check_columns(df, required_cols)
-                        
-                        accuracy = df['Accuracy'].mean()
-                        df = df[["Accuracy", "Confidence_Level", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
 
+                        required_cols = ["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]
+                        confidence_inference_analysis.check_columns(df, required_cols)
+                        df = df[["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" ,"Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
+
+                        accuracy = df['Accuracy'].mean()
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
                         accuracy_list = df['Accuracy_Reward'].tolist()
 
                         confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level', 'Confidence')
                         confidence_level_list = df['Confidence'].tolist()
+
+                        confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level_With_Solution', 'Confidence_With_Solution')
+                        confidence_level_with_solution_list = df['Confidence_With_Solution'].tolist()
 
                         confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level_Self_Criteria', 'Confidence_Self_Criteria')
                         confidence_level_self_criteria_list = df['Confidence_Self_Criteria'].tolist()
@@ -45,8 +48,9 @@ class confidence_inference_analysis(object):
                         accuracy = np.average(y_true)
 
                         con_A = np.array(confidence_level_list)
-                        con_B = np.array(confidence_level_self_criteria_list)
-                        con_C = np.array(confidence_level_self_criteria_with_solution_list)
+                        con_B = np.array(confidence_level_with_solution_list)
+                        con_C = np.array(confidence_level_self_criteria_list)
+                        con_D = np.array(confidence_level_self_criteria_with_solution_list)
 
                         fpr1, tpr1, _ = roc_curve(y_true, con_A)
                         roc_auc1 = auc(fpr1, tpr1)
@@ -57,14 +61,18 @@ class confidence_inference_analysis(object):
                         fpr3, tpr3, _ = roc_curve(y_true, con_C)
                         roc_auc3 = auc(fpr3, tpr3)
 
+                        fpr4, tpr4, _ = roc_curve(y_true, con_D)
+                        roc_auc4 = auc(fpr4, tpr4)
+
                         data_item = {
                                         "run_number": run_number, 
                                         "dataset": dataset , 
                                         "confidence_type": confidence_type , 
                                         "accuracy": accuracy,
                                         "auc": roc_auc1,
-                                        "auc_self_criteria": roc_auc2,
-                                        "auc_self_criteria_with_solution": roc_auc3,
+                                        "auc_with_solution": roc_auc2,
+                                        "auc_self_criteria": roc_auc3,
+                                        "auc_self_criteria_with_solution": roc_auc4,
                                     }
                         data_list.append(data_item)
                     except Exception as e:
@@ -72,7 +80,7 @@ class confidence_inference_analysis(object):
         
         df_summary = pd.DataFrame(data_list)
         group_cols=['confidence_type', 'dataset']        
-        value_cols=['accuracy','auc','auc_self_criteria', 'auc_self_criteria_with_solution']
+        value_cols=['accuracy','auc', 'auc_with_solution', 'auc_self_criteria', 'auc_self_criteria_with_solution']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['confidence_type', 'dataset'])        
         print(df_summary.to_string(index=False))        
@@ -95,6 +103,9 @@ class confidence_inference_analysis(object):
                         
                         confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level', 'Confidence')
                         confidence, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence', n_bins)
+
+                        confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level_With_Solution', 'Confidence_With_Solution')
+                        confidence_with_solution, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence_With_Solution', n_bins)
                         
                         confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level_Self_Criteria', 'Confidence_Self_Criteria')
                         confidence_self_criteria, _ = confidence_inference_analysis.calculate_ECE_MCE(df, 'Confidence_Self_Criteria', n_bins)
@@ -108,6 +119,7 @@ class confidence_inference_analysis(object):
                                         "confidence_type": confidence_type , 
                                         "accuracy": accuracy,
                                         "ece": confidence,
+                                        "ece_with_solution": confidence_with_solution,
                                         "ece_self_criteria": confidence_self_criteria,
                                         "ece_self_criteria_with_solution": confidence_self_criteria_with_solution,
                                     }
@@ -117,7 +129,7 @@ class confidence_inference_analysis(object):
 
         df_summary = pd.DataFrame(data_list)
         group_cols=['confidence_type', 'dataset']        
-        value_cols=['accuracy', 'ece', 'ece_self_criteria', 'ece_self_criteria_with_solution']
+        value_cols=['accuracy', 'ece', 'ece_with_solution' ,'ece_self_criteria', 'ece_self_criteria_with_solution']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['confidence_type','dataset'])        
         print(df_summary.to_string(index=False))        
@@ -155,10 +167,11 @@ class confidence_inference_analysis(object):
                     try:
                         file_path_run_number = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path_run_number}')
-                        df = df[["Target", "Final_Answer" , "Accuracy", "Confidence_Level", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
+                        df = df[["Target", "Final_Answer" , "Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" , "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
                         accuracy = df['Accuracy'].mean()
                         
                         d_prime_c, meta_d_prime_c, m_ratio_c = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level')
+                        d_prime_c_ws, meta_d_prime_c_ws, m_ratio_c_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_With_Solution')
                         d_prime_csc, meta_d_prime_csc, m_ratio_csc = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria')
                         d_prime_csc_ws, meta_d_prime_csc_ws, m_ratio_csc_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria_With_Solution')
             
@@ -169,6 +182,9 @@ class confidence_inference_analysis(object):
                                         "d_prime_confidence": d_prime_c,
                                         "meta_d_prime_confidence": meta_d_prime_c,
                                         "m_ratio_confidence": m_ratio_c,
+                                        "d_prime_confidence_ws": d_prime_c_ws,
+                                        "meta_d_prime_confidence_ws": meta_d_prime_c_ws,
+                                        "m_ratio_confidence_ws": m_ratio_c_ws,
                                         "d_prime_confidence_self_criteria": d_prime_csc,
                                         "meta_d_prime_confidence_self_criteria": meta_d_prime_csc,
                                         "m_ratio_confidence_self_criteria": m_ratio_csc,
@@ -182,7 +198,7 @@ class confidence_inference_analysis(object):
 
         df_summary = pd.DataFrame(data_list)
         group_cols=['dataset']        
-        value_cols=['accuracy', 'm_ratio_confidence', 'm_ratio_confidence_self_criteria', 'm_ratio_confidence_self_criteria_with_Solution']
+        value_cols=['accuracy', 'm_ratio_confidence', 'm_ratio_confidence_ws', 'm_ratio_confidence_self_criteria', 'm_ratio_confidence_self_criteria_with_Solution']
         df_summary = confidence_inference_analysis.aggregate_mean_pandas_rounded(df_summary, group_cols, value_cols)
         df_summary = df_summary.sort_values(by=['dataset'])        
         print(df_summary.to_string(index=False))        
@@ -223,86 +239,86 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            "deepseek_r1_7b_no_training_p": {
-                            "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "deepseek_r1_7b_no_training_l": {
-                            "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 5,
-                            "to_run_number": 9,
-                        },
+            # "deepseek_r1_7b_no_training_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "deepseek_r1_7b_no_training_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 5,
+            #                 "to_run_number": 9,
+            #             },
             "qwen3_8b_no_training_p": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
                             ],
                             "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
+                            "from_run_number": 9,
+                            "to_run_number": 13,
                         },
-            "qwen3_8b_no_training_l": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 5,
-                            "to_run_number": 9,
-                        },
-            "qwen3_8b_ar_p": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_ar_confidence_p": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_1/run_/llm_generation_metacognitive_settings_1.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_ar_confidence_wc_p": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_confidence_p": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_3/run_/llm_generation_metacognitive_settings_3.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_settings_8_l": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_8/run_/llm_generation_metacognitive_settings_8.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
-            "qwen3_8b_settings_10_l": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/settings_10/run_/llm_generation_metacognitive_settings_10.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 1,
-                            "to_run_number": 5,
-                        },
+            # "qwen3_8b_no_training_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 13,
+            #                 "to_run_number": 17,
+            #             },
+            # "qwen3_8b_ar_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_ar_confidence_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_1/run_/llm_generation_metacognitive_settings_1.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_ar_confidence_wc_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_2/run_/llm_generation_metacognitive_settings_2.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_confidence_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_3/run_/llm_generation_metacognitive_settings_3.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_settings_8_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_8/run_/llm_generation_metacognitive_settings_8.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
+            # "qwen3_8b_settings_10_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/settings_10/run_/llm_generation_metacognitive_settings_10.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 1,
+            #                 "to_run_number": 5,
+            #             },
 
         }
         
@@ -318,7 +334,7 @@ class confidence_inference_analysis(object):
     @staticmethod
     def calculate_confidence_level_map(df, confidence_type, confidence_column_name, confidence_value_column_name):
         if "probability" == confidence_type:
-            df[confidence_value_column_name] = df[confidence_column_name]
+            df[confidence_value_column_name] = df[confidence_column_name] / 100
             return None
         
         elif "level" == confidence_type:
@@ -381,10 +397,10 @@ class confidence_inference_analysis(object):
 
 
 confidence_inference_analysis.calculate_auroc()
-# print()
-# confidence_inference_analysis.calculate_ece()
-# print()
-# confidence_inference_analysis.calculate_m_ratio()
+print()
+confidence_inference_analysis.calculate_ece()
+print()
+confidence_inference_analysis.calculate_m_ratio()
 
 
 # df = pd.read_csv('src/confidence/verbal/deepSeek_r1_distill_qwen_7b/no_training/run_5/llm_generation_metacognitive_no_training.csv')

@@ -1,9 +1,9 @@
 from src.logger.llm_response.llm_response_inference_logger import llm_response_inference_logger
-from src.confidence.verbal.qwen3_8b.llm_generation_metacognitive_qwen3_8b import llm_generation_metacognitive_qwen3_8b
+from src.confidence.llm_generation_metacognitive import llm_generation_metacognitive
 from src.utils.enums_class import confidence_type_enum
 
 
-class llm_generation_metacognitive_settings_8(llm_generation_metacognitive_qwen3_8b): 
+class llm_generation_metacognitive_settings_8(llm_generation_metacognitive): 
 
     def __init__(self, modelname):
         super().__init__(modelname)
