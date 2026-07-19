@@ -1,10 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np 
-from pathlib import Path
 from sklearn.metrics import roc_curve, auc
-import re 
-from scipy.stats import norm
 from metadpy.mle import metad
 
 class confidence_inference_analysis(object):
@@ -26,7 +23,7 @@ class confidence_inference_analysis(object):
 
                         required_cols = ["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution", "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]
                         confidence_inference_analysis.check_columns(df, required_cols)
-                        df = df[["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" ,"Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
+                        df = df.dropna(subset=["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" ,"Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"])                        
 
                         accuracy = df['Accuracy'].mean()
                         df['Accuracy_Reward'] = df['Accuracy'].map({True: 1, False: 0})        
@@ -99,6 +96,8 @@ class confidence_inference_analysis(object):
                     try:
                         file_path_run_number = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path_run_number}')
+
+                        df = df[["Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" ,"Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
                         accuracy = df['Accuracy'].mean()
                         
                         confidence_inference_analysis.calculate_confidence_level_map(df, confidence_type, 'Confidence_Level', 'Confidence')
@@ -167,11 +166,13 @@ class confidence_inference_analysis(object):
                     try:
                         file_path_run_number = file_path.replace('run_', f'run_{run_number}')
                         df = pd.read_csv(f'{dir}/{file_path_run_number}')
+
                         df = df[["Target", "Final_Answer" , "Accuracy", "Confidence_Level", "Confidence_Level_With_Solution" , "Confidence_Level_Self_Criteria", "Confidence_Level_Self_Criteria_With_Solution"]].dropna()
                         accuracy = df['Accuracy'].mean()
                         
                         d_prime_c, meta_d_prime_c, m_ratio_c = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level')
                         d_prime_c_ws, meta_d_prime_c_ws, m_ratio_c_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_With_Solution')
+                        
                         d_prime_csc, meta_d_prime_csc, m_ratio_csc = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria')
                         d_prime_csc_ws, meta_d_prime_csc_ws, m_ratio_csc_ws = confidence_inference_analysis.calculate_metad_dprime(df, 'Confidence_Level_Self_Criteria_With_Solution')
             
@@ -239,22 +240,22 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
-            # "deepseek_r1_7b_no_training_p": {
-            #                 "file_paths" : [
-            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-            #                 ],
-            #                 "confidence_type": "probability",
-            #                 "from_run_number": 1,
-            #                 "to_run_number": 5,
-            #             },
-            # "deepseek_r1_7b_no_training_l": {
-            #                 "file_paths" : [
-            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-            #                 ],
-            #                 "confidence_type": "level",
-            #                 "from_run_number": 5,
-            #                 "to_run_number": 9,
-            #             },
+            "deepseek_r1_7b_no_training_p": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+                            ],
+                            "confidence_type": "probability",
+                            "from_run_number": 9,
+                            "to_run_number": 13,
+                        },
+            "deepseek_r1_7b_no_training_l": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+                            ],
+                            "confidence_type": "level",
+                            "from_run_number": 13,
+                            "to_run_number": 17,
+                        },
             "qwen3_8b_no_training_p": {
                             "file_paths" : [
                                     f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
@@ -263,14 +264,14 @@ class confidence_inference_analysis(object):
                             "from_run_number": 9,
                             "to_run_number": 13,
                         },
-            # "qwen3_8b_no_training_l": {
-            #                 "file_paths" : [
-            #                         f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-            #                 ],
-            #                 "confidence_type": "level",
-            #                 "from_run_number": 13,
-            #                 "to_run_number": 17,
-            #             },
+            "qwen3_8b_no_training_l": {
+                            "file_paths" : [
+                                    f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+                            ],
+                            "confidence_type": "level",
+                            "from_run_number": 13,
+                            "to_run_number": 17,
+                        },
             # "qwen3_8b_ar_p": {
             #                 "file_paths" : [
             #                         f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
