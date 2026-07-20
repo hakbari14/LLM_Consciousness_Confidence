@@ -6,6 +6,8 @@ from src.utils.enums_class import training_type_enum, confidence_type_enum, conf
 from src.training.training_config import training_config
 import torch
 import re
+import gc
+import math
 
 class grpo_trainer(ABC): 
 
@@ -44,11 +46,11 @@ class grpo_trainer(ABC):
         if training_type_enum.ACCURACY_REWARD == self.config.training_type: 
             return [self.accuracy_reward]
 
-        if training_type_enum.CONFIDENCE == self.config.training_type or training_type_enum.CONFIDENCE_WITH_CRITERAI == self.config.training_type: 
-            return [self.calculate_confidence_reward]
+        if training_type_enum.CONFIDENCE == self.config.training_type: 
+            return [self.calculate_confidence_reward, self.calculate_entropy_confidence_reward]
 
-        if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.config.training_type: 
-            return [self.accuracy_reward, self.calculate_confidence_reward]
+        if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type: 
+            return [self.accuracy_reward, self.calculate_confidence_reward, self.calculate_entropy_confidence_reward]
         
         return []
 
@@ -63,23 +65,80 @@ class grpo_trainer(ABC):
         trainer_global_step = trainer_state.global_step
         
         log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
-        if training_type_enum.CONFIDENCE == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type:
-            log_list = self.generate_confidence(log_list)
-        if training_type_enum.CONFIDENCE_WITH_CRITERAI == self.config.training_type or training_type_enum.ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI == self.config.training_type:
-            log_list = self.generate_self_criteria(log_list)
-            log_list = self.generate_confidence_in_criteria_mode(log_list)
+        log_list, prompt_ID_list = self.generate_prompt_confidence(log_list)
+    
+        trainer = self.get_trainer()
+        tokenizer = trainer.processing_class
+
+        _, completion_ids, _, _ = trainer.vllm_generation.generate(prompts=prompt_ID_list, images=[], num_generations=1)
+        completion_confidence_list = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+        for completion_confidence, log in zip(completion_confidence_list, log_list):
+            log.completion_confidence = completion_confidence
+        
+        rewards = []
+        for log in log_list:
+            log.verbal_confidence = self.extract_confidence(log.completion_confidence)
+            if log.verbal_confidence is None: 
+                log.verbal_confidence_reward = 0.0
+                rewards.append(0.0)
+                continue
+                
+            verbal_confidence_reward = self.calculate_verbal_confidence(log.verbal_confidence)
+            
+            if confidence_reward_calculation_type_enum.linear == self.config.confidence_reward_type:
+                verbal_confidence_reward = verbal_confidence_reward if log.accuracy else 1.0 - verbal_confidence_reward
+            elif confidence_reward_calculation_type_enum.brier_score == self.config.confidence_reward_type:
+                y = 1 if log.accuracy else 0 
+                verbal_confidence_reward = 1 - pow(verbal_confidence_reward - y, 2)
+            
+            log.verbal_confidence_reward = verbal_confidence_reward
+            reward = self.config.confidence_reward_coefficient * log.verbal_confidence_reward
+            rewards.append(reward)
+            
+        return rewards
+
+    @torch.inference_mode()
+    def calculate_entropy_confidence_reward(self, completions, target=None, tokenizer=None, **kwargs):
+        split_list = kwargs.get("split")     
+        sample_ids = kwargs.get("sample_id") 
+        problem_ids = kwargs.get("problem_id", None)
+        prompts = kwargs.get("prompts") or kwargs.get("prompt") or kwargs.get("inputs")
+        questions = kwargs.get("question")     
+        trainer_state = kwargs.get("trainer_state", None)
+        trainer_global_step = trainer_state.global_step
+        
+        log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
+        trainer = self.get_trainer()
+        model = trainer.model
+        tokenizer = trainer.processing_class
 
         rewards = []
         for log in log_list:
-            if log.confidence is None: 
-                log.confidence_reward = 0.0
-                rewards.append(log.confidence_reward)
+            if log.completion is None or log.verbal_confidence is None: 
+                log.entropy_reward = 0.0
+                rewards.append(0.0)
                 continue
             
-            confidence_reward = self.config.confidence_reward_coefficient * self.calculate_confidence_reward_on_log(log)
-            log.confidence_reward = confidence_reward
-            rewards.append(confidence_reward)
+            try:
+                entropy, _, _ = self.representation.calculate_entropy(log.completion, model, tokenizer)
+                log.entropy = entropy
+                model_confidence = math.exp(-1.0 * log.entropy)
+                verbal_confidence = self.calculate_verbal_confidence(log.verbal_confidence)
+                
+                if confidence_reward_calculation_type_enum.linear == self.config.entropy_reward_type:
+                    log.entropy_reward = 1.0 - abs(verbal_confidence - model_confidence)
+                elif confidence_reward_calculation_type_enum.brier_score == self.config.entropy_reward_type:
+                    log.entropy_reward = 1.0 - pow(abs(verbal_confidence - model_confidence) ,2)
 
+                gc.collect()
+                torch.cuda.empty_cache()
+            except Exception as e:
+                log.entropy_reward = 0.0
+                print(f"[WARN] Calculate Entropy: {e}")
+                
+            reward = self.config.entropy_confidence_reward_coefficient * log.entropy_reward
+            rewards.append(reward)
+        
         self.get_logger().write_to_log_file()
         return rewards
 
@@ -102,54 +161,6 @@ class grpo_trainer(ABC):
 
         return rewards
 
-    def generate_confidence(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
-        log_list, prompt_ID_list = self.generate_prompt_confidence(log_list)
-    
-        trainer = self.get_trainer()
-        tokenizer = trainer.processing_class
-
-        _, completion_ids, _, _ = trainer.vllm_generation.generate(prompts=prompt_ID_list, images=[], num_generations=1)
-        completion_confidence_list = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        for completion_confidence, log in zip(completion_confidence_list, log_list):
-            log.completion_confidence = completion_confidence
-        
-        for log in log_list:
-            log.confidence = self.extract_confidence(log.completion_confidence)
-        
-        return log_list
-
-    def generate_self_criteria(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
-        log_list, prompt_ID_list = self.generate_prompt_self_criteria(log_list)
-    
-        trainer = self.get_trainer()
-        tokenizer = trainer.processing_class
-
-        _, completion_ids, _, _ = trainer.vllm_generation.generate(prompts=prompt_ID_list, images=[], num_generations=1)
-        completion_sc_list = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        for completion_sc, log in zip(completion_sc_list, log_list):
-            log.completion_self_criteria = completion_sc
-        
-        for log in log_list:
-            log.self_criteria = self.extract_self_criteria(log.completion_self_criteria)
-        
-        return log_list
-
-    def generate_confidence_in_criteria_mode(self, log_list: list[training_log_entity]) -> list[training_log_entity]:
-        log_list, prompt_ID_list = self.generate_prompt_confidence_in_criteria_mode(log_list)
-    
-        trainer = self.get_trainer()
-        tokenizer = trainer.processing_class
-
-        _, completion_ids, _, _ = trainer.vllm_generation.generate(prompts=prompt_ID_list, images=[], num_generations=1)
-        completion_confidence_list = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        for completion_confidence, log in zip(completion_confidence_list, log_list):
-            log.completion_confidence = completion_confidence
-        
-        for log in log_list:
-            log.confidence = self.extract_confidence(log.completion_confidence)
-        
-        return log_list
-        
     def generate_prompt_confidence(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
         trainer = self.get_trainer()
         tokenizer = trainer.processing_class
@@ -158,27 +169,35 @@ class grpo_trainer(ABC):
         
             if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
                 prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Reasoning Process]: {log.completion}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
 
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
-                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
-                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
-                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
-                prompt += 'Return only:\n'
-                prompt += 'Confidence:<integer between 0 and 100>\n'
+                prompt += (
+                    'Your only task is to estimate how likely it is that the provided Answer is correct, '
+                    'using only the Question, the Reasoning Process, and the Answer. Critically evaluate whether the reasoning process logically supports the answer.\n\n'
+
+                    'Follow these instructions strictly:\n'
+                    '1. First, provide your detailed step-by-step reasoning. Do not mention any confidence score or number in this section.\n'
+                    '2. After you have completed your reasoning, on a new line, output your final confidence in the exact format: Confidence:<integer between 0 and 100>\n'
+                    '3. Do not output anything else after the confidence value. Do not output the confidence before the reasoning.\n'
+                )
                 
             elif confidence_type_enum.LEVEL == self.config.confidence_type:
                 prompt = f'[Question]: {log.question}\n\n'
+                prompt += f'[Reasoning Process]: {log.completion}\n\n'
                 prompt += f'[Answer]: {log.final_answer}\n\n'
 
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question and the answer.\n'
-                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Base your confidence estimate on the consistency between the question and the answer.\n'
-                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
-                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
-                prompt += 'Return only in the following format:\n'
-                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
+                prompt += (
+                    'Your only task is to estimate how likely it is that the provided Answer is correct, '
+                    'using only the Question, the Reasoning Process, and the Answer. Critically evaluate whether the reasoning process logically supports the answer.\n\n'
+
+                    'Follow these instructions strictly:\n'
+                    '1. First, provide your detailed step-by-step reasoning. Do not mention any confidence level or category during your reasoning.\n'
+                    '2. After all reasoning is complete, output exactly one final line in the following format:\n'
+                    '   Confidence:<Very Low | Low | Medium | High | Very High>\n'
+                    '3. The confidence level must be exactly one of: Very Low, Low, Medium, High, or Very High.\n'
+                    '4. Do not output anything before the reasoning or after the confidence line.\n'
+                )
 
             log.prompt_confidence = prompt
             prefix = [
@@ -189,79 +208,6 @@ class grpo_trainer(ABC):
             prompt_list.append(tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids'])
         
         return log_list, prompt_list        
-
-    def generate_prompt_self_criteria(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
-        trainer = self.get_trainer()
-        tokenizer = trainer.processing_class
-        prompt_list : list[list[int]] = []
-        for log in log_list:        
-        
-            prompt = f'Question: {log.question}\n\n'
-            prompt += f'Answer: {log.final_answer}\n'
-            
-            prompt += 'A question and its answer are provided.\n'
-            prompt += 'Based on the question and answer, generate a list of up to five distinct criteria for assessing confidence in the correctness of the answer.\n'
-            
-            prompt += 'Output requirements:\n'
-            prompt += 'Return only the criteria and nothing else.\n'
-            prompt += 'Format the output strictly as a list using either number or - (e.g., "1. criterion" or "- criterion" or "[1] criterion").\n'
-            prompt += 'Each criterion must appear on a separate line.\n'
-
-            log.prompt_self_criteria = prompt
-            prefix = [
-                {"role": "user",
-                    "content": prompt
-                    },
-            ]
-            prompt_list.append(tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids'])
-
-        
-        return log_list, prompt_list        
-
-
-    def generate_prompt_confidence_in_criteria_mode(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
-        trainer = self.get_trainer()
-        tokenizer = trainer.processing_class
-        prompt_list : list[list[int]] = []
-        for log in log_list:        
-        
-            if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
-                prompt = f'[Question]: {log.question}\n\n'
-                prompt += f'[Answer]: {log.final_answer}\n\n'
-                prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
-
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
-                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Base your confidence estimate on the consistency between the question, the answer, and the evaluation criteria.\n'
-                prompt += 'Interpret the confidence score as the estimated probability that the given answer is correct.\n'
-                prompt += 'Reserve confidence values near the extremes (0 or 100) for exceptional cases where the available evidence overwhelmingly supports such certainty.\n'
-                prompt += 'Return only:\n'
-                prompt += 'Confidence:<integer between 0 and 100>\n'
-                
-            elif confidence_type_enum.LEVEL == self.config.confidence_type:
-                prompt = f'[Question]: {log.question}\n\n'
-                prompt += f'[Answer]: {log.final_answer}\n\n'
-                prompt += f'[Evaluation Criteria]:\n{log.self_criteria}\n\n'
-
-                prompt += 'Your task is only to evaluate the likelihood that the given answer is correct based on the question, the answer, and the evaluation criteria.\n'
-                prompt += 'Do not revise, improve, replace, or reinterpret the answer. Evaluate the answer exactly as provided.\n'
-                prompt += 'Base your confidence assessment on the consistency between the question, the answer, and the evaluation criteria.\n'
-                prompt += 'Select exactly one confidence level that best reflects how likely the given answer is to be correct.\n'
-                prompt += 'Use the extreme confidence levels (Very Low and Very High) only when the available evidence overwhelmingly supports such certainty.\n'
-                prompt += 'Return only in the following format:\n'
-                prompt += 'Confidence:<Very Low | Low | Medium | High | Very High>\n'
-
-
-            log.prompt_confidence = prompt
-            prefix = [
-                {"role": "user",
-                    "content": prompt
-                    },
-            ]
-            prompt_list.append(tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids'])
-        
-        return log_list, prompt_list        
-
 
     def extract_confidence(self, solution) -> str:
         if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
@@ -273,6 +219,8 @@ class grpo_trainer(ABC):
 
     def extract_confidence_prbability(self, solution):
         patterns = [
+            r"Confidence\s*:\s*<\s*(\d{1,3})\s*>",
+            r"\[\s*Confidence\s*\]\s*:\s*(\d+)",
             r"Confidence[\s*]*:[\s*]*(\d+(?:\.\d+)?)",
             r"Confidence\s*Score[\s*\n:]*([0-9]+(?:\.[0-9]+)?)",
         ]
@@ -312,9 +260,9 @@ class grpo_trainer(ABC):
         
         return None
 
-    def calculate_confidence_reward_on_log(self, log):
+    def calculate_verbal_confidence(self, verbal_confidence):
         if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
-            confidence_reward = float(log.confidence) / 100
+            confidence = float(verbal_confidence) / 100
         elif confidence_type_enum.LEVEL == self.config.confidence_type:
 
             confidence_values = {
@@ -324,40 +272,9 @@ class grpo_trainer(ABC):
                 "high": 0.7,
                 "very high": 0.9,
             }
-            confidence_reward = confidence_values.get(log.confidence.strip().casefold(), None)            
-
-        if confidence_reward_calculation_type_enum.linear == self.config.confidence_reward_type:
-            return confidence_reward if log.accuracy else 1.0 - confidence_reward
+            confidence = confidence_values.get(verbal_confidence.strip().casefold(), None)            
         
-        elif confidence_reward_calculation_type_enum.brier_score == self.config.confidence_reward_type:
-            y = 1 if log.accuracy else 0 
-            return 1 - pow(confidence_reward - y, 2)
-        
-        return None
-
-    def extract_self_criteria(self, self_criteria_completion):
-        parts = self_criteria_completion.split("</think>", 1)
-        if len(parts) >= 2:
-            content = parts[1]
-        else:
-            content = self_criteria_completion
-            
-        patterns = [
-                r"^\s*\**\s*Step\s+\d+\s*[:\.\-]?\s*(.+)$", 
-                r"^\s*(?:\[\s*\d+\s*\]|\d+\s*[\.:]?|-[\.:]?)\s*(.+)$",
-                r"^\s*(?:\d+\s*[\.:]?|-[\.:]?)\s*(.+)$",
-        ]
-
-        for pattern in patterns:
-            matches = re.findall(pattern, content, flags=re.MULTILINE | re.IGNORECASE)
-            if not matches or len(matches) == 0: continue
-            result = "\n".join(
-                f"{i}. {item.strip()}"
-                for i, item in enumerate(matches, start=1)
-            )
-            return result
-
-        return ""
+        return confidence
 
     def get_log_list(self, trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target) -> list[training_log_entity]:
         log_list = self.get_logger().get_log_list(trainer_global_step)

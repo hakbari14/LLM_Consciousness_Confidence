@@ -29,13 +29,12 @@ class training_logger(logger):
                 'Compared_Final_Answer': log.compared_final_answer,
                 'Accuracy_Reward': log.accuracy_reward,
                 'Accuracy': log.accuracy,
-                'Prompt_Self_Criteria': log.prompt_self_criteria,
-                'Completion_Self_Criteria': log.completion_self_criteria,
-                'Self_Criteria': log.self_criteria,
                 'Prompt_Confidence': log.prompt_confidence,
                 'Completion_Confidence': log.completion_confidence,
-                'Confidence': log.confidence,
-                'Confidence_Reward': log.confidence_reward,
+                'Verbal_Confidence': log.verbal_confidence,
+                'Verbal_Confidence_Reward': log.verbal_confidence_reward,
+                'Entropy': log.entropy,
+                'Entropy_Reward': log.entropy_reward,
                 }
             list.append(b)            
         return list
@@ -56,13 +55,12 @@ class training_logger(logger):
                 'Compared_Final_Answer',
                 'Accuracy_Reward',
                 'Accuracy',
-                'Prompt_Self_Criteria',
-                'Completion_Self_Criteria',
-                'Self_Criteria',
                 'Prompt_Confidence',
                 'Completion_Confidence',
-                'Confidence',
-                'Confidence_Reward',
+                'Verbal_Confidence',
+                'Verbal_Confidence_Reward',
+                'Entropy',
+                'Entropy_Reward',
                 ]
 
         

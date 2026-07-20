@@ -11,7 +11,9 @@ class training_config:
 
     acurray_reward_coefficient: float 
     confidence_reward_coefficient: float 
+    entropy_confidence_reward_coefficient: float 
     confidence_reward_type: confidence_reward_calculation_type_enum
+    entropy_reward_type: confidence_reward_calculation_type_enum
     
     def to_dict(self):
         return self.__dict__

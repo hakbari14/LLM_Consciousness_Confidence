@@ -13,15 +13,13 @@ class training_log_entity(log_entity):
     compared_final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
 
-    prompt_self_criteria : Optional[str] = None
-    completion_self_criteria : Optional[str] = None
-    self_criteria : Optional[str] = None
-
     prompt_confidence : Optional[str] = None
     completion_confidence : Optional[str] = None
-    confidence : Optional[str] = None
-    
-    confidence_reward : Optional[float] = None
+    verbal_confidence : Optional[str] = None
+    verbal_confidence_reward : Optional[float] = None
+
+    entropy : Optional[float] = None
+    entropy_reward : Optional[float] = None
 
     def validate(self): 
         super().validate()
