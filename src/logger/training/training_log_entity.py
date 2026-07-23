@@ -15,6 +15,7 @@ class training_log_entity(log_entity):
 
     prompt_sdt_correct : Optional[str] = None
     prompt_sdt_incorrect : Optional[str] = None
+    wrong_target : Optional[str] = None
     completion_sdt_correct : Optional[str] = None
     completion_sdt_incorrect : Optional[str] = None
     confidence_sdt_correct : Optional[float] = None

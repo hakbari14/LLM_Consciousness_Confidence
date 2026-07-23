@@ -89,20 +89,25 @@ class grpo_trainer(ABC):
         for log in log_list:
             log.confidence_sdt_correct = self.extract_confidence_prbability(log.completion_sdt_correct)
             log.confidence_sdt_incorrect = self.extract_confidence_prbability(log.completion_sdt_incorrect)
-            if log.confidence_sdt_correct is None or log.confidence_sdt_incorrect is None: 
+            if log.target == log.wrong_target or log.confidence_sdt_correct is None or log.confidence_sdt_incorrect is None: 
                 log.sdt_reward = 0.0
                 rewards.append(0.0)
                 continue
             
-            eps=1e-6    
-            hit = np.clip(log.confidence_sdt_correct, eps, 1 - eps)
-            false_alarm = np.clip(log.confidence_sdt_incorrect, eps, 1 - eps)
+            eps=1e-6
+            hit = log.confidence_sdt_correct / 100
+            hit = np.clip(hit, eps, 1 - eps)
+            
+            false_alarm = log.confidence_sdt_incorrect / 100
+            false_alarm = np.clip(false_alarm, eps, 1 - eps)
+            
             d_prime = norm.ppf(hit) - norm.ppf(false_alarm)
             log.sdt_reward = (np.tanh(d_prime) + 1.0) / 2.0
             
             reward = self.config.confidence_reward_coefficient * log.sdt_reward
             rewards.append(reward)
             
+        self.get_logger().write_to_log_file()
         return rewards
 
     @torch.inference_mode()
@@ -226,6 +231,7 @@ class grpo_trainer(ABC):
             wrong_answer = self.get_dataset().generate_wrong_answer(log.target)
             incorrect_prompt, incorrect_final_prompt = self.create_sdt_prompt(tokenizer, log.question, wrong_answer)
             log.prompt_sdt_incorrect = incorrect_prompt
+            log.wrong_target = wrong_answer
             incorrect_prompt_list.append(incorrect_final_prompt)
         
         return log_list, correct_prompt_list, incorrect_prompt_list        
@@ -235,13 +241,38 @@ class grpo_trainer(ABC):
         prompt += f'[Answer]: {answer}\n\n'
 
         prompt += (
-            'Your only task is to estimate how likely it is that the provided Answer is correct, '
-            'using only the Question, the Reasoning Process, and the Answer. Critically evaluate whether the reasoning process logically supports the answer.\n\n'
+            'Task: Evaluate how likely the provided Answer is correct based only on the Question and Answer.\n\n'
 
-            'Follow these instructions strictly:\n'
-            '1. First, provide your detailed step-by-step reasoning. Do not mention any confidence score or number in this section.\n'
-            '2. After you have completed your reasoning, on a new line, output your final confidence in the exact format: Confidence:<integer between 0 and 100>\n'
-            '3. Do not output anything else after the confidence value. Do not output the confidence before the reasoning.\n'
+            'You must follow this output protocol exactly:\n\n'
+
+            'PHASE 1 — REASONING\n'
+            'Start your response immediately with a detailed step-by-step analysis of whether the Answer is correct.\n'
+            'Do not write any introduction, instructions, labels, or comments before the reasoning begins.\n'
+            'Do not mention confidence, probability, percentages, or numerical values during this phase.\n\n'
+
+            'During the reasoning:\n'
+            '- Check the validity of the answer carefully.\n'
+            '- Look for mistakes, missing assumptions, logical gaps, or alternative interpretations.\n'
+            '- Do not trust the answer merely because it is fluent or detailed.\n\n'
+
+            'PHASE 2 — FINAL CONFIDENCE\n'
+            'Only after completing the reasoning, output exactly one final line:\n'
+            'Confidence:<integer between 0 and 100>\n\n'
+
+            'Calibration rules:\n'
+            '- The confidence should represent the true probability that the Answer is correct.\n'
+            '- Use the full range from 0 to 100 when appropriate.\n'
+            '- Use 100 only when the answer is correct beyond reasonable doubt.\n'
+            '- Use 0 only when the answer is certainly wrong.\n'
+            '- Otherwise choose an intermediate value.\n'
+            '- Avoid unnecessary rounding to common values such as 0, 50, or 100.\n\n'
+
+            'Important restrictions:\n'
+            '- Do not output the word "Confidence" before the reasoning.\n'
+            '- Do not output any instructions or the text of this prompt.\n'
+            '- Do not output anything after the Confidence line.\n\n'
+
+            'Begin now with PHASE 1 reasoning.'
         )
 
         prefix = [
@@ -302,7 +333,9 @@ class grpo_trainer(ABC):
 
     def extract_confidence(self, solution) -> str:
         if confidence_type_enum.PROBABILITY == self.config.confidence_type: 
-            return self.extract_confidence_prbability(solution)
+            probability = self.extract_confidence_prbability(solution)
+            return str(probability) if probability is not None else None
+        
         elif confidence_type_enum.LEVEL == self.config.confidence_type:
             return self.extract_confidence_level(solution)
         
@@ -321,7 +354,7 @@ class grpo_trainer(ABC):
             if not match: continue
             answer = float(match.group(1))
             if answer > 100 or answer < 0: continue
-            return str(answer)
+            return answer
         
         return None
 
