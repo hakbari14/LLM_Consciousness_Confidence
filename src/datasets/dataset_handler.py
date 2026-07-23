@@ -87,6 +87,9 @@ class dataset_handler(ABC):
     @abstractmethod
     def generate_model_prompt(self, x):
         pass
-
+    
+    @abstractmethod
+    def generate_wrong_answer(self, x):
+        pass
 
 

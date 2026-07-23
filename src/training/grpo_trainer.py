@@ -4,10 +4,12 @@ from src.logger.training.training_log_entity import training_log_entity
 from src.utils.llm_representation import llm_representation
 from src.utils.enums_class import training_type_enum, confidence_type_enum, confidence_reward_calculation_type_enum
 from src.training.training_config import training_config
+from scipy.stats import norm
 import torch
 import re
 import gc
 import math
+import numpy as np
 
 class grpo_trainer(ABC): 
 
@@ -52,7 +54,56 @@ class grpo_trainer(ABC):
         if training_type_enum.ACCURACY_REWARD_CONFIDENCE == self.config.training_type: 
             return [self.accuracy_reward, self.calculate_confidence_reward, self.calculate_entropy_confidence_reward]
         
+        if training_type_enum.SIGNAL_DETECTION_THEORY == self.config.training_type: 
+            return [self.accuracy_reward, self.calculate_sdt_reward]
+        
         return []
+
+    @torch.inference_mode()
+    def calculate_sdt_reward(self, completions, target=None, tokenizer=None, **kwargs):
+        split_list = kwargs.get("split")     
+        sample_ids = kwargs.get("sample_id") 
+        problem_ids = kwargs.get("problem_id", None)
+        prompts = kwargs.get("prompts") or kwargs.get("prompt") or kwargs.get("inputs")
+        questions = kwargs.get("question")     
+        trainer_state = kwargs.get("trainer_state", None)
+        trainer_global_step = trainer_state.global_step
+        
+        log_list: list[training_log_entity] = self.get_log_list(trainer_global_step, split_list, sample_ids, problem_ids, questions, prompts, completions, target)
+        log_list, correct_prompt_ID_list, incorrect_prompt_ID_list = self.generate_sdt_prompt(log_list)
+    
+        trainer = self.get_trainer()
+        tokenizer = trainer.processing_class
+
+        _, correct_completion_ids, _, _ = trainer.vllm_generation.generate(prompts=correct_prompt_ID_list, images=[], num_generations=1)
+        correct_completion_confidence_list = tokenizer.batch_decode(correct_completion_ids, skip_special_tokens=True)
+        for correct_completion_confidence, log in zip(correct_completion_confidence_list, log_list):
+            log.completion_sdt_correct = correct_completion_confidence
+
+        _, incorrect_completion_ids, _, _ = trainer.vllm_generation.generate(prompts=incorrect_prompt_ID_list, images=[], num_generations=1)
+        incorrect_completion_confidence_list = tokenizer.batch_decode(incorrect_completion_ids, skip_special_tokens=True)
+        for incorrect_completion_confidence, log in zip(incorrect_completion_confidence_list, log_list):
+            log.completion_sdt_incorrect = incorrect_completion_confidence
+        
+        rewards = []
+        for log in log_list:
+            log.confidence_sdt_correct = self.extract_confidence_prbability(log.completion_sdt_correct)
+            log.confidence_sdt_incorrect = self.extract_confidence_prbability(log.completion_sdt_incorrect)
+            if log.confidence_sdt_correct is None or log.confidence_sdt_incorrect is None: 
+                log.sdt_reward = 0.0
+                rewards.append(0.0)
+                continue
+            
+            eps=1e-6    
+            hit = np.clip(log.confidence_sdt_correct, eps, 1 - eps)
+            false_alarm = np.clip(log.confidence_sdt_incorrect, eps, 1 - eps)
+            d_prime = norm.ppf(hit) - norm.ppf(false_alarm)
+            log.sdt_reward = (np.tanh(d_prime) + 1.0) / 2.0
+            
+            reward = self.config.confidence_reward_coefficient * log.sdt_reward
+            rewards.append(reward)
+            
+        return rewards
 
     @torch.inference_mode()
     def calculate_confidence_reward(self, completions, target=None, tokenizer=None, **kwargs):
@@ -122,7 +173,7 @@ class grpo_trainer(ABC):
             try:
                 entropy, _, _ = self.representation.calculate_entropy(log.completion, model, tokenizer)
                 log.entropy = entropy
-                model_confidence = math.exp(-1.0 * log.entropy)
+                model_confidence = math.exp(-3.0 * log.entropy)
                 verbal_confidence = self.calculate_verbal_confidence(log.verbal_confidence)
                 
                 if confidence_reward_calculation_type_enum.linear == self.config.entropy_reward_type:
@@ -161,6 +212,46 @@ class grpo_trainer(ABC):
 
         return rewards
 
+    def generate_sdt_prompt(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
+        trainer = self.get_trainer()
+        tokenizer = trainer.processing_class
+        
+        correct_prompt_list : list[list[int]] = []
+        incorrect_prompt_list : list[list[int]] = []
+        for log in log_list:        
+            correct_prompt, correct_final_prompt = self.create_sdt_prompt(tokenizer, log.question, log.target)
+            log.prompt_sdt_correct = correct_prompt
+            correct_prompt_list.append(correct_final_prompt)
+
+            wrong_answer = self.get_dataset().generate_wrong_answer(log.target)
+            incorrect_prompt, incorrect_final_prompt = self.create_sdt_prompt(tokenizer, log.question, wrong_answer)
+            log.prompt_sdt_incorrect = incorrect_prompt
+            incorrect_prompt_list.append(incorrect_final_prompt)
+        
+        return log_list, correct_prompt_list, incorrect_prompt_list        
+
+    def create_sdt_prompt(self, tokenizer, question: str, answer: str) -> str:
+        prompt = f'[Question]: {question}\n\n'
+        prompt += f'[Answer]: {answer}\n\n'
+
+        prompt += (
+            'Your only task is to estimate how likely it is that the provided Answer is correct, '
+            'using only the Question, the Reasoning Process, and the Answer. Critically evaluate whether the reasoning process logically supports the answer.\n\n'
+
+            'Follow these instructions strictly:\n'
+            '1. First, provide your detailed step-by-step reasoning. Do not mention any confidence score or number in this section.\n'
+            '2. After you have completed your reasoning, on a new line, output your final confidence in the exact format: Confidence:<integer between 0 and 100>\n'
+            '3. Do not output anything else after the confidence value. Do not output the confidence before the reasoning.\n'
+        )
+
+        prefix = [
+            {"role": "user",
+                "content": prompt
+                },
+        ]
+        final_prompt = tokenizer.apply_chat_template(prefix, tokenize=True, continue_final_message=True)['input_ids']
+        return prompt, final_prompt 
+        
     def generate_prompt_confidence(self, log_list: list[training_log_entity]) -> tuple[list[training_log_entity], list[list[int]]]:
         trainer = self.get_trainer()
         tokenizer = trainer.processing_class

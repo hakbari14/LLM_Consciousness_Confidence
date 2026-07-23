@@ -29,6 +29,15 @@ class training_logger(logger):
                 'Compared_Final_Answer': log.compared_final_answer,
                 'Accuracy_Reward': log.accuracy_reward,
                 'Accuracy': log.accuracy,
+
+                'Prompt_SDT_Correct': log.prompt_sdt_correct,
+                'Completion_SDT_Correct': log.completion_sdt_correct,
+                'Confidence_SDT_Correct': log.confidence_sdt_correct,
+                'Prompt_SDT_Incorrect': log.prompt_sdt_incorrect,
+                'Completion_SDT_Incorrect': log.completion_sdt_incorrect,
+                'Confidence_SDT_Incorrect': log.confidence_sdt_incorrect,
+                'SDT_Reward': log.sdt_reward,
+
                 'Prompt_Confidence': log.prompt_confidence,
                 'Completion_Confidence': log.completion_confidence,
                 'Verbal_Confidence': log.verbal_confidence,
@@ -55,6 +64,15 @@ class training_logger(logger):
                 'Compared_Final_Answer',
                 'Accuracy_Reward',
                 'Accuracy',
+
+                'Prompt_SDT_Correct',
+                'Completion_SDT_Correct',
+                'Confidence_SDT_Correct',
+                'Prompt_SDT_Incorrect',
+                'Completion_SDT_Incorrect',
+                'Confidence_SDT_Incorrect',
+                'SDT_Reward',
+
                 'Prompt_Confidence',
                 'Completion_Confidence',
                 'Verbal_Confidence',

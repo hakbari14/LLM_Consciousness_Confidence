@@ -13,6 +13,14 @@ class training_log_entity(log_entity):
     compared_final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
 
+    prompt_sdt_correct : Optional[str] = None
+    prompt_sdt_incorrect : Optional[str] = None
+    completion_sdt_correct : Optional[str] = None
+    completion_sdt_incorrect : Optional[str] = None
+    confidence_sdt_correct : Optional[float] = None
+    confidence_sdt_incorrect : Optional[float] = None
+    sdt_reward : Optional[float] = None
+    
     prompt_confidence : Optional[str] = None
     completion_confidence : Optional[str] = None
     verbal_confidence : Optional[str] = None

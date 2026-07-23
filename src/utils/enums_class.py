@@ -42,6 +42,7 @@ class granularity_enum(StrEnum):
 class training_type_enum(StrEnum):
     ACCURACY_REWARD = 'accuracy_reward'
     CONFIDENCE = 'confidence'
+    SIGNAL_DETECTION_THEORY = 'signal_detection_theory'
     CONFIDENCE_WITH_CRITERAI = 'confidence_with_criteria'
     ACCURACY_REWARD_CONFIDENCE = 'accuracy_reward_confidence'
     ACCURACY_REWARD_CONFIDENCE_WITH_CRITERAI = 'accuracy_reward_confidence_with_criteria'
