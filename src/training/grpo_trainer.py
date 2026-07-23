@@ -102,7 +102,7 @@ class grpo_trainer(ABC):
             false_alarm = np.clip(false_alarm, eps, 1 - eps)
             
             d_prime = norm.ppf(hit) - norm.ppf(false_alarm)
-            log.sdt_reward = (np.tanh(d_prime) + 1.0) / 2.0
+            log.sdt_reward = (np.tanh(d_prime / 5.0) + 1.0) / 2.0
             
             reward = self.config.confidence_reward_coefficient * log.sdt_reward
             rewards.append(reward)
