@@ -19,7 +19,7 @@ from src.utils.enums_class import ii_calculation_type_enum, tpm_creation_type_en
 import pandas as pd
 import torch
 import gc
-
+import numpy as np 
 
 class confidence_inference(ABC): 
 
@@ -40,6 +40,31 @@ class confidence_inference(ABC):
         self.whitebox_tokenizer = None
         self.blackbox_model = None
         self.blackbox_tokenizer = None
+
+    @torch.inference_mode()
+    def save_representation_model(self, model_name, run_number = 0): 
+        print(f'{'*' * 90}  Save Representation {model_name} Run Number {run_number} {'*' * 90}')
+        model, tokenizer = self.get_model(model_name)
+        log_list: list[self_consistency_log_entity] = self.load_logs_list(run_number)
+        prompt_representation = {}
+        completion_representation = {}
+        for log in tqdm(log_list, desc="Save Representation Processing", unit="step"): 
+            try:
+                refine_prompt = self.representation.clean_prompt_for_phi(log.prompt)
+                prompt_emb, _, _ = self.representation.extract_representation(refine_prompt, model, tokenizer, self.get_layer_type())
+                prompt_representation[f'id_{log.sample_ID}'] = prompt_emb
+                for log_detail in log.consistency_list:     
+                    if log_detail.completion is None: continue
+                    
+                    completion_emb, _, _ = self.representation.extract_representation(log_detail.completion, model, tokenizer, self.get_layer_type())
+                    completion_representation[f'id_{log_detail.index}'] = completion_emb
+            except Exception as e:
+                print(f"[WARN] Load Embedding: {e}")
+        
+        prompt_filename, completion_filename = self.get_prompt_completion_filename(run_number)
+        np.savez_compressed(f'{prompt_filename}', **prompt_representation)        
+        np.savez_compressed(f'{completion_filename}', **completion_representation)        
+
 
     @torch.inference_mode()
     def calculate_confidence_blackbox_model(self, run_number = 0): 
@@ -216,6 +241,20 @@ class confidence_inference(ABC):
 
         return self.blackbox_model, self.blackbox_tokenizer 
 
+    def get_model(self, model_name: str):
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit = True,
+            bnb_4bit_quant_type = "nf4",
+            bnb_4bit_compute_dtype = getattr(torch, "bfloat16"),
+            bnb_4bit_use_double_quant = False,
+        )
+        model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config = bnb_config)
+        model.config.use_cache = True
+        model.config.pretraining_tp = 1        
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        return model, tokenizer 
+
     def get_iit_calculator_list(self) -> list[integrated_information_theory]:
         if self.iit_calculator_list is None: 
             iit_calculator_list: list[integrated_information_theory] = []
@@ -259,6 +298,12 @@ class confidence_inference(ABC):
 
     def get_layer_type(self):
         return iit_layer_type_enum.SOME
+
+    def get_prompt_completion_filename(self, run_number: int) -> tuple[str,str]:
+        logger = self.create_self_consistency_logger(run_number)
+        prompt_filename = logger.get_log_file_name().replace('.csv', '_prompt')
+        completion_filename = logger.get_log_file_name().replace('.csv', '_completion')
+        return prompt_filename, completion_filename
 
     @abstractmethod
     def create_self_consistency_logger(self, run_number) -> self_consistency_inference_logger:

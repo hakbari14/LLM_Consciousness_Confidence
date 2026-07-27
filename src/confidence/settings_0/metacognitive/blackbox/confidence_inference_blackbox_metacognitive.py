@@ -20,6 +20,8 @@ for run_number in range(1,2):
                                             whitebox_modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
                                             blackbox_modelname='Qwen/Qwen2.5-3B-Instruct'
                                             )
+    # t.save_representation_model(model_name='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', run_number = run_number)
+    # t.save_representation_model(model_name='Qwen/Qwen2.5-3B-Instruct', run_number = run_number)
     t.calculate_confidence_blackbox_model(run_number = run_number)
     t.calculate_confidence_whitebox_model(run_number = run_number)
     print(f'{'*' * 210}')
