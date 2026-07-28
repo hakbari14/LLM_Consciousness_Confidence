@@ -2,7 +2,7 @@ from src.logger.logger import logger
 from typing import cast
 from src.logger.training.training_log_entity import training_log_entity
 
-class training_logger(logger): 
+class training_sdt_logger(logger): 
 
     def __init__(self, log_file_name) -> None:
         super().__init__(log_file_name)
@@ -27,17 +27,19 @@ class training_logger(logger):
                 'Token_Count': log.token_count, 
                 'Final_Answer': log.final_answer,
                 'Compared_Final_Answer': log.compared_final_answer,
+                'Confidence': log.confidence,
                 'Accuracy_Reward': log.accuracy_reward,
                 'Accuracy': log.accuracy,
-                'Prompt_Confidence': log.prompt_confidence,
-                'Completion_Confidence': log.completion_confidence,
-                'Verbal_Confidence': log.verbal_confidence,
-                'Verbal_Confidence_Reward': log.verbal_confidence_reward,
-                'Entropy': log.entropy,
-                'Entropy_Reward': log.entropy_reward,
+                'Another_Prompt': log.another_prompt,
+                'Another_Target': log.another_target,
+                'Another_Completion': log.another_completion,
+                'Another_Confidence': log.another_confidence,
+                'SDT_D_Prime': log.sdt_d_prime,
+                'SDT_Reward': log.sdt_reward,
                 }
             list.append(b)            
         return list
+
 
     def get_fieldnames(self): 
         return [ 
@@ -53,14 +55,15 @@ class training_logger(logger):
                 'Token_Count', 
                 'Final_Answer',
                 'Compared_Final_Answer',
+                'Confidence',
                 'Accuracy_Reward',
                 'Accuracy',
-                'Prompt_Confidence',
-                'Completion_Confidence',
-                'Verbal_Confidence',
-                'Verbal_Confidence_Reward',
-                'Entropy',
-                'Entropy_Reward',
+                'Another_Prompt',
+                'Another_Target',
+                'Another_Completion',
+                'Another_Confidence',
+                'SDT_D_Prime',
+                'SDT_Reward',
                 ]
 
         

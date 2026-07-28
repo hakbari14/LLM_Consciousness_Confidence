@@ -36,6 +36,27 @@ class dataset_handler(ABC):
 
         return train_dataset, eval_dataset
 
+    def preprocess_dataset_with_confidence(self) -> tuple[Dataset, Dataset]:
+        train_dataset = self.train_dataset.map(lambda x: self.generate_model_prompt_confidence(x))
+        train_dataset = train_dataset.filter(lambda x: self.filter_by_required_criteria(x, dataset_element_type_enum.TRAIN))
+
+        test_dataset = self.test_dataset.map(lambda x: self.generate_model_prompt_confidence(x))
+        test_dataset = test_dataset.filter(lambda x: self.filter_by_required_criteria(x, dataset_element_type_enum.EVAL))
+       
+        train_dataset = train_dataset.add_column("split", [dataset_element_type_enum.TRAIN] * len(train_dataset))
+        train_dataset = train_dataset.add_column("sample_id", list(range(len(train_dataset))))
+
+        if self.config.get_max_test_dataset_size() is not None: 
+            rng = random.Random(42)            
+            indices = rng.sample(range(len(test_dataset)), self.config.get_max_test_dataset_size())
+            test_dataset = test_dataset.select(indices)
+
+        eval_dataset = test_dataset
+        eval_dataset = eval_dataset.add_column("split", [dataset_element_type_enum.EVAL] * len(eval_dataset))
+        eval_dataset = eval_dataset.add_column("sample_id", list(range(len(eval_dataset))))
+
+        return train_dataset, eval_dataset
+
     def generate_model_prompt_permutation(self, x, num_choice_permutations: int) -> list[dict]:
         data_list = []
         for i in range(0, num_choice_permutations):
@@ -53,6 +74,14 @@ class dataset_handler(ABC):
 
         target_answer_equal, comapred_final_answer = self.verify_final_answer(target, final_answer)
         return final_answer, target_answer_equal, comapred_final_answer
+
+    def extract_and_verify_final_answer_confidence(self, prompt: str, completion: str, target: str) -> tuple[str, str, bool, str]:
+        final_answer, confidence = self.final_answer_confidence_extraction(prompt, completion, target)
+        if final_answer is None:
+            return final_answer, confidence, False, final_answer
+
+        target_answer_equal, comapred_final_answer = self.verify_final_answer(target, final_answer)
+        return final_answer, confidence, target_answer_equal, comapred_final_answer
         
     def verify_final_answer(self, target: str, final_answer: str) -> tuple[bool, str]:
         return final_answer == target, final_answer
@@ -85,7 +114,23 @@ class dataset_handler(ABC):
         pass
 
     @abstractmethod
+    def final_answer_confidence_extraction(self, prompt, completion, target):
+        pass
+
+    @abstractmethod
     def generate_model_prompt(self, x):
+        pass
+
+    @abstractmethod
+    def generate_model_prompt_confidence(self, x):
+        pass
+
+    @abstractmethod
+    def generate_another_prompt_confidence(self, question: str, answer: str) -> str:
+        pass
+
+    @abstractmethod
+    def extract_another_confidence(self, solution: str) -> float:
         pass
     
     @abstractmethod
