@@ -240,6 +240,38 @@ class confidence_inference_analysis(object):
     def get_filenames() -> None:
         dir = './src/confidence'
         csv_paths = {
+            "deepseek_r1_7b_em": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/entropy_minimization/run_/llm_generation_metacognitive_entropy_minimization.csv", 
+                            ],
+                            "confidence_type": "probability",
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
+            "deepseek_r1_7b_iir": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/intrinsic_information/run_/llm_generation_metacognitive_intrinsic_information.csv", 
+                            ],
+                            "confidence_type": "probability",
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
+            "deepseek_r1_7b_iit": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/integrated_information/run_/llm_generation_metacognitive_integrated_information.csv", 
+                            ],
+                            "confidence_type": "probability",
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
+            "deepseek_r1_7b_iit_max": {
+                            "file_paths" : [
+                                    f"verbal/deepSeek_r1_distill_qwen_7b/integrated_intrinsic_information/run_/llm_generation_metacognitive_integrated_intrinsic_information.csv", 
+                            ],
+                            "confidence_type": "probability",
+                            "from_run_number": 1,
+                            "to_run_number": 5,
+                        },
             "deepseek_r1_7b_no_training_p": {
                             "file_paths" : [
                                     f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
@@ -248,30 +280,30 @@ class confidence_inference_analysis(object):
                             "from_run_number": 9,
                             "to_run_number": 13,
                         },
-            "deepseek_r1_7b_no_training_l": {
-                            "file_paths" : [
-                                    f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 13,
-                            "to_run_number": 17,
-                        },
-            "qwen3_8b_no_training_p": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "probability",
-                            "from_run_number": 9,
-                            "to_run_number": 13,
-                        },
-            "qwen3_8b_no_training_l": {
-                            "file_paths" : [
-                                    f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
-                            ],
-                            "confidence_type": "level",
-                            "from_run_number": 13,
-                            "to_run_number": 17,
-                        },
+            # "deepseek_r1_7b_no_training_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/deepSeek_r1_distill_qwen_7b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 13,
+            #                 "to_run_number": 17,
+            #             },
+            # "qwen3_8b_no_training_p": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "probability",
+            #                 "from_run_number": 9,
+            #                 "to_run_number": 13,
+            #             },
+            # "qwen3_8b_no_training_l": {
+            #                 "file_paths" : [
+            #                         f"verbal/qwen3_8b/no_training/run_/llm_generation_metacognitive_no_training.csv", 
+            #                 ],
+            #                 "confidence_type": "level",
+            #                 "from_run_number": 13,
+            #                 "to_run_number": 17,
+            #             },
             # "qwen3_8b_ar_p": {
             #                 "file_paths" : [
             #                         f"verbal/qwen3_8b/settings_0/run_/llm_generation_metacognitive_settings_0.csv", 
@@ -400,8 +432,8 @@ class confidence_inference_analysis(object):
 confidence_inference_analysis.calculate_auroc()
 print()
 confidence_inference_analysis.calculate_ece()
-print()
-confidence_inference_analysis.calculate_m_ratio()
+# print()
+# confidence_inference_analysis.calculate_m_ratio()
 
 
 # df = pd.read_csv('src/confidence/verbal/deepSeek_r1_distill_qwen_7b/no_training/run_5/llm_generation_metacognitive_no_training.csv')
