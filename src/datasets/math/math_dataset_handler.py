@@ -48,3 +48,15 @@ class math_dataset_handler(dataset_handler):
         )
         return new_expr if new_expr != origin_expr else None
 
+    def final_answer_confidence_extraction(self, prompt, completion, target):
+        return None
+
+    def generate_model_prompt_confidence(self, x):
+        return None
+
+    def generate_another_prompt_confidence(self, question: str, answer: str) -> str:
+        return None
+
+    def extract_another_confidence(self, solution: str) -> float:
+        return None
+    
