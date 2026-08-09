@@ -135,8 +135,12 @@ class diffusion_decision_model(ABC):
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
 
             prompt_list = self.generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
-            outputs = self.model.generate(prompt_list, sampling_params)
-            
+            try:
+                outputs = self.model.generate(prompt_list, sampling_params)
+            except Exception as e:
+                print(f"[WARN] generate failed: {e}")
+                continue
+
             for j, output in enumerate(outputs):
                 if output.outputs is None: continue
                 idx = i + j
