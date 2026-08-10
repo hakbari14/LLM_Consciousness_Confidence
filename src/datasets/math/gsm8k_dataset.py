@@ -54,15 +54,19 @@ class gsm8k_dataset(math_dataset_handler):
             r'(?i)####\s*(-?[0-9.,]+)',
             r'(?i)\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}',            
             r'(?i)\*[^*]*?(\d+(?:\.\d+)?)[^*]*?\*',            
+            r'(?i)#+\s*\\?\$(\d+)',            
         ]
 
         for pattern in patterns:
-            matches = list(re.finditer(pattern, solution, re.IGNORECASE))
+            matches = list(re.finditer(pattern, solution, re.DOTALL | re.IGNORECASE))
             if not matches: continue
 
             last_match = matches[-1]
-            final_answer = gsm8k_dataset.extract_number(last_match.group(1))
-            return final_answer
+            x = last_match.group(1)
+            try:
+                return float(x.strip())
+            except ValueError:
+                return gsm8k_dataset.extract_number(x)
 
         return None
 
