@@ -114,11 +114,19 @@ class dataset_handler(ABC):
         pass
 
     @abstractmethod
+    def chain_of_thought_extraction(self, question, completion):
+        pass
+
+    @abstractmethod
     def final_answer_confidence_extraction(self, prompt, completion, target):
         pass
 
     @abstractmethod
     def generate_model_prompt(self, x):
+        pass
+
+    @abstractmethod
+    def generate_model_prompt_chain_of_thought(self, question_list: list[str], partial_cot_list: list[str]) -> list[str]:
         pass
 
     @abstractmethod

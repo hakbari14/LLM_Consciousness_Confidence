@@ -101,8 +101,10 @@ class diffusion_decision_model_logger(logger):
                     'Parent_ID': log.ID,
                     'Evidence': evidence_log.evidence,
                     'Partial_COT': evidence_log.partial_cot,
-                    'Evidence_Accumulation': evidence_log.evidence_accumulation,
-                    'Delta_Evidence': evidence_log.delta_evidence,
+                    'Evidence_Accumulation_Self_Consistency': evidence_log.evidence_accumulation_self_consistency,
+                    'Delta_Evidence_Self_Consistency': evidence_log.delta_evidence_self_consistency,
+                    'Evidence_Accumulation_Loss': evidence_log.evidence_accumulation_loss,
+                    'Delta_Evidence_Loss': evidence_log.delta_evidence_loss,
                     'Consistency_Count': len(evidence_log.consistency_list),
                     'Original_Final_Answer': log.final_answer,
                     }
@@ -116,8 +118,10 @@ class diffusion_decision_model_logger(logger):
                 'Parent_ID',
                 'Evidence',
                 'Partial_COT',
-                'Evidence_Accumulation',
-                'Delta_Evidence',
+                'Evidence_Accumulation_Self_Consistency',
+                'Delta_Evidence_Self_Consistency',
+                'Evidence_Accumulation_Loss',
+                'Delta_Evidence_Loss',
                 'Consistency_Count',
                 'Original_Final_Answer',
                 ]
@@ -132,12 +136,14 @@ class diffusion_decision_model_logger(logger):
                         'Sample_ID': log.sample_ID,
                         'Parent_ID': log.ID,
                         'Evidence_Index': evidence_log.index,
+                        'Prompt': sample_log.prompt,
                         'Completion': sample_log.completion,
                         'Token_Count': sample_log.token_count,
                         'Original_Final_Answer': sample_log.original_final_answer,
                         'Final_Answer': sample_log.final_answer,
-                        'Accuracy': sample_log.accuracy,
                         'Compared_Final_Answer': getattr(sample_log, 'compared_final_answer', None),
+                        'Accuracy': sample_log.accuracy,
+                        'Loss': sample_log.loss,
                         }
                     list.append(b)
         return list
@@ -148,12 +154,14 @@ class diffusion_decision_model_logger(logger):
                 'Sample_ID',
                 'Parent_ID',
                 'Evidence_Index',
+                'Prompt',
                 'Completion',
                 'Token_Count',
                 'Original_Final_Answer',
                 'Final_Answer',
-                'Accuracy',
                 'Compared_Final_Answer',
+                'Accuracy',
+                'Loss',
                 ]
 
     def get_samples_log_file_name(self) -> str:

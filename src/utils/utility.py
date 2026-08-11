@@ -105,5 +105,24 @@ class my_utils(object):
         result["accuracy_percent"] = 100 * (result["correct"] / result["total"])
         print(result)
 
+    @staticmethod
+    def get_loss_from_vllm_output(response):
 
+        if response.logprobs is None:
+            return None
+
+        logprobs = []
+        for token_logprobs in response.logprobs:
+            if token_logprobs is None:
+                continue
+
+            token_id = list(token_logprobs.keys())[0]
+            logprob = token_logprobs[token_id].logprob
+            logprobs.append(logprob)
+
+        if not logprobs:
+            return None
+
+        loss = -sum(logprobs) 
+        return loss
 

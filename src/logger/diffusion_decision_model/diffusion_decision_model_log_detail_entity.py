@@ -5,11 +5,13 @@ from typing import Optional
 class diffusion_decision_model_log_detail_entity:
 
     index : Optional[str] = None
+    prompt : Optional[str] = None
     completion : Optional[str] = None
     token_count : Optional[int] = None
     original_final_answer : Optional[str] = None
     final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
+    loss : Optional[float] = None
 
     def validate(self): 
         if self.index is None:

@@ -8,8 +8,10 @@ class diffusion_decision_model_evidence_log_entity:
     index : Optional[str] = None
     evidence : Optional[str] = None
     partial_cot : Optional[str] = None
-    evidence_accumulation : Optional[float] = 0.0
-    delta_evidence : Optional[float] = 0.0
+    evidence_accumulation_self_consistency : Optional[float] = 0.0
+    delta_evidence_self_consistency : Optional[float] = 0.0
+    evidence_accumulation_loss : Optional[float] = 0.0
+    delta_evidence_loss : Optional[float] = 0.0
 
     consistency_list: List[diffusion_decision_model_log_detail_entity] = field(default_factory=list)
 

@@ -7,9 +7,11 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_evidence_log_e
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_detail_entity import diffusion_decision_model_log_detail_entity
 from src.datasets.dataset_handler import dataset_handler
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
+from src.utils.utility import my_utils
+from math import ceil
 import torch
 import re
-from math import ceil
+import numpy as np 
 
 class diffusion_decision_model(ABC): 
 
@@ -47,7 +49,8 @@ class diffusion_decision_model(ABC):
                 temperature=0.2, 
                 n = 1, 
                 top_p= 0.9, 
-                top_k=50
+                top_k=50,
+                logprobs=1
             )
         
         log_list: list[diffusion_decision_model_log_entity] = []
@@ -86,6 +89,7 @@ class diffusion_decision_model(ABC):
                     
                     log.completion = completion
                     log.token_count = len(response.token_ids)
+                    log.completion_loss = my_utils.get_loss_from_vllm_output(response)
 
                     try:
                         final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, str(completion), target)
@@ -113,12 +117,14 @@ class diffusion_decision_model(ABC):
                 temperature=1.0, 
                 n = sc_sample_count, 
                 top_p= 0.9, 
-                top_k=50
+                top_k=50, 
+                logprobs=1
             )
 
         evidence_log_list: list[diffusion_decision_model_evidence_log_entity] = []
         question_list: list[str] = []
         final_answer_list: list[str] = []
+        completion_loss_list: list[float] = []
         for log in log_list: 
             if log.final_answer is None: continue
             
@@ -126,101 +132,75 @@ class diffusion_decision_model(ABC):
                 evidence_log_list.append(evidence_log)
                 question_list.append(log.question)
                 final_answer_list.append(log.final_answer)
-                
+                completion_loss_list.append(log.completion_loss)
+        
         for i in tqdm(range(0, len(evidence_log_list), batch_size), desc="Processing Batches", unit="step"):
             batch: list[diffusion_decision_model_evidence_log_entity] = evidence_log_list[i : i + batch_size]        
             batch_partial_cot_list = list(map(lambda x: x.partial_cot, batch))
             
             batch_question_list: list[str] = question_list[i : i + batch_size]        
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
+            batch_completion_loss_list: list[str] = completion_loss_list[i : i + batch_size]        
 
-            prompt_list = self.generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
             try:
+                prompt_list = self.get_dataset().generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
                 outputs = self.model.generate(prompt_list, sampling_params)
+                for j, output in enumerate(outputs):
+                    if output.outputs is None: continue
+                    idx = i + j
+                    evidence_log = batch[j]
+                    prompt = prompt_list[j]
+                    original_final_answer = batch_final_answer_list[j]
+                    completion_loss = batch_completion_loss_list[j]
+                    
+                    for index in range(sc_sample_count):
+                        response = output.outputs[index]
+                        completion = response.text
+
+                        log_detail = diffusion_decision_model_log_detail_entity()
+                        log_detail.index = f'{idx}_{index}'
+                        log_detail.prompt = prompt
+                        log_detail.completion = completion
+                        log_detail.token_count = len(response.token_ids)
+                        log_detail.original_final_answer = original_final_answer
+                        log_detail.loss = my_utils.get_loss_from_vllm_output(response)
+                        
+                        try:
+                            final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, str(completion), original_final_answer)
+                            log_detail.final_answer = final_answer
+                            log_detail.compared_final_answer = compared_final_answer
+                            log_detail.accuracy = accuracy
+                        except Exception as e:
+                            print(f"[WARN] generate failed: {e}")
+                            
+                        evidence_log.add_consistency_list(log_detail)
+                        
+                    true_count = sum(x.accuracy for x in evidence_log.consistency_list)
+                    evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 1.0)
+
+                    losses = [
+                        x.loss
+                        for x in evidence_log.consistency_list
+                        if x.accuracy
+                    ]
+                    losses.append(completion_loss)
+                    evidence_log.evidence_accumulation_loss = np.mean(losses)
+
             except Exception as e:
                 print(f"[WARN] generate failed: {e}")
-                continue
 
-            for j, output in enumerate(outputs):
-                if output.outputs is None: continue
-                idx = i + j
-                evidence_log = batch[j]
-                prompt = prompt_list[j]
-                original_final_answer = batch_final_answer_list[j]
-                
-                for index in range(sc_sample_count):
-                    response = output.outputs[index]
-                    completion = response.text
-
-                    log_detail = diffusion_decision_model_log_detail_entity()
-                    log_detail.index = f'{idx}_{index}'
-                    log_detail.completion = completion
-                    log_detail.token_count = len(response.token_ids)
-                    log_detail.original_final_answer = original_final_answer
-                    
-                    try:
-                        final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, str(completion), original_final_answer)
-                        log_detail.final_answer = final_answer
-                        log_detail.compared_final_answer = compared_final_answer
-                        log_detail.accuracy = accuracy
-                    except Exception as e:
-                        print(f"[WARN] generate failed: {e}")
-                        
-                    evidence_log.add_consistency_list(log_detail)
-                    
-                true_count = sum(x.accuracy for x in evidence_log.consistency_list)
-                evidence_log.evidence_accumulation = true_count / len(evidence_log.consistency_list)
         
         for log in log_list: 
             for i in range(1, len(log.evidence_list)):
                 current = log.evidence_list[i]
                 previous = log.evidence_list[i - 1]
-                current.delta_evidence = current.evidence_accumulation - previous.evidence_accumulation
-        
+                current.delta_evidence_self_consistency = current.evidence_accumulation_self_consistency - previous.evidence_accumulation_self_consistency
+                current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
+
         return log_list
 
-    def generate_model_prompt_chain_of_thought(self, question_list: list[str], partial_cot_list: list[str]) -> list[str]:
-        prompt_list : list[str] = []
-        for question, partial_cot in zip(question_list, partial_cot_list):        
-            prompt = "You are continuing an unfinished reasoning process.\n\n"
-            prompt += (
-                "The reasoning below represents the current reasoning state reached while "
-                "solving the question.\n"
-                "Assume that every reasoning step in the provided partial reasoning is "
-                "correct and should be preserved.\n\n"
-            )
-            prompt += (
-                "Follow these instructions carefully:\n"
-                "- Do NOT restart the solution from the beginning.\n"
-                "- Do NOT repeat, summarize, or rewrite the provided reasoning.\n"
-                "- Treat the partial reasoning as the current reasoning state.\n"
-                "- Continue reasoning directly from the final step of the provided partial reasoning.\n"
-                "- Your first generated sentence must logically follow the final sentence of the provided reasoning.\n"
-                "- If multiple valid continuations exist, choose one plausible continuation and follow it consistently until reaching a final answer.\n"
-                "- Do NOT revise or question earlier reasoning unless the last step is explicitly incomplete.\n"
-                "- Continue reasoning until the problem is completely solved.\n"
-                "- Output only the continuation of the reasoning followed by the final answer.\n\n"
-            )
-
-            prompt += f"Question:\n{question}\n\n"
-            prompt += f"Partial Reasoning:\n{partial_cot}\n\n"
-            prompt += "Continue the reasoning from this point and output the final answer after ####"
-            
-            prefix = [
-                {"role": "user",
-                    "content": prompt
-                    },
-            ]
-            prompt_list.append(self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True))
-        
-        return prompt_list        
-
     def add_evidence_log_list(self, log: diffusion_decision_model_log_entity) -> diffusion_decision_model_log_entity:
-        chain_of_thought = log.completion
-        pos = chain_of_thought.find(log.question)
-        if pos != -1:
-            chain_of_thought = chain_of_thought[pos + len(log.question):]
-            
+        chain_of_thought = self.get_dataset().chain_of_thought_extraction(log.question, log.completion)
         sentences = re.split(r'(?<=[.!?])\s+', chain_of_thought)
         chunk_size = ceil(len(sentences) / self.get_number_of_evidence())
         for idx, i in enumerate(range(0, len(sentences), chunk_size)):        
