@@ -176,7 +176,11 @@ class diffusion_decision_model(ABC):
                         evidence_log.add_consistency_list(log_detail)
                         
                     true_count = sum(x.accuracy for x in evidence_log.consistency_list)
-                    evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 1.0)
+                    # Laplace smoothing: (k + 1) / (K + 2) keeps the estimate strictly
+                    # inside (0, 1). (K + 1) would return exactly 1.0 when every
+                    # continuation agrees, and its logit -- the evidence axis a drift
+                    # rate is fitted on -- would be infinite.
+                    evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 2.0)
 
                     # Per-token NLL, not the raw sum: x.loss is -sum(logprobs) and so
                     # grows with completion length. Averaging raw sums would compare
