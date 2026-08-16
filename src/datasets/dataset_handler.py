@@ -113,9 +113,50 @@ class dataset_handler(ABC):
     def final_answer_extraction(self, prompt, completion, target):
         pass
 
-    @abstractmethod
-    def chain_of_thought_extraction(self, question, completion):
-        pass
+    def get_final_answer_marker(self) -> str:
+        return getattr(self, 'force_generate_answer_text', '####')
+
+    def strip_answer_statement(self, text: str) -> str:
+        patterns = [self.get_final_answer_marker(), 'Final Answer', 'boxed{']
+        min_pos = len(text)
+        for pattern in patterns:
+            pos = text.find(pattern)
+            if pos == -1: continue
+
+            min_pos = min(min_pos, pos)
+
+        return text[:min_pos]
+
+    def chain_of_thought_extraction(self, question: str, solution: str) -> str:
+        """Return the reasoning with the final answer statement removed.
+
+        The diffusion decision model chunks this into growing prefixes, so any
+        answer left behind would let a continuation agree without reasoning.
+        """
+        chain_of_thought = solution
+        pos = chain_of_thought.find(question)
+        if pos != -1:
+            chain_of_thought = chain_of_thought[pos + len(question):]
+
+        # The prompt asks for the answer within \boxed{}, and the model echoes that
+        # instruction back before it reasons. Those empty braces are not an answer,
+        # so drop them or they cut the chain of thought off at its first characters.
+        chain_of_thought = chain_of_thought.replace('\\boxed{}', '')
+
+        think_end = chain_of_thought.find('</think>')
+        if think_end == -1:
+            return self.strip_answer_statement(chain_of_thought)
+
+        # The model reasons either inside the <think> block or, when it closes
+        # that block immediately after echoing the prompt instruction, in the
+        # presentation that follows. Strip the answer from both candidates and
+        # keep whichever retains more reasoning: comparing the stripped results
+        # cannot discard the larger body of reasoning, so a genuinely short chain
+        # of thought survives instead of being traded for an empty presentation.
+        thinking = self.strip_answer_statement(chain_of_thought[:think_end])
+        presentation = self.strip_answer_statement(chain_of_thought[think_end + len('</think>'):])
+
+        return thinking if len(thinking) >= len(presentation) else presentation
 
     @abstractmethod
     def final_answer_confidence_extraction(self, prompt, completion, target):
@@ -125,9 +166,41 @@ class dataset_handler(ABC):
     def generate_model_prompt(self, x):
         pass
 
-    @abstractmethod
     def generate_model_prompt_chain_of_thought(self, question_list: list[str], partial_cot_list: list[str]) -> list[str]:
-        pass
+        prompt_list : list[str] = []
+        for question, partial_cot in zip(question_list, partial_cot_list):
+            prompt = "You are continuing an unfinished reasoning process.\n\n"
+            prompt += (
+                "The reasoning below represents the current reasoning state reached while "
+                "solving the question.\n"
+                "Assume that every reasoning step in the provided partial reasoning is "
+                "correct and should be preserved.\n\n"
+            )
+            prompt += (
+                "Follow these instructions carefully:\n"
+                "- Do NOT restart the solution from the beginning.\n"
+                "- Do NOT repeat, summarize, or rewrite the provided reasoning.\n"
+                "- Treat the partial reasoning as the current reasoning state.\n"
+                "- Continue reasoning directly from the final step of the provided partial reasoning.\n"
+                "- Your first generated sentence must logically follow the final sentence of the provided reasoning.\n"
+                "- If multiple valid continuations exist, choose one plausible continuation and follow it consistently until reaching a final answer.\n"
+                "- Do NOT revise or question earlier reasoning unless the last step is explicitly incomplete.\n"
+                "- Continue reasoning until the problem is completely solved.\n"
+                "- Output only the continuation of the reasoning followed by the final answer.\n\n"
+            )
+
+            prompt += f"Question:\n{question}\n\n"
+            prompt += f"Partial Reasoning:\n{partial_cot}\n\n"
+            prompt += f"Continue the reasoning from this point and output the final answer after {self.get_final_answer_marker()}"
+
+            prefix = [
+                {"role": "user",
+                    "content": prompt
+                    },
+            ]
+            prompt_list.append(self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True))
+
+        return prompt_list
 
     @abstractmethod
     def generate_model_prompt_confidence(self, x):
