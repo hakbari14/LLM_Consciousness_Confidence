@@ -24,21 +24,41 @@ class gsm8k_dataset(math_dataset_handler):
     def final_answer_extraction(self, prompt: str, solution: str, target: str) -> str :
         return gsm8k_dataset.gsm8k_answer_extraction(solution)
 
+    def get_min_chain_of_thought_length(self) -> int:
+        return 200
+
     def chain_of_thought_extraction(self, question: str, solution: str) -> str :
         chain_of_thought = solution
         pos = chain_of_thought.find(question)
         if pos != -1:
             chain_of_thought = chain_of_thought[pos + len(question):]
 
-        patterns = [self.force_generate_answer_text, '</think>', 'Final Answer', 'boxed'] 
-        min_pos = len(chain_of_thought)
-        for pattern in patterns:
-            pos = chain_of_thought.find(pattern)
-            if pos == -1: continue
-            
-            min_pos = min(min_pos, pos)
-        
-        return chain_of_thought[:min_pos]
+        # Locate the region holding the reasoning. A substantive <think> block IS
+        # the reasoning, and everything after </think> is the answer presentation.
+        # When that block is trivial or absent the model reasoned in the
+        # presentation instead, so drop the block along with the prompt
+        # instruction echoed before it.
+        think_end = chain_of_thought.find('</think>')
+        if think_end >= self.get_min_chain_of_thought_length():
+            chain_of_thought = chain_of_thought[:think_end]
+        elif think_end != -1:
+            chain_of_thought = chain_of_thought[think_end + len('</think>'):]
+
+        # Then cut at the FIRST answer statement inside that region: the model
+        # states its answer inside the thinking block too, and one that repeats
+        # '#### 45' many times would leave earlier copies behind if we cut at the
+        # last. 'boxed{}' with empty braces is the instruction the prompt asks the
+        # model to follow, echoed back before any reasoning happens, so it must
+        # not count as an answer -- requiring a non-empty brace separates the
+        # echoed '\boxed{}' from a real '\boxed{145}'.
+        answer_statement = re.compile(
+            re.escape(self.force_generate_answer_text) + r'|Final Answer|boxed\{[^}\s]'
+        )
+        match = answer_statement.search(chain_of_thought)
+        if match is None:
+            return chain_of_thought
+
+        return chain_of_thought[:match.start()]
 
     def generate_model_prompt(self, x):
         question = x['question']
