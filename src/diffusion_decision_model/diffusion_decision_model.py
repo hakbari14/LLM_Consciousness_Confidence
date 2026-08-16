@@ -178,13 +178,19 @@ class diffusion_decision_model(ABC):
                     true_count = sum(x.accuracy for x in evidence_log.consistency_list)
                     evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 1.0)
 
+                    # Per-token NLL, not the raw sum: x.loss is -sum(logprobs) and so
+                    # grows with completion length. Averaging raw sums would compare
+                    # a long continuation against a short one on different scales.
+                    # completion_loss is deliberately NOT averaged in here: it is a
+                    # per-sample constant covering the whole phase-1 trajectory, so it
+                    # carries no information about this particular prefix. It is kept
+                    # on the log entity as a per-sample baseline instead.
                     losses = [
-                        x.loss
+                        x.loss / x.token_count
                         for x in evidence_log.consistency_list
-                        if x.accuracy
+                        if x.accuracy and x.loss is not None and x.token_count
                     ]
-                    losses.append(completion_loss)
-                    evidence_log.evidence_accumulation_loss = np.mean(losses)
+                    evidence_log.evidence_accumulation_loss = float(np.mean(losses)) if losses else None
 
             except Exception as e:
                 print(f"[WARN] generate failed: {e}")
@@ -195,7 +201,14 @@ class diffusion_decision_model(ABC):
                 current = log.evidence_list[i]
                 previous = log.evidence_list[i - 1]
                 current.delta_evidence_self_consistency = current.evidence_accumulation_self_consistency - previous.evidence_accumulation_self_consistency
-                current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
+
+                # evidence_accumulation_loss is None when no continuation agreed, so
+                # there is no per-token NLL to average. Leave the delta undefined
+                # rather than crashing this loop, which runs outside any try/except.
+                if previous.evidence_accumulation_loss is None or current.evidence_accumulation_loss is None:
+                    current.delta_evidence_loss = None
+                else:
+                    current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
 
         return log_list
 
