@@ -15,8 +15,9 @@ import numpy as np
 
 class diffusion_decision_model(ABC): 
 
-    def __init__(self, modelname) -> None:
+    def __init__(self, modelname: str, number_of_evidence: int | None = None) -> None:
         self.modelname = modelname
+        self.number_of_evidence = number_of_evidence
         
         if self.modelname is None:
             raise Exception('modelname is required')
@@ -30,7 +31,7 @@ class diffusion_decision_model(ABC):
         for run_number in range(from_run_number,to_run_number):
             print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
             
-            log_list: list[diffusion_decision_model_log_entity] = self.generate_response(run_number = run_number)
+            log_list: list[diffusion_decision_model_log_entity] = self.generate_response()
             log_list = self.generate_self_consistency(log_list)
             
             logger = self.create_logger(run_number)
@@ -40,7 +41,7 @@ class diffusion_decision_model(ABC):
             print(f"{'*' * 210}")
 
     @torch.inference_mode()
-    def generate_response(self, batch_size = 128, run_number = 0) -> list[diffusion_decision_model_log_entity]: 
+    def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
         print(f"{'*' * 100}  Generate Response {'*' * 100}")
 
         _, test_dataset = self.get_dataset().preprocess_dataset()
@@ -124,7 +125,6 @@ class diffusion_decision_model(ABC):
         evidence_log_list: list[diffusion_decision_model_evidence_log_entity] = []
         question_list: list[str] = []
         final_answer_list: list[str] = []
-        completion_loss_list: list[float] = []
         for log in log_list: 
             if log.final_answer is None: continue
             
@@ -132,7 +132,6 @@ class diffusion_decision_model(ABC):
                 evidence_log_list.append(evidence_log)
                 question_list.append(log.question)
                 final_answer_list.append(log.final_answer)
-                completion_loss_list.append(log.completion_loss)
         
         for i in tqdm(range(0, len(evidence_log_list), batch_size), desc="Processing Batches", unit="step"):
             batch: list[diffusion_decision_model_evidence_log_entity] = evidence_log_list[i : i + batch_size]        
@@ -140,7 +139,6 @@ class diffusion_decision_model(ABC):
             
             batch_question_list: list[str] = question_list[i : i + batch_size]        
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
-            batch_completion_loss_list: list[str] = completion_loss_list[i : i + batch_size]        
 
             try:
                 prompt_list = self.get_dataset().generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
@@ -151,7 +149,6 @@ class diffusion_decision_model(ABC):
                     evidence_log = batch[j]
                     prompt = prompt_list[j]
                     original_final_answer = batch_final_answer_list[j]
-                    completion_loss = batch_completion_loss_list[j]
                     
                     for index in range(sc_sample_count):
                         response = output.outputs[index]
@@ -190,9 +187,9 @@ class diffusion_decision_model(ABC):
                     # carries no information about this particular prefix. It is kept
                     # on the log entity as a per-sample baseline instead.
                     losses = [
-                        x.loss / x.token_count
+                        x.loss
                         for x in evidence_log.consistency_list
-                        if x.accuracy and x.loss is not None and x.token_count
+                        if x.accuracy and x.loss is not None
                     ]
                     evidence_log.evidence_accumulation_loss = float(np.mean(losses)) if losses else None
 
@@ -219,7 +216,8 @@ class diffusion_decision_model(ABC):
     def add_evidence_log_list(self, log: diffusion_decision_model_log_entity) -> diffusion_decision_model_log_entity:
         chain_of_thought = self.get_dataset().chain_of_thought_extraction(log.question, log.completion)
         sentences = re.split(r'(?<=[.!?])\s+', chain_of_thought)
-        chunk_size = ceil(len(sentences) / self.get_number_of_evidence())
+
+        chunk_size = self.get_chunk_size(sentences)
         for idx, i in enumerate(range(0, len(sentences), chunk_size)):        
             evidence = " ".join(sentences[i:i + chunk_size])
             partial_cot = " ".join(sentences[0:i + chunk_size])
@@ -235,8 +233,11 @@ class diffusion_decision_model(ABC):
     def get_max_new_tokens(self) -> int:
         return 15000
 
-    def get_number_of_evidence(self) -> int:
-        return 20
+    def get_chunk_size(self, sentences) -> int:
+        if self.number_of_evidence is None: 
+            return 1.0
+        
+        return ceil(len(sentences) / self.number_of_evidence)
 
     @abstractmethod
     def get_dataset(self) -> dataset_handler:
