@@ -5,7 +5,7 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity imp
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
 
 
-class diffusion_decision_model_gsm8k(diffusion_decision_model): 
+class diffusion_decision_model_aime(diffusion_decision_model): 
 
     def __init__(self, modelname, number_of_evidence: int | None = None) -> None:
         super().__init__(modelname, number_of_evidence)
@@ -25,5 +25,5 @@ class diffusion_decision_model_gsm8k(diffusion_decision_model):
         return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/aime/{self.modelname}/run_{run_number}/diffusion_decision_model_aime.csv')
 
 
-t = diffusion_decision_model_gsm8k(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
 t.run(from_run_number=1, to_run_number=2)
