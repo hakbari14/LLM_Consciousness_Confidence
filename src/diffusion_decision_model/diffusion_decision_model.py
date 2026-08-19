@@ -233,6 +233,9 @@ class diffusion_decision_model(ABC):
     def get_modelname_dir(self) -> str:
         return self.modelname.replace('/', '-').lower()
 
+    def get_number_of_evidence_dir(self) -> str:
+        return f'_nv_{self.number_of_evidence}' if self.number_of_evidence is not None else ''
+
     def get_chunk_size(self, sentences) -> int:
         if self.number_of_evidence is None: 
             return 1
