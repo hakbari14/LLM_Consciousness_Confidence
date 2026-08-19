@@ -11,6 +11,7 @@ from src.utils.utility import my_utils
 from math import ceil
 import torch
 import re
+import math
 import numpy as np 
 
 class diffusion_decision_model(ABC): 
@@ -18,7 +19,7 @@ class diffusion_decision_model(ABC):
     def __init__(self, modelname: str, number_of_evidence: int | None = None) -> None:
         self.modelname = modelname
         self.number_of_evidence = number_of_evidence
-        
+
         if self.modelname is None:
             raise Exception('modelname is required')
         
@@ -142,7 +143,7 @@ class diffusion_decision_model(ABC):
 
             try:
                 prompt_list = self.get_dataset().generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
-                outputs = self.model.generate(prompt_list, sampling_params)
+                outputs = self.model.generate(prompt_list, sampling_params, use_tqdm=False)
                 for j, output in enumerate(outputs):
                     if output.outputs is None: continue
                     idx = i + j
@@ -173,11 +174,7 @@ class diffusion_decision_model(ABC):
                         evidence_log.add_consistency_list(log_detail)
                         
                     true_count = sum(x.accuracy for x in evidence_log.consistency_list)
-                    # Laplace smoothing: (k + 1) / (K + 2) keeps the estimate strictly
-                    # inside (0, 1). (K + 1) would return exactly 1.0 when every
-                    # continuation agrees, and its logit -- the evidence axis a drift
-                    # rate is fitted on -- would be infinite.
-                    evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 2.0)
+                    evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 1.0)
 
                     # Per-token NLL, not the raw sum: x.loss is -sum(logprobs) and so
                     # grows with completion length. Averaging raw sums would compare
@@ -233,9 +230,12 @@ class diffusion_decision_model(ABC):
     def get_max_new_tokens(self) -> int:
         return 15000
 
+    def get_modelname_dir(self) -> str:
+        return self.modelname.replace('/', '-').lower()
+
     def get_chunk_size(self, sentences) -> int:
         if self.number_of_evidence is None: 
-            return 1.0
+            return 1
         
         return ceil(len(sentences) / self.number_of_evidence)
 

@@ -4,7 +4,6 @@ from src.datasets.dataset_config import dataset_config
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity import diffusion_decision_model_log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
 
-
 class diffusion_decision_model_aime(diffusion_decision_model): 
 
     def __init__(self, modelname, number_of_evidence: int | None = None) -> None:
@@ -22,8 +21,8 @@ class diffusion_decision_model_aime(diffusion_decision_model):
         return 15000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
-        return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/aime/{self.modelname}/run_{run_number}/diffusion_decision_model_aime.csv')
+        return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_aime.csv')
 
 
-t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B')
 t.run(from_run_number=1, to_run_number=2)

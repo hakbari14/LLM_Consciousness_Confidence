@@ -11,7 +11,6 @@ class aime_dataset(math_dataset_handler):
     def __init__(self, config):
         super().__init__(config)
         self.dataset_id = "di-zhang-fdu/AIME_1983_2024" 
-        # self.dataset_id = '/home/hr_akbari/.cache/huggingface/datasets/di-zhang-fdu___aime_1983_2024/default/0.0.0/3e2cc86390666c5c756622afc0eeb9e6194496bc'
         self.dataset = load_dataset(self.dataset_id)
         self.train_dataset = Dataset.from_dict({"prompt": [], "target": [], "problem_id" : []})
         self.test_dataset = self.dataset['train']
@@ -34,6 +33,7 @@ class aime_dataset(math_dataset_handler):
         return {
                 "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
                 "target": final_answer,
+                "question": question,
                 "problem_id": problem_id
                 }
 
