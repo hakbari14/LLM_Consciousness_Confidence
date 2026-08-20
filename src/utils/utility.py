@@ -79,8 +79,8 @@ class my_utils(object):
             chunk.to_csv(output_file, index=False)
 
     @staticmethod
-    def merge_csv_files(directory_full_path: str, file_name: str) -> None: 
-        files = sorted(glob.glob(f"{directory_full_path}/*_part_*.csv"))
+    def merge_csv_files(file_name_full_path: str) -> None: 
+        files = sorted(glob.glob(f"{file_name_full_path}_part_*.csv"))
 
         if not files:
             print("files not found")
@@ -88,7 +88,7 @@ class my_utils(object):
 
         df_list = [pd.read_csv(file) for file in files]
         merged_df = pd.concat(df_list, ignore_index=True)
-        merged_df.to_csv(f'{directory_full_path}/{file_name}', index=False)
+        merged_df.to_csv(f'{file_name_full_path}.csv', index=False)
 
     @staticmethod
     def calculate_accuracy_training_log(file_full_path: str) -> None: 
