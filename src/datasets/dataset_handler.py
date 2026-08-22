@@ -167,7 +167,7 @@ class dataset_handler(ABC):
         pass
 
     @abstractmethod
-    def generate_model_prompt_chain_of_thought(self, question: str, partial_cot: str) -> str:
+    def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
         pass
 
     @abstractmethod

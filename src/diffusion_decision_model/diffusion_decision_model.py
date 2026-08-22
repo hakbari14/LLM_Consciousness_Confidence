@@ -117,14 +117,19 @@ class diffusion_decision_model(ABC):
         log_list: list[diffusion_decision_model_log_entity] = []
         idx: int = 0
         for i in tqdm(range(0, len(test_dataset), batch_size), desc="Processing Batches", unit="step"):
-            batch = test_dataset[i : i + batch_size]
+            batch_dict = test_dataset[i : i + batch_size]
 
-            sample_ID_list = batch['sample_id']
-            problem_id_list = batch['problem_id']
-            split_list = batch['split']
-            question_list = batch['question']
-            prompt_list = batch['prompt']
-            target_list = batch['target']
+            batch = [
+                {key: values[j] for key, values in batch_dict.items()}
+                for j in range(len(batch_dict[next(iter(batch_dict))]))
+            ]
+
+            sample_ID_list = batch_dict['sample_id']
+            problem_id_list = batch_dict['problem_id']
+            split_list = batch_dict['split']
+            question_list = batch_dict['question']
+            prompt_list = batch_dict['prompt']
+            target_list = batch_dict['target']
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
                 for j, output in enumerate(outputs):
@@ -134,9 +139,11 @@ class diffusion_decision_model(ABC):
                     target = target_list[j]
                     problem_id = problem_id_list[j]
                     question = question_list[j]
+                    x = batch[j]
                     
                     log = diffusion_decision_model_log_entity()
                     log.ID = idx
+                    log.x = x
                     log.sample_ID = sample_ID
                     log.problem_id = problem_id
                     log.split = split
@@ -184,25 +191,25 @@ class diffusion_decision_model(ABC):
             )
 
         evidence_log_list: list[diffusion_decision_model_evidence_log_entity] = []
-        question_list: list[str] = []
+        x_list: list[dict] = []
         final_answer_list: list[str] = []
         for log in log_list: 
             for evidence_log in log.evidence_list:
                 evidence_log_list.append(evidence_log)
-                question_list.append(log.question)
+                x_list.append(log.x)
                 final_answer_list.append(log.final_answer)
         
         for i in tqdm(range(0, len(evidence_log_list), batch_size), desc="Processing Batches", unit="step"):
             batch: list[diffusion_decision_model_evidence_log_entity] = evidence_log_list[i : i + batch_size]        
             batch_partial_cot_list = list(map(lambda x: x.partial_cot, batch))
             
-            batch_question_list: list[str] = question_list[i : i + batch_size]        
+            batch_x_list: list[str] = x_list[i : i + batch_size]        
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
 
             try:
                 prompt_list : list[str] = []
-                for question, partial_cot in zip(batch_question_list, batch_partial_cot_list):
-                    prompt_list.append(self.get_dataset().generate_model_prompt_chain_of_thought(question, partial_cot))
+                for x, partial_cot in zip(batch_x_list, batch_partial_cot_list):
+                    prompt_list.append(self.get_dataset().generate_model_prompt_chain_of_thought(x, partial_cot))
                 
                 outputs = self.model.generate(prompt_list, sampling_params, use_tqdm=False)
                 for j, output in enumerate(outputs):

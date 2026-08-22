@@ -47,18 +47,38 @@ class countdown_dataset(countdown_dataset_handler):
         numbers = x['nums']
         target = x['target']
         problem_id = None
+        question = f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final answer in <answer> </answer> tags, for example <answer> (1 + 2) / 3 </answer>."        
         
         r1_prefix = [{ 
             "role": "user",
-            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final answer in <answer> </answer> tags, for example <answer> (1 + 2) / 3 </answer>."
+            "content": question
         },]
 
         return {
                 "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
                 "target": target, 
                 "nums": numbers,
+                "question": question,
                 "problem_id": problem_id
                 }
+
+    def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
+        numbers = x['nums']
+        target = x['target']
+        question = f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final answer in <answer> </answer> tags, for example <answer> (1 + 2) / 3 </answer>."        
+
+        prefix = [
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": partial_cot
+            },
+        ]
+
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
 
 # config = dataset_config('Qwen/Qwen2.5-1.5B')

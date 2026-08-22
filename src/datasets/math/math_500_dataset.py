@@ -55,8 +55,24 @@ class math_500_dataset(math_dataset_handler):
         return {
                 "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
                 "target": final_answer,
+                "question": question,
                 "problem_id": problem_id
                 }
+
+    def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
+        question = x['problem'] + " " + self.instruction
+        prefix = [
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": partial_cot
+            },
+        ]
+
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
 
 

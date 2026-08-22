@@ -42,8 +42,8 @@ class gsm8k_dataset(math_dataset_handler):
                 "problem_id": None
                 }
 
-    def generate_model_prompt_chain_of_thought(self, question: str, partial_cot: str) -> str:
-        question = question + " " + self.instruction
+    def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
+        question = x['question'] + " " + self.instruction
         prefix = [
             {
                 "role": "user",

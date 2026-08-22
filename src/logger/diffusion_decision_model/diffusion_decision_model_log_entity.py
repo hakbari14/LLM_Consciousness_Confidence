@@ -6,6 +6,7 @@ from typing import Optional, List
 @dataclass
 class diffusion_decision_model_log_entity(log_entity):
 
+    x: Optional[dict] = None
     completion : Optional[str] = None
     final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
@@ -27,6 +28,9 @@ class diffusion_decision_model_log_entity(log_entity):
     def validate(self): 
         super().validate()
 
+        if self.x is None:
+            raise Exception('data x is required')
+        
         if self.final_answer is None:
             raise Exception('final answer is required')
         
