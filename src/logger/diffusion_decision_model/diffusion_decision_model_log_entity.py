@@ -27,9 +27,11 @@ class diffusion_decision_model_log_entity(log_entity):
     def validate(self): 
         super().validate()
 
-        if self.completion is not None:
-            if self.evidence_list is None or len(self.evidence_list) == 0:
-                raise Exception('evidence list empty')
+        if self.final_answer is None:
+            raise Exception('final answer is required')
+        
+        if self.evidence_list is None or len(self.evidence_list) == 0:
+            raise Exception('evidence list empty')
             
         for e in self.evidence_list: 
             e.validate()

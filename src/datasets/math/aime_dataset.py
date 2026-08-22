@@ -37,6 +37,24 @@ class aime_dataset(math_dataset_handler):
                 "problem_id": problem_id
                 }
 
+    def generate_model_prompt_chain_of_thought(self, question: str, partial_cot: str) -> str:
+        prefix = [
+            {
+                "role": "system", 
+                "content": self.instruction
+            },
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": partial_cot
+            },
+        ]
+
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+
     def final_answer_extraction(self, prompt, solution_str, target):
         _SOLUTION_CLIP_CHARS = 600
         if len(solution_str) > _SOLUTION_CLIP_CHARS:

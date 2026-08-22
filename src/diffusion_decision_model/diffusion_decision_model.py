@@ -10,18 +10,32 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 from src.utils.utility import my_utils
 from math import ceil
 import torch
-import re
-import math
 import numpy as np 
+import pandas as pd 
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+    confusion_matrix
+)
+
 
 class diffusion_decision_model(ABC): 
 
-    def __init__(self, modelname: str, number_of_evidence: int | None = None) -> None:
+    def __init__(self, modelname: str, number_of_evidence: int) -> None:
         self.modelname = modelname
         self.number_of_evidence = number_of_evidence
 
         if self.modelname is None:
             raise Exception('modelname is required')
+        if self.number_of_evidence is None:
+            raise Exception('number of evidence is required')
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dataset = None
@@ -40,6 +54,50 @@ class diffusion_decision_model(ABC):
             logger.write_to_log_file()
             
             print(f"{'*' * 210}")
+
+    def train_logistic_regression(self, run_number = 0) -> None:
+        log_list = self.load_logs_list(run_number=run_number)
+        
+        filtered_log_list = [
+            log for log in log_list
+            if len(log.evidence_list) == 20
+        ] 
+               
+        X = np.array([
+            [e.evidence_accumulation_self_consistency for e in log.evidence_list]
+            for log in filtered_log_list
+        ], dtype=float)
+        y = np.array([1 if log.accuracy else 0 for log in filtered_log_list], dtype=int)
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=y
+        )
+
+        print(f"Training samples: {len(X_train)}")
+        print(f"Test samples:     {len(X_test)}")
+
+        model = LogisticRegression(
+            max_iter=1000,
+            random_state=42
+        )
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        y_prob = model.predict_proba(X_test)[:, 1]
+
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, zero_division=0)
+        recall = recall_score(y_test, y_pred, zero_division=0)
+        f1 = f1_score(y_test, y_pred, zero_division=0)
+
+        print(f"Accuracy : {accuracy:.4f}")
+        print(f"Precision: {precision:.4f}")
+        print(f"Recall   : {recall:.4f}")
+        print(f"F1 Score : {f1:.4f}")
+        
 
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
@@ -95,10 +153,11 @@ class diffusion_decision_model(ABC):
 
                     try:
                         final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, str(completion), target)
+                        if final_answer is None: continue
                         log.final_answer = final_answer
                         log.compared_final_answer = compared_final_answer
                         log.accuracy = accuracy
-                        log = self.add_evidence_log_list(log)
+                        log = self.add_evidence_log_list(log, response)
                     except Exception as e:
                         print(f"[WARN] generate failed: {e}")
 
@@ -127,8 +186,6 @@ class diffusion_decision_model(ABC):
         question_list: list[str] = []
         final_answer_list: list[str] = []
         for log in log_list: 
-            if log.final_answer is None: continue
-            
             for evidence_log in log.evidence_list:
                 evidence_log_list.append(evidence_log)
                 question_list.append(log.question)
@@ -142,7 +199,10 @@ class diffusion_decision_model(ABC):
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
 
             try:
-                prompt_list = self.get_dataset().generate_model_prompt_chain_of_thought(batch_question_list, batch_partial_cot_list)
+                prompt_list : list[str] = []
+                for question, partial_cot in zip(batch_question_list, batch_partial_cot_list):
+                    prompt_list.append(self.get_dataset().generate_model_prompt_chain_of_thought(question, partial_cot))
+                
                 outputs = self.model.generate(prompt_list, sampling_params, use_tqdm=False)
                 for j, output in enumerate(outputs):
                     if output.outputs is None: continue
@@ -176,19 +236,13 @@ class diffusion_decision_model(ABC):
                     true_count = sum(x.accuracy for x in evidence_log.consistency_list)
                     evidence_log.evidence_accumulation_self_consistency = (true_count + 1.0) / (len(evidence_log.consistency_list) + 1.0)
 
-                    # Per-token NLL, not the raw sum: x.loss is -sum(logprobs) and so
-                    # grows with completion length. Averaging raw sums would compare
-                    # a long continuation against a short one on different scales.
-                    # completion_loss is deliberately NOT averaged in here: it is a
-                    # per-sample constant covering the whole phase-1 trajectory, so it
-                    # carries no information about this particular prefix. It is kept
-                    # on the log entity as a per-sample baseline instead.
                     losses = [
                         x.loss
                         for x in evidence_log.consistency_list
                         if x.accuracy and x.loss is not None
                     ]
-                    evidence_log.evidence_accumulation_loss = float(np.mean(losses)) if losses else None
+                    losses.append(evidence_log.partial_cot_loss)
+                    evidence_log.evidence_accumulation_loss = float(np.mean(losses))
 
             except Exception as e:
                 print(f"[WARN] generate failed: {e}")
@@ -199,33 +253,88 @@ class diffusion_decision_model(ABC):
                 current = log.evidence_list[i]
                 previous = log.evidence_list[i - 1]
                 current.delta_evidence_self_consistency = current.evidence_accumulation_self_consistency - previous.evidence_accumulation_self_consistency
-
-                # evidence_accumulation_loss is None when no continuation agreed, so
-                # there is no per-token NLL to average. Leave the delta undefined
-                # rather than crashing this loop, which runs outside any try/except.
-                if previous.evidence_accumulation_loss is None or current.evidence_accumulation_loss is None:
-                    current.delta_evidence_loss = None
-                else:
-                    current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
+                current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
 
         return log_list
 
-    def add_evidence_log_list(self, log: diffusion_decision_model_log_entity) -> diffusion_decision_model_log_entity:
-        chain_of_thought = self.get_dataset().chain_of_thought_extraction(log.question, log.completion)
-        sentences = re.split(r'(?<=[.!?])\s+', chain_of_thought)
+    def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response) -> diffusion_decision_model_log_entity:
+        token_count = len(response.logprobs)
+        base = token_count // (self.number_of_evidence + 1)
+        remainder = token_count % (self.number_of_evidence + 1)
+        
+        token_ids = response.token_ids 
+        start = 0
+        for i in range(self.number_of_evidence):
+            group_size = base + (1 if i < remainder else 0)
+            evidence = self.tokenizer.decode(token_ids[start:start + group_size], skip_special_tokens=True)
+            partial_cot = self.tokenizer.decode(token_ids[0:start + group_size], skip_special_tokens=True)
+            partial_completion = self.tokenizer.decode(token_ids[start + group_size:], skip_special_tokens=True)
 
-        chunk_size = self.get_chunk_size(sentences)
-        for idx, i in enumerate(range(0, len(sentences), chunk_size)):        
-            evidence = " ".join(sentences[i:i + chunk_size])
-            partial_cot = " ".join(sentences[0:i + chunk_size])
-            
             evidence_log = diffusion_decision_model_evidence_log_entity()
-            evidence_log.index = idx
+            evidence_log.index = i
             evidence_log.evidence = evidence
             evidence_log.partial_cot = partial_cot
+            evidence_log.partial_completion = partial_completion
+            evidence_log.partial_cot_loss = my_utils.get_loss_from_vllm_output(response, token_start = start + group_size)
+            
             log.add_evidence_list(evidence_log)
+            start += group_size
+           
                 
         return log
+
+    def load_logs_list(self, run_number = 0) -> list[diffusion_decision_model_log_entity]:
+        logger = self.create_logger(run_number)
+
+        df_logs = pd.read_csv(logger.get_log_file_name())
+        df_evidences = pd.read_csv(logger.get_evidence_log_file_name())
+        df_samples = pd.read_csv(logger.get_samples_log_file_name())
+
+        log_list: list[diffusion_decision_model_log_entity] = []
+        for _, a_row in df_logs.iterrows():
+            log = diffusion_decision_model_log_entity()
+            log.ID = a_row["ID"]
+            log.sample_ID = a_row["Sample_ID"]
+            log.problem_id = a_row["problem_id"]
+            log.split = a_row["Split"]
+            log.prompt = a_row["Prompt"]
+            log.target = a_row["Target"]
+            log.completion = a_row["Completion"]
+            log.final_answer = a_row["Final_Answer"]
+            log.accuracy = a_row["Accuracy"]
+            log.token_count = a_row["Token_Count"]
+
+            b_subset = df_evidences[df_evidences["Sample_ID"] == log.sample_ID]
+            for _, b_row in b_subset.iterrows():
+                log_evidence = diffusion_decision_model_evidence_log_entity()
+                log_evidence.index = b_row["Evidence_Index"]
+                log_evidence.evidence = b_row["Evidence"]
+                log_evidence.partial_cot = b_row["Partial_COT"]
+                log_evidence.evidence_accumulation_self_consistency = b_row["Evidence_Accumulation_Self_Consistency"]
+                log_evidence.delta_evidence_self_consistency = b_row["Delta_Evidence_Self_Consistency"]
+                log_evidence.evidence_accumulation_loss = b_row["Evidence_Accumulation_Loss"]
+                log_evidence.delta_evidence_loss = b_row["Delta_Evidence_Loss"]
+               
+                s_subset = df_samples[(df_samples["Sample_ID"] == log.sample_ID) & (df_samples["Evidence_Index"] == log_evidence.index)]
+                for _, s_row in s_subset.iterrows():
+                    log_detail = diffusion_decision_model_log_detail_entity()
+                    log_detail.index = s_row["Index"]
+                    log_detail.prompt = s_row["Prompt"]
+                    log_detail.completion = s_row["Completion"]
+                    log_detail.token_count = s_row["Token_Count"]
+                    log_detail.original_final_answer = s_row["Original_Final_Answer"]
+                    log_detail.final_answer = s_row["Final_Answer"]
+                    log_detail.accuracy = s_row["Accuracy"]
+                    log_detail.loss = s_row["Loss"]
+                
+                    log_evidence.add_consistency_list(log_detail)
+
+                log.add_evidence_list(log_evidence)
+            
+            log_list.append(log)
+
+        return log_list
+
 
     def get_max_new_tokens(self) -> int:
         return 15000
@@ -234,13 +343,7 @@ class diffusion_decision_model(ABC):
         return self.modelname.replace('/', '-').lower()
 
     def get_number_of_evidence_dir(self) -> str:
-        return f'_nv_{self.number_of_evidence}' if self.number_of_evidence is not None else ''
-
-    def get_chunk_size(self, sentences) -> int:
-        if self.number_of_evidence is None: 
-            return 1
-        
-        return ceil(len(sentences) / self.number_of_evidence)
+        return f'_nv_{self.number_of_evidence}'
 
     @abstractmethod
     def get_dataset(self) -> dataset_handler:

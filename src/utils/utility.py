@@ -106,13 +106,14 @@ class my_utils(object):
         print(result)
 
     @staticmethod
-    def get_loss_from_vllm_output(response):
+    def get_loss_from_vllm_output(response, token_start = 0):
 
         if response.logprobs is None:
             return None
 
+        response_logprobs = response.logprobs[token_start:]
         logprobs = []
-        for token_logprobs in response.logprobs:
+        for token_logprobs in response_logprobs:
             if token_logprobs is None:
                 continue
 

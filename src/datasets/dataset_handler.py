@@ -166,41 +166,9 @@ class dataset_handler(ABC):
     def generate_model_prompt(self, x):
         pass
 
-    def generate_model_prompt_chain_of_thought(self, question_list: list[str], partial_cot_list: list[str]) -> list[str]:
-        prompt_list : list[str] = []
-        for question, partial_cot in zip(question_list, partial_cot_list):
-            prompt = "You are continuing an unfinished reasoning process.\n\n"
-            prompt += (
-                "The reasoning below represents the current reasoning state reached while "
-                "solving the question.\n"
-                "Assume that every reasoning step in the provided partial reasoning is "
-                "correct and should be preserved.\n\n"
-            )
-            prompt += (
-                "Follow these instructions carefully:\n"
-                "- Do NOT restart the solution from the beginning.\n"
-                "- Do NOT repeat, summarize, or rewrite the provided reasoning.\n"
-                "- Treat the partial reasoning as the current reasoning state.\n"
-                "- Continue reasoning directly from the final step of the provided partial reasoning.\n"
-                "- Your first generated sentence must logically follow the final sentence of the provided reasoning.\n"
-                "- If multiple valid continuations exist, choose one plausible continuation and follow it consistently until reaching a final answer.\n"
-                "- Do NOT revise or question earlier reasoning unless the last step is explicitly incomplete.\n"
-                "- Continue reasoning until the problem is completely solved.\n"
-                "- Output only the continuation of the reasoning followed by the final answer.\n\n"
-            )
-
-            prompt += f"Question:\n{question}\n\n"
-            prompt += f"Partial Reasoning:\n{partial_cot}\n\n"
-            prompt += f"Continue the reasoning from this point and output the final answer after {self.get_final_answer_marker()}"
-
-            prefix = [
-                {"role": "user",
-                    "content": prompt
-                    },
-            ]
-            prompt_list.append(self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True))
-
-        return prompt_list
+    @abstractmethod
+    def generate_model_prompt_chain_of_thought(self, question: str, partial_cot: str) -> str:
+        pass
 
     @abstractmethod
     def generate_model_prompt_confidence(self, x):

@@ -42,6 +42,22 @@ class gsm8k_dataset(math_dataset_handler):
                 "problem_id": None
                 }
 
+    def generate_model_prompt_chain_of_thought(self, question: str, partial_cot: str) -> str:
+        question = question + " " + self.instruction
+        prefix = [
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": partial_cot
+            },
+        ]
+
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+
+
     @staticmethod
     def gsm8k_answer_extraction(solution: str) -> str :
         _SOLUTION_CLIP_CHARS = 300

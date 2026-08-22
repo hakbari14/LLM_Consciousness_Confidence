@@ -7,9 +7,7 @@ class diffusion_decision_model_logger(logger):
     def __init__(self, log_file_name) -> None:
         super().__init__(log_file_name)
         self.samples_log_file_name = log_file_name.replace('.csv', '_samples.csv')
-        self.create_and_prepare(self.samples_log_file_name, self.get_samples_fieldnames())
         self.evidence_log_file_name = log_file_name.replace('.csv', '_evidence.csv')
-        self.create_and_prepare(self.evidence_log_file_name, self.get_evidence_fieldnames())
 
     def validate_log(self, log):
         # A sample whose final answer could not be parsed never gets self-consistency
@@ -29,6 +27,7 @@ class diffusion_decision_model_logger(logger):
         if len(self.buffer) == 0:
             return
 
+        self.create_and_prepare(self.samples_log_file_name, self.get_samples_fieldnames())
         try:
             with open(self.samples_log_file_name, "a", newline="", encoding="utf-8") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames = self.get_samples_fieldnames())
@@ -41,6 +40,7 @@ class diffusion_decision_model_logger(logger):
         if len(self.buffer) == 0:
             return
 
+        self.create_and_prepare(self.evidence_log_file_name, self.get_evidence_fieldnames())
         try:
             with open(self.evidence_log_file_name, "a", newline="", encoding="utf-8") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames = self.get_evidence_fieldnames())
@@ -103,6 +103,8 @@ class diffusion_decision_model_logger(logger):
                     'Parent_ID': log.ID,
                     'Evidence': evidence_log.evidence,
                     'Partial_COT': evidence_log.partial_cot,
+                    'Partial_Completion': evidence_log.partial_completion,
+                    'Partial_COT_Loss': evidence_log.partial_cot_loss,
                     'Evidence_Accumulation_Self_Consistency': evidence_log.evidence_accumulation_self_consistency,
                     'Delta_Evidence_Self_Consistency': evidence_log.delta_evidence_self_consistency,
                     'Evidence_Accumulation_Loss': evidence_log.evidence_accumulation_loss,
@@ -120,6 +122,8 @@ class diffusion_decision_model_logger(logger):
                 'Parent_ID',
                 'Evidence',
                 'Partial_COT',
+                'Partial_Completion',
+                'Partial_COT_Loss',
                 'Evidence_Accumulation_Self_Consistency',
                 'Delta_Evidence_Self_Consistency',
                 'Evidence_Accumulation_Loss',
