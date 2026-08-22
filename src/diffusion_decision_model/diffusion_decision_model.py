@@ -58,16 +58,11 @@ class diffusion_decision_model(ABC):
     def train_logistic_regression(self, run_number = 0) -> None:
         log_list = self.load_logs_list(run_number=run_number)
         
-        filtered_log_list = [
-            log for log in log_list
-            if len(log.evidence_list) == 20
-        ] 
-               
         X = np.array([
-            [e.evidence_accumulation_self_consistency for e in log.evidence_list]
-            for log in filtered_log_list
+            [e.evidence_accumulation_loss for e in log.evidence_list]
+            for log in log_list
         ], dtype=float)
-        y = np.array([1 if log.accuracy else 0 for log in filtered_log_list], dtype=int)
+        y = np.array([1 if log.accuracy else 0 for log in log_list], dtype=int)
 
         X_train, X_test, y_train, y_test = train_test_split(
             X,
