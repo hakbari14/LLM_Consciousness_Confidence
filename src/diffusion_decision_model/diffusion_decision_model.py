@@ -57,7 +57,7 @@ class diffusion_decision_model(ABC):
 
     def train_logistic_regression(self, run_number = 0) -> None:
         log_list = self.load_logs_list(run_number=run_number)
-        
+       
         X = np.array([
             [e.evidence_accumulation_loss for e in log.evidence_list]
             for log in log_list
@@ -92,6 +92,12 @@ class diffusion_decision_model(ABC):
         print(f"Precision: {precision:.4f}")
         print(f"Recall   : {recall:.4f}")
         print(f"F1 Score : {f1:.4f}")
+        
+        print("\n===== Classification Report =====")
+        print(classification_report(y_test, y_pred, zero_division=0))
+
+        print("\n===== Confusion Matrix =====")
+        print(confusion_matrix(y_test, y_pred))
         
 
     @torch.inference_mode()
