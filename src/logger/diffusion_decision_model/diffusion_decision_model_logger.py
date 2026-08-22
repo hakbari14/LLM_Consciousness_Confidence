@@ -64,7 +64,7 @@ class diffusion_decision_model_logger(logger):
                 'Token_Count': log.token_count,
                 'Completion_Loss': log.completion_loss,
                 'Final_Answer': log.final_answer,
-                'Compared_Final_Answer': getattr(log, 'compared_final_answer', None),
+                'Compared_Final_Answer': log.compared_final_answer,
                 'Accuracy': log.accuracy,
                 'Evidence_Count': len(log.evidence_list),
                 'Evidence_Accumulation_Avg': log.evidence_accumulation_avg,
@@ -147,7 +147,7 @@ class diffusion_decision_model_logger(logger):
                         'Token_Count': sample_log.token_count,
                         'Original_Final_Answer': sample_log.original_final_answer,
                         'Final_Answer': sample_log.final_answer,
-                        'Compared_Final_Answer': getattr(sample_log, 'compared_final_answer', None),
+                        'Compared_Final_Answer': sample_log.compared_final_answer,
                         'Accuracy': sample_log.accuracy,
                         'Loss': sample_log.loss,
                         }

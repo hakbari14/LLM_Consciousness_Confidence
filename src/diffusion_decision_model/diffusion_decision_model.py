@@ -13,7 +13,7 @@ import torch
 import numpy as np 
 import pandas as pd 
 import numpy as np
-
+import traceback
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -161,18 +161,20 @@ class diffusion_decision_model(ABC):
 
                     try:
                         final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(prompt, str(completion), target)
-                        if final_answer is None: continue
+                        if final_answer is None or compared_final_answer is None: continue
                         log.final_answer = final_answer
                         log.compared_final_answer = compared_final_answer
                         log.accuracy = accuracy
                         log = self.add_evidence_log_list(log, response)
                     except Exception as e:
-                        print(f"[WARN] generate failed: {e}")
+                        print(f"[WARN]: {e}")
+                        traceback.print_exc()                        
 
                     idx += 1
                     log_list.append(log)    
             except Exception as e:
-                print(f"[WARN] generate failed: {e}")
+                print(f"[WARN]: {e}")
+                traceback.print_exc()                        
 
         return log_list
 
@@ -197,7 +199,7 @@ class diffusion_decision_model(ABC):
             for evidence_log in log.evidence_list:
                 evidence_log_list.append(evidence_log)
                 x_list.append(log.x)
-                final_answer_list.append(log.final_answer)
+                final_answer_list.append(log.compared_final_answer)
         
         for i in tqdm(range(0, len(evidence_log_list), batch_size), desc="Processing Batches", unit="step"):
             batch: list[diffusion_decision_model_evidence_log_entity] = evidence_log_list[i : i + batch_size]        
@@ -237,7 +239,8 @@ class diffusion_decision_model(ABC):
                             log_detail.compared_final_answer = compared_final_answer
                             log_detail.accuracy = accuracy
                         except Exception as e:
-                            print(f"[WARN] generate failed: {e}")
+                            print(f"[WARN]: {e}")
+                            traceback.print_exc()                        
                             
                         evidence_log.add_consistency_list(log_detail)
                         
@@ -253,7 +256,8 @@ class diffusion_decision_model(ABC):
                     evidence_log.evidence_accumulation_loss = float(np.mean(losses))
 
             except Exception as e:
-                print(f"[WARN] generate failed: {e}")
+                print(f"[WARN]: {e}")
+                traceback.print_exc()                        
 
         
         for log in log_list: 

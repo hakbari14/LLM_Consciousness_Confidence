@@ -1,4 +1,4 @@
-from src.datasets.math.countdown_dataset_handler import countdown_dataset_handler
+from src.datasets.dataset_handler import dataset_handler
 from src.datasets.dataset_config import dataset_config
 from src.utils.enums_class import llm_pipeline_type_enum
 from datasets import Dataset
@@ -7,11 +7,10 @@ import re
 
 
 
-class countdown_dataset(countdown_dataset_handler): 
+class countdown_dataset(dataset_handler): 
 
     def __init__(self, config):
         super().__init__(config)
-        # self.dataset_id = "/home/hr_akbari/.cache/huggingface/datasets/datasets--Jiayi-Pan--Countdown-Tasks-3to4"
         self.dataset_id = "Jiayi-Pan/Countdown-Tasks-3to4"
         self.dataset = load_dataset(self.dataset_id)["train"].train_test_split(test_size=0.001, seed=42)
         self.train_dataset = Dataset.from_dict({"prompt": [], "target": [], "problem_id" : []})
@@ -79,6 +78,129 @@ class countdown_dataset(countdown_dataset_handler):
         ]
 
         return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+
+    def generate_wrong_answer(self, latex_expr:str) -> str:
+        return None
+
+    def final_answer_confidence_extraction(self, prompt, completion, target):
+        return None
+
+    def generate_model_prompt_confidence(self, x):
+        return None
+
+    def generate_another_prompt_confidence(self, question: str, answer: str) -> str:
+        return None
+
+    def extract_another_confidence(self, solution: str) -> float:
+        return None
+
+    def verify_final_answer(self, target, equation):
+        equation_expr = self.normalize_math_text(equation)
+
+        allowed_pattern = r'^[\d+\-*/().\s]+$'
+        if not re.match(allowed_pattern, equation_expr):
+           return False, None
+       
+        result = eval(equation_expr, {"__builtins__": None}, {})
+        return abs(float(result) - float(target)) < 1e-5, result
+
+    def normalize_math_text(self, text: str) -> str:
+        replacements = {
+            # Multiplication
+            '×': '*',
+            '✕': '*',
+            '✖': '*',
+            '⨯': '*',
+            '⨉': '*',
+            '⋅': '*',
+            '∙': '*',
+            '·': '*',
+            '＊': '*',
+
+            # Division
+            '÷': '/',
+            '∕': '/',
+            '⁄': '/',
+            '／': '/',
+
+            # Plus
+            '＋': '+',
+
+            # Minus / hyphen
+            '−': '-',
+            '–': '-',
+            '—': '-',
+            '﹣': '-',
+            '－': '-',
+
+            # Equal
+            '＝': '=',
+
+            # Comparison
+            '≤': '<=',
+            '≥': '>=',
+            '≠': '!=',
+            '＜': '<',
+            '＞': '>',
+
+            # Parentheses
+            '（': '(',
+            '）': ')',
+            '［': '[',
+            '］': ']',
+            '｛': '{',
+            '｝': '}',
+
+            # Comma / decimal separators
+            '，': ',',
+            '．': '.',
+
+            # Colon
+            '：': ':',
+
+            # Percent
+            '％': '%',
+
+            # Power-related
+            '∧': '^',
+
+            # Square root
+            '√': 'sqrt',
+
+            # Infinity
+            '∞': 'inf',
+
+            # Common spaces
+            '\u00A0': ' ',   # non-breaking space
+            '\u2009': ' ',   # thin space
+            '\u200A': ' ',   # hair space
+            '\u202F': ' ',   # narrow no-break space
+        }
+
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+
+        # Convert Unicode superscript digits to normal digits
+        superscripts = str.maketrans(
+            '⁰¹²³⁴⁵⁶⁷⁸⁹',
+            '0123456789'
+        )
+        text = text.translate(superscripts)
+
+        # Convert Unicode subscript digits
+        subscripts = str.maketrans(
+            '₀₁₂₃₄₅₆₇₈₉',
+            '0123456789'
+        )
+        text = text.translate(subscripts)
+
+        # Normalize multiple spaces
+        text = re.sub(r'[ \t]+', ' ', text)
+
+        # Remove spaces around operators
+        text = re.sub(r'\s*([+\-*/=<>])\s*', r'\1', text)
+
+        return text.strip()
 
 
 # config = dataset_config('Qwen/Qwen2.5-1.5B')

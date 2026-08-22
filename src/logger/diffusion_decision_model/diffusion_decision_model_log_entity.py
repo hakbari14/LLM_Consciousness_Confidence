@@ -9,6 +9,7 @@ class diffusion_decision_model_log_entity(log_entity):
     x: Optional[dict] = None
     completion : Optional[str] = None
     final_answer : Optional[str] = None
+    compared_final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
     token_count : Optional[int] = None
     completion_embedding_shape : Optional[str] = None

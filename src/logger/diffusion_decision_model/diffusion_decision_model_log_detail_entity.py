@@ -10,6 +10,7 @@ class diffusion_decision_model_log_detail_entity:
     token_count : Optional[int] = None
     original_final_answer : Optional[str] = None
     final_answer : Optional[str] = None
+    compared_final_answer : Optional[str] = None
     accuracy : Optional[bool] = None
     loss : Optional[float] = None
 
