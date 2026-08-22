@@ -13,7 +13,7 @@ class diffusion_decision_model_gsm8k(diffusion_decision_model):
     def get_dataset(self) -> gsm8k_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(1)
+            config.set_max_test_dataset_size(150)
             self.dataset = gsm8k_dataset(config)
         return self.dataset
 
