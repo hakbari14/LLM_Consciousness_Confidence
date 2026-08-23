@@ -16,6 +16,7 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix
 )
+from sklearn.metrics import roc_curve, auc
 
 class diffusion_decision_model_training: 
 
@@ -78,6 +79,10 @@ class diffusion_decision_model_training:
 
         print("\n===== Confusion Matrix =====")
         print(confusion_matrix(y_test, y_pred))
+
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        roc_auc = auc(fpr, tpr)
+        print(f"ROC : {roc_auc:.4f}")
         
 
     def load_logs_list(self, df_logs, df_evidences, df_samples) -> list[diffusion_decision_model_log_entity]:
