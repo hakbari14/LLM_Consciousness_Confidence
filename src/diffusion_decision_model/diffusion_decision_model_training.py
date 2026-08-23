@@ -82,7 +82,10 @@ class diffusion_decision_model_training:
 
         fpr, tpr, _ = roc_curve(y_test, y_prob)
         roc_auc = auc(fpr, tpr)
+
+        ece, _ = self.calculate_ECE_MCE(y_test, y_prob)        
         print(f"ROC : {roc_auc:.4f}")
+        print(f"ECE : {ece:.4f}")
         
 
     def load_logs_list(self, df_logs, df_evidences, df_samples) -> list[diffusion_decision_model_log_entity]:
@@ -130,6 +133,27 @@ class diffusion_decision_model_training:
             log_list.append(log)
 
         return log_list
+
+    def calculate_ECE_MCE(df, y_list, confidence_list, n_bins = 10):
+        df = pd.DataFrame({
+                "confidence": confidence_list,
+                "accuracy_reward": y_list
+            })
+             
+        df['binned_confidence'] = pd.qcut(df['confidence'], q=n_bins, duplicates='drop')
+        agg_perplexity = df.groupby('binned_confidence', observed=False)['confidence'].agg(['mean'])
+        agg_accuracy = df.groupby('binned_confidence', observed=False)['accuracy_reward'].agg(['mean'])
+
+        expected_calibration_error = 0
+        maximum_calibration_error = 0
+        for idx, row in enumerate(agg_perplexity.iterrows()):
+            confidence = row[1]['mean']
+            accuracy = agg_accuracy.iloc[idx]['mean']
+            expected_calibration_error += abs(confidence - accuracy)
+            maximum_calibration_error = max(abs(confidence - accuracy), maximum_calibration_error)
+
+        expected_calibration_error = expected_calibration_error / (idx + 1)
+        return expected_calibration_error, maximum_calibration_error
 
 
 training = diffusion_decision_model_training(number_of_evidence=20)
