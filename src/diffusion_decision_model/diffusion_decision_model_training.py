@@ -29,7 +29,7 @@ class diffusion_decision_model_training:
 
     def train_logistic_regression(self, from_run_number = 1, to_run_number = 2) -> None:
         log_list: list[diffusion_decision_model_log_entity] = []
-        datasets = ['gpqa', 'countdown']
+        datasets = ['gpqa', 'countdown', 'aime']
         for dataset in datasets:
             for run_number in range(from_run_number,to_run_number):
                 logger = diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/{dataset}/qwen-qwen3-8b/run_{run_number}/diffusion_decision_model_{dataset}_nv_{self.number_of_evidence}.csv')
