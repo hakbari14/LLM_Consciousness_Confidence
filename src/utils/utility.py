@@ -127,3 +127,4 @@ class my_utils(object):
         loss = -sum(logprobs) 
         return loss
 
+my_utils.split_csv_file('src/diffusion_decision_model/gpqa/qwen-qwen3-8b/run_1/diffusion_decision_model_gpqa_nv_20_samples.csv', 2)

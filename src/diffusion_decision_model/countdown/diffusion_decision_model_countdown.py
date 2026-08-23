@@ -25,4 +25,5 @@ class diffusion_decision_model_countdown(diffusion_decision_model):
 
 
 t = diffusion_decision_model_countdown(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
-t.run(from_run_number=1, to_run_number=2)
+# t.run(from_run_number=1, to_run_number=2)
+t.train_logistic_regression(run_number=1)
