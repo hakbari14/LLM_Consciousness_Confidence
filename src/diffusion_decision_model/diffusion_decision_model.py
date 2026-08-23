@@ -72,7 +72,7 @@ class diffusion_decision_model(ABC):
             problem_id_list = batch_dict['problem_id']
             split_list = batch_dict['split']
             question_list = batch_dict['question']
-            prompt_list = batch_dict['prompt']
+            prompt_list = [self.build_generation_prompt(prompt) for prompt in batch_dict['prompt']]
             target_list = batch_dict['target']
             try:
                 outputs = self.model.generate(prompt_list, sampling_params)
@@ -212,6 +212,35 @@ class diffusion_decision_model(ABC):
                 current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
 
         return log_list
+
+    def build_generation_prompt(self, prompt: str) -> str:
+        """Close the user turn and open the assistant turn.
+
+        The dataset builds its prompt with continue_final_message=True, which
+        leaves the USER turn open, so the model generates as if it were still
+        writing the user's message: it appends notes to the question, answers
+        before it reasons, and emits a closing </think> for a block it never
+        opened. Moving generation into the assistant turn gives the model the
+        structure it was trained on.
+
+        Override to return prompt unchanged to restore the previous behaviour.
+        """
+        return prompt + self.get_assistant_turn_suffix()
+
+    def get_assistant_turn_suffix(self) -> str:
+        """Template text between an open user turn and an open assistant turn.
+
+        Derived from the tokenizer rather than hardcoded, so it holds for any
+        chat template, not only the one this model happens to use.
+        """
+        probe = [{"role": "user", "content": "x"}]
+        open_user_turn = self.tokenizer.apply_chat_template(probe, tokenize=False, continue_final_message=True)
+        open_assistant_turn = self.tokenizer.apply_chat_template(probe, tokenize=False, add_generation_prompt=True)
+
+        if not open_assistant_turn.startswith(open_user_turn):
+            return ''
+
+        return open_assistant_turn[len(open_user_turn):]
 
     def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response) -> diffusion_decision_model_log_entity:
         token_count = len(response.logprobs)
