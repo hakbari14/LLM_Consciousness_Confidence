@@ -10,9 +10,9 @@ class logger(ABC):
         self.log_file_name = log_file_name
         if self.log_file_name is None:
             raise Exception('logfile name is required')
-        self.create_and_prepare(self.log_file_name, self.get_fieldnames())
         
     def write_to_log_file(self): 
+        self.create_and_prepare(self.log_file_name, self.get_fieldnames())
         if len(self.buffer) == 0:
             return 
         

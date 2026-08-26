@@ -69,6 +69,9 @@ class diffusion_decision_model_logger(logger):
                 'Evidence_Count': len(log.evidence_list),
                 'Evidence_Accumulation_Avg': log.evidence_accumulation_avg,
                 'Drift_Rate': log.driff_rate,
+                'Self_Consistency_Confidence': log.self_consistency_confidence,
+                'Self_Consistency_Final_Answer': log.self_consistency_final_answer,
+                'Self_Consistency_Accuracy': log.self_consistency_accuracy,
                 }
             list.append(b)
         return list
@@ -91,7 +94,11 @@ class diffusion_decision_model_logger(logger):
                 'Evidence_Count',
                 'Evidence_Accumulation_Avg',
                 'Drift_Rate',
+                'Self_Consistency_Confidence',
+                'Self_Consistency_Final_Answer',
+                'Self_Consistency_Accuracy',
                 ]
+
 
     def convert_evidence_buffer(self):
         list = []

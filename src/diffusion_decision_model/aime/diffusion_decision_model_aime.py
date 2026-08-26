@@ -6,7 +6,7 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 
 class diffusion_decision_model_aime(diffusion_decision_model): 
 
-    def __init__(self, modelname, number_of_evidence: int | None = None) -> None:
+    def __init__(self, modelname, number_of_evidence: int) -> None:
         super().__init__(modelname, number_of_evidence)
         
 
@@ -25,4 +25,4 @@ class diffusion_decision_model_aime(diffusion_decision_model):
 
 
 t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)

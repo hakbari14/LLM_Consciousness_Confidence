@@ -25,7 +25,7 @@ class diffusion_decision_model_evidence_log_entity:
             raise Exception('index required')
         if self.evidence is None:
             raise Exception('evidence required')
-        if self.partial_cot is None:
+        if self.index != 0 and self.partial_cot is None:
             raise Exception('partial cot required')
         if self.partial_cot_loss is None:
             raise Exception('partial cot loss required')

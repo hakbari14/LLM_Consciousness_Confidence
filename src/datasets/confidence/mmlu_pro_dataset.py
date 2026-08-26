@@ -63,7 +63,21 @@ class mmlu_pro_dataset(dataset_handler):
         answer_index = x['answer_index']
         answer = x['answer']
         problem_id = x['question_id']
-        return self.generate_model_prompt_item(unique_id, problem_id, question, choices, answer_index, answer)
+        prompt, label = self.generate_model_prompt_item(unique_id, problem_id, question, choices, answer_index, answer)
+        
+        r1_prefix = [
+            {"role": "user",
+                "content": prompt
+                },
+        ]
+        
+        return {
+                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
+                "target": label,
+                "problem_id": problem_id
+                }
+        
+        return 
 
     def generate_model_prompt_permutation(self, x, num_choice_permutations: int) -> list[dict]:
         unique_id: str = x['unique_id']
@@ -78,7 +92,17 @@ class mmlu_pro_dataset(dataset_handler):
         for item in result:
             permute_choices = item[0]
             permute_label_index = item[1]
-            prompt_list.append(self.generate_model_prompt_item(unique_id, problem_id, question, permute_choices, permute_label_index, answer))
+            prompt, label = self.generate_model_prompt_item(unique_id, problem_id, question, permute_choices, permute_label_index, answer)
+            r1_prefix = [
+                {"role": "user",
+                    "content": prompt
+                    },
+            ]
+            prompt_list.append({
+                    "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
+                    "target": label,
+                    "problem_id": problem_id
+                    })
             
         return prompt_list
 
@@ -91,18 +115,49 @@ class mmlu_pro_dataset(dataset_handler):
         prompt += 'Reason step by step internally and then choose the most truthful answer.\n'
         prompt += 'Respond with only one letter (A, B, C, or D).\n'
         prompt += 'Answer:'
-        
-        r1_prefix = [
-            {"role": "user",
+        return prompt, answer_options[answer_index]         
+
+    def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
+        unique_id: str = x['unique_id']
+        question: str = x['question']
+        choices: list[str] = x['options']
+        answer_index = x['answer_index']
+        answer = x['answer']
+        problem_id = x['question_id']
+        prompt, label = self.generate_model_prompt_item(unique_id, problem_id, question, choices, answer_index, answer)
+
+        partial_cot = partial_cot.strip()
+        partial_cot = partial_cot.replace("<think>", "")
+        partial_cot = partial_cot.replace("</think>", "")
+
+        prefix = [
+            {
+                "role": "user",
                 "content": prompt
-                },
+            },
+            {
+                "role": "assistant",
+                "content": partial_cot
+            },
         ]
-        
-        return {
-                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
-                "target": answer_options[answer_index],
-                "problem_id": problem_id
-                }
+
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+
+
+    def generate_wrong_answer(self, latex_expr:str) -> str:
+        return None
+
+    def final_answer_confidence_extraction(self, prompt, completion, target):
+        return None
+
+    def generate_model_prompt_confidence(self, x):
+        return None
+
+    def generate_another_prompt_confidence(self, question: str, answer: str) -> str:
+        return None
+
+    def extract_another_confidence(self, solution: str) -> float:
+        return None
 
 
 # config: dataset_config = dataset_config('Qwen/Qwen2.5-1.5B')

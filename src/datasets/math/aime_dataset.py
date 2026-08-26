@@ -39,6 +39,11 @@ class aime_dataset(math_dataset_handler):
 
     def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:
         question = x['question']
+
+        partial_cot = partial_cot.strip()
+        partial_cot = partial_cot.replace("<think>", "")
+        partial_cot = partial_cot.replace("</think>", "")
+
         prefix = [
             {
                 "role": "system", 
@@ -54,7 +59,7 @@ class aime_dataset(math_dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
 
     def final_answer_extraction(self, prompt, solution_str, target):
         _SOLUTION_CLIP_CHARS = 600

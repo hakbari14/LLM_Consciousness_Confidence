@@ -79,6 +79,10 @@ class gpqa_dataset(math_dataset_handler):
         prompt += f"\n\nChoices:\n(A) {matches[0][1]}\n(B) {matches[1][1]}\n(C) {matches[2][1]}\n(D) {matches[3][1]}"
         prompt += f"\n\nFormat your response as follows: \"The correct answer is (insert answer here)\""
 
+        partial_cot = partial_cot.strip()
+        partial_cot = partial_cot.replace("<think>", "")
+        partial_cot = partial_cot.replace("</think>", "")
+        
         prefix = [
             {
                 "role": "user",
@@ -90,7 +94,7 @@ class gpqa_dataset(math_dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
 
 
 # config = dataset_config('Qwen/Qwen2.5-1.5B')

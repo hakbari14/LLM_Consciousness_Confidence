@@ -2,6 +2,7 @@
 *.pyc
 *.pyo
 pyphi.log
+error.log
 live_logs/**
 .vscode/**
 .venv/**

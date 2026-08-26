@@ -6,14 +6,14 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 
 class diffusion_decision_model_gsm8k(diffusion_decision_model): 
 
-    def __init__(self, modelname, number_of_evidence: int | None = None) -> None:
+    def __init__(self, modelname, number_of_evidence: int) -> None:
         super().__init__(modelname, number_of_evidence)
         
 
     def get_dataset(self) -> gsm8k_dataset:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
+            config.set_max_test_dataset_size(200)
             self.dataset = gsm8k_dataset(config)
         return self.dataset
 
@@ -25,4 +25,4 @@ class diffusion_decision_model_gsm8k(diffusion_decision_model):
 
 
 t = diffusion_decision_model_gsm8k(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)

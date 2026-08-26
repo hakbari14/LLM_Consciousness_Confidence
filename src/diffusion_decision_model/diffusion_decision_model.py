@@ -12,7 +12,18 @@ from math import ceil
 import torch
 import numpy as np 
 import numpy as np
+import pandas as pd
 import traceback
+from collections import Counter
+import logging
+
+
+
+logging.basicConfig(
+    filename="error.log",
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)        
 
 
 class diffusion_decision_model(ABC): 
@@ -30,6 +41,7 @@ class diffusion_decision_model(ABC):
         self.dataset = None
         self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
         self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
+        
 
     def run(self, from_run_number: int , to_run_number: int) -> None:
         for run_number in range(from_run_number,to_run_number):
@@ -47,8 +59,8 @@ class diffusion_decision_model(ABC):
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
         print(f"{'*' * 100}  Generate Response {'*' * 100}")
-
         _, test_dataset = self.get_dataset().preprocess_dataset()
+
         sampling_params = SamplingParams(
                 max_tokens=self.get_max_new_tokens(), 
                 temperature=0.2, 
@@ -111,12 +123,14 @@ class diffusion_decision_model(ABC):
                         log.accuracy = accuracy
                         log = self.add_evidence_log_list(log, response)
                     except Exception as e:
+                        logging.exception("An exception occurred")                        
                         print(f"[WARN]: {e}")
                         traceback.print_exc()                        
 
                     idx += 1
                     log_list.append(log)    
             except Exception as e:
+                logging.exception("An exception occurred")                        
                 print(f"[WARN]: {e}")
                 traceback.print_exc()                        
 
@@ -183,6 +197,7 @@ class diffusion_decision_model(ABC):
                             log_detail.compared_final_answer = compared_final_answer
                             log_detail.accuracy = accuracy
                         except Exception as e:
+                            logging.exception("An exception occurred")                        
                             print(f"[WARN]: {e}")
                             traceback.print_exc()                        
                             
@@ -200,6 +215,7 @@ class diffusion_decision_model(ABC):
                     evidence_log.evidence_accumulation_loss = float(np.mean(losses))
 
             except Exception as e:
+                logging.exception("An exception occurred")                        
                 print(f"[WARN]: {e}")
                 traceback.print_exc()                        
 
@@ -210,9 +226,40 @@ class diffusion_decision_model(ABC):
                 previous = log.evidence_list[i - 1]
                 current.delta_evidence_self_consistency = current.evidence_accumulation_self_consistency - previous.evidence_accumulation_self_consistency
                 current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
+            
+            self.calculate_self_consistency_log(log)
 
         return log_list
 
+    def calculate_self_consistency_log(self, log: diffusion_decision_model_log_entity) -> diffusion_decision_model_log_entity:
+        evidence_filtered_list = list(filter(lambda x: x.index == 0 , log.evidence_list))
+        if len(evidence_filtered_list) == 0:
+            return log
+        
+        evidence_0: diffusion_decision_model_evidence_log_entity = evidence_filtered_list[0]
+        answers = [
+            log_detail.compared_final_answer
+            for log_detail in evidence_0.consistency_list
+            if log_detail.compared_final_answer is not None
+        ]
+
+        if not answers: 
+            return log
+        
+        answer_counts = Counter(answers)
+        mv_compare_final_answer, mv_count = answer_counts.most_common(1)[0]
+        log.self_consistency_confidence = mv_count / len(evidence_0.consistency_list)
+        try:
+            mv_accuracy, compared_final_answer = self.get_dataset().verify_final_answer(log.target, str(mv_compare_final_answer))
+            log.self_consistency_accuracy = mv_accuracy
+            log.self_consistency_final_answer = compared_final_answer
+        except Exception as e:
+            logging.exception("An exception occurred")                        
+            print(f"[WARN]: {e}")
+            traceback.print_exc()                        
+            
+        return log
+    
     def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response) -> diffusion_decision_model_log_entity:
         token_count = len(response.logprobs)
         base = token_count // (self.number_of_evidence + 1)
@@ -220,24 +267,88 @@ class diffusion_decision_model(ABC):
         
         token_ids = response.token_ids 
         start = 0
-        for i in range(self.number_of_evidence):
+
+        evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = 0, evidence = '', partial_cot = '', partial_completion = log.completion, partial_cot_loss = log.completion_loss)
+        log.add_evidence_list(evidence_log)
+
+        for i in range(1, self.number_of_evidence):
             group_size = base + (1 if i < remainder else 0)
             evidence = self.tokenizer.decode(token_ids[start:start + group_size], skip_special_tokens=True)
             partial_cot = self.tokenizer.decode(token_ids[0:start + group_size], skip_special_tokens=True)
             partial_completion = self.tokenizer.decode(token_ids[start + group_size:], skip_special_tokens=True)
+            partial_cot_loss: float = my_utils.get_loss_from_vllm_output(response, token_start = start + group_size)
 
-            evidence_log = diffusion_decision_model_evidence_log_entity()
-            evidence_log.index = i
-            evidence_log.evidence = evidence
-            evidence_log.partial_cot = partial_cot
-            evidence_log.partial_completion = partial_completion
-            evidence_log.partial_cot_loss = my_utils.get_loss_from_vllm_output(response, token_start = start + group_size)
-            
+            evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = i, evidence = evidence, partial_cot = partial_cot, partial_completion = partial_completion, partial_cot_loss = partial_cot_loss)
             log.add_evidence_list(evidence_log)
+
             start += group_size
            
                 
         return log
+
+    def create_evidence_log(self, index: int, evidence: str , partial_cot: str, partial_completion: str, partial_cot_loss: float) -> int:
+        evidence_log = diffusion_decision_model_evidence_log_entity()
+        evidence_log.index = index
+        evidence_log.evidence = evidence
+        evidence_log.partial_cot = partial_cot
+        evidence_log.partial_completion = partial_completion
+        evidence_log.partial_cot_loss = partial_cot_loss
+        return evidence_log
+
+    @staticmethod
+    def load_logs_list(df_logs, df_evidences, df_samples) -> list[diffusion_decision_model_log_entity]:
+        log_list: list[diffusion_decision_model_log_entity] = []
+        for _, a_row in df_logs.iterrows():
+            log = diffusion_decision_model_log_entity()
+            log.ID = a_row["ID"]
+            log.sample_ID = a_row["Sample_ID"]
+            log.problem_id = a_row["problem_id"]
+            log.split = a_row["Split"]
+            log.question = a_row["Question"]
+            log.prompt = a_row["Prompt"]
+            log.target = a_row["Target"]
+            log.completion = a_row["Completion"]
+            log.completion_loss = a_row["Completion_Loss"]
+            log.final_answer = a_row["Final_Answer"]
+            log.compared_final_answer = a_row["Compared_Final_Answer"]
+            log.accuracy = a_row["Accuracy"]
+            log.token_count = a_row["Token_Count"]
+            log.evidence_accumulation_avg = a_row["Evidence_Accumulation_Avg"]
+            log.driff_rate = a_row["Drift_Rate"]
+
+            b_subset = df_evidences[df_evidences["Sample_ID"] == log.sample_ID]
+            for _, b_row in b_subset.iterrows():
+                log_evidence = diffusion_decision_model_evidence_log_entity()
+                log_evidence.index = b_row["Evidence_Index"]
+                log_evidence.evidence = b_row["Evidence"]
+                log_evidence.partial_cot = b_row["Partial_COT"]
+                log_evidence.partial_cot_loss = b_row["Partial_COT_Loss"]
+                log_evidence.partial_completion = b_row["Partial_Completion"]
+                log_evidence.evidence_accumulation_self_consistency = b_row["Evidence_Accumulation_Self_Consistency"]
+                log_evidence.delta_evidence_self_consistency = b_row["Delta_Evidence_Self_Consistency"]
+                log_evidence.evidence_accumulation_loss = b_row["Evidence_Accumulation_Loss"]
+                log_evidence.delta_evidence_loss = b_row["Delta_Evidence_Loss"]
+
+                s_subset = df_samples[(df_samples["Sample_ID"] == log.sample_ID) & (df_samples["Evidence_Index"] == log_evidence.index)]
+                for _, s_row in s_subset.iterrows():
+                    log_detail = diffusion_decision_model_log_detail_entity()
+                    log_detail.index = s_row["Index"]
+                    log_detail.prompt = s_row["Prompt"]
+                    log_detail.completion = s_row["Completion"]
+                    log_detail.token_count = s_row["Token_Count"]
+                    log_detail.original_final_answer = s_row["Original_Final_Answer"]
+                    log_detail.final_answer = s_row["Final_Answer"]
+                    log_detail.compared_final_answer = s_row["Compared_Final_Answer"]
+                    log_detail.accuracy = s_row["Accuracy"]
+                    log_detail.loss = s_row["Loss"]
+                
+                    log_evidence.add_consistency_list(log_detail)
+
+                log.add_evidence_list(log_evidence)
+            
+            log_list.append(log)
+
+        return log_list
 
     def get_max_new_tokens(self) -> int:
         return 15000

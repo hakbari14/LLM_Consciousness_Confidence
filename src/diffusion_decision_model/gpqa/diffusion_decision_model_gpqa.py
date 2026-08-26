@@ -6,7 +6,7 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 
 class diffusion_decision_model_gpqa(diffusion_decision_model): 
 
-    def __init__(self, modelname, number_of_evidence: int | None = None) -> None:
+    def __init__(self, modelname, number_of_evidence: int) -> None:
         super().__init__(modelname, number_of_evidence)
         
 

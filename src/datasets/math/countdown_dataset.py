@@ -66,6 +66,10 @@ class countdown_dataset(dataset_handler):
         target = x['target']
         question = f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final answer in <answer> </answer> tags, for example <answer> (1 + 2) / 3 </answer>."        
 
+        partial_cot = partial_cot.strip()
+        partial_cot = partial_cot.replace("<think>", "")
+        partial_cot = partial_cot.replace("</think>", "")
+
         prefix = [
             {
                 "role": "user",
@@ -77,7 +81,7 @@ class countdown_dataset(dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
+        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
 
     def generate_wrong_answer(self, latex_expr:str) -> str:
         return None
