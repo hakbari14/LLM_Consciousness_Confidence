@@ -52,6 +52,13 @@ class diffusion_decision_model_training:
     TARGET_RUN = 'run'
     TARGET_VOTE = 'vote'
 
+    # How long the solver is allowed to search. The unscaled total loss needs
+    # about 4800 rounds, because raw summed losses run into the thousands and
+    # leave a long narrow valley to walk, so the usual thousand cut it off part
+    # way and left its coefficients wherever they happened to be. The normalized
+    # loss reaches the same place in about fifty.
+    MAX_ITER = 10000
+
     def __init__(self, number_of_evidence: int) -> None:
         self.number_of_evidence = number_of_evidence
         if self.number_of_evidence is None:
@@ -260,12 +267,12 @@ class diffusion_decision_model_training:
         # warning is silenced and the answer to it is carried in the result
         # instead: a row that did not converge stopped wherever the solver ran
         # out, and its numbers are worth less than the ones that did.
-        model = LogisticRegression(max_iter = 1000, random_state = 42, class_weight = class_weight)
+        model = LogisticRegression(max_iter = self.MAX_ITER, random_state = 42, class_weight = class_weight)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category = ConvergenceWarning)
             model.fit(X_train, y_train)
 
-        converged = bool(np.all(np.asarray(model.n_iter_) < 1000))
+        converged = bool(np.all(np.asarray(model.n_iter_) < self.MAX_ITER))
         y_pred = model.predict(X_test)
         y_prob = model.predict_proba(X_test)[:, 1]
 
@@ -414,14 +421,15 @@ weight    balanced makes the classifier weigh the rarer class as heavily as the
           read its ECE before believing its ROC.
 
 fit       whether the solver finished. ok means it stopped because it had found
-          the answer. STOP means it reached max_iter=1000 and was cut off, so the
-          coefficients are wherever it had got to. Only the unscaled total rows do
-          this: raw summed losses run into the thousands and the four channels sit
-          on very different scales, which leaves a long narrow valley the solver
-          needs about 4800 rounds to walk. per_token solves the same problem in
-          about 50. Raising max_iter to 10000 makes those rows converge and moves
-          their mean ROC from 0.7444 down to 0.7360, so stopping early is
-          currently flattering them rather than penalising them.
+          the answer, STOP means it used its whole budget and was cut off with the
+          coefficients wherever they had got to. The budget is max_iter=10000,
+          raised from the usual thousand because the unscaled total loss needs
+          about 4800 rounds: raw summed losses run into the thousands and the four
+          channels sit on very different scales, which leaves a long narrow valley
+          to walk. The normalized loss reaches the same place in about fifty. At
+          the old limit those rows were cut off and scored 0.7444, slightly above
+          the 0.7360 they settle at once allowed to finish, so stopping early had
+          been flattering them rather than holding them back.
 
 train     how many samples were fitted on, and how many were scored. They differ
 test      between the two blocks because a sample with no vote has no second
