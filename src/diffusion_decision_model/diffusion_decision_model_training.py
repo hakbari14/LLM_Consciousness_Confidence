@@ -374,6 +374,99 @@ class diffusion_decision_model_training:
         self.print_results([result], 'random split over every dataset')
         return result
 
+    def print_reading_notes(self) -> None:
+        """What someone opening the results needs to know before reading a number."""
+        print('=' * 94)
+        print('== how to read this')
+        print('=' * 94)
+        print("""
+Produced by:
+    .venv/bin/python -m src.diffusion_decision_model.diffusion_decision_model_training
+
+One table per held out setting. The first is a random 80/20 split over every
+dataset, which is the reference. The rest hold one dataset out completely: it is
+kept out of training and is the only thing scored, which asks whether any of this
+carries to a benchmark the model has never seen.
+
+Each table has two blocks, one per graded answer, and each block has the eight
+configurations followed by two rows that fit nothing at all.
+
+target    which of the two answers the row was graded against. The run produces
+          two: the one it wrote in its single completion, and the one its ten
+          rollouts voted for. They disagree on one sample in eight, so the two
+          blocks answer different questions and their numbers are not comparable
+          with each other. Use run if the system returns the completion, vote if
+          it returns the majority answer.
+
+loss      total is the Evidence_Accumulation_Loss the run wrote, a sum of
+          negative log probabilities over every token it scored, so it grows with
+          the length of that text. per_token divides each loss by the number of
+          tokens behind it first. The self cons rows fit nothing at all: they take
+          the vote share itself as the confidence. Those two are the bar. A
+          trained row that does not clear them is not worth the compute it costs.
+
+scaled    whether the features were standardised. The standardiser and the column
+          means that fill gaps are fitted on the training half only, never on the
+          held out set.
+
+weight    balanced makes the classifier weigh the rarer class as heavily as the
+          common one. It buys a little ranking and costs a lot of calibration, so
+          read its ECE before believing its ROC.
+
+fit       whether the solver finished. ok means it stopped because it had found
+          the answer. STOP means it reached max_iter=1000 and was cut off, so the
+          coefficients are wherever it had got to. Only the unscaled total rows do
+          this: raw summed losses run into the thousands and the four channels sit
+          on very different scales, which leaves a long narrow valley the solver
+          needs about 4800 rounds to walk. per_token solves the same problem in
+          about 50. Raising max_iter to 10000 makes those rows converge and moves
+          their mean ROC from 0.7444 down to 0.7360, so stopping early is
+          currently flattering them rather than penalising them.
+
+train     how many samples were fitted on, and how many were scored. They differ
+test      between the two blocks because a sample with no vote has no second
+          label and is dropped rather than counted as a wrong one.
+
+minority  how many of the rarer class the scored set holds. READ THIS FIRST. The
+          area under the curve rests on those samples alone. math500 holds 1 and
+          countdown holds 3, so their ROC means nothing whatever, including the
+          row that reports 1.0000. Only gpqa (91), mmlu_pro (105), truthfulqa (85)
+          and mmlu (50) carry enough of both classes to be worth reading.
+
+majority  the share of the commoner class, which is the accuracy of answering the
+          same thing every time. It is identical down a whole block because it
+          describes the data, not the model. An accuracy below it means the row
+          lost to doing nothing.
+
+accuracy  the CLASSIFIER's hit rate, not the language model's answer accuracy. A
+          sample whose answer was wrong and which the classifier correctly flagged
+          as wrong counts as a hit here.
+
+ROC       ranking and calibration. ROC is unmoved by a constant shift in the
+ECE       predicted probabilities and ECE is not, which is why balanced can look
+          fine on one and bad on the other.
+
+what the tables say, averaged over the four held out sets with enough of the
+rarer class to trust:
+
+  per_token beats total under both targets and takes the top rows of each block
+  the trained rows beat the vote share by +0.16 on target run, +0.09 on vote
+  under target vote, plain self consistency beats every total configuration
+  self cons last is near chance on both targets, far below self cons 0
+
+worth knowing before trusting any of it:
+
+  the last evidence step covers about 92 percent of the reasoning rather than all
+  of it, because the chunk loop stops two groups short of the end. changing that
+  needs the generation run done again, it cannot be repaired from the logs
+  these come from logs repaired after the vote counting fix. before it, the
+  rollouts that reached no readable answer grouped together and won the vote,
+  which was written out as a confidence of 1.0 for an answer of nan on 131 samples
+  every table is one run of one model, with no error bars. a single split of this
+  size moves by roughly 0.06 ROC on the random seed alone, so small differences
+  between neighbouring rows are not differences
+""")
+
     def print_results(self, results: list[dict], caption: str) -> None:
         width = 142
         print('\n' + '=' * width)
@@ -529,6 +622,7 @@ if __name__ == '__main__':
     # held out in turn. Each table holds two blocks, one per graded answer, and each
     # block holds the eight configurations followed by the two untrained rows that
     # take the vote share as it is, which is the bar the trained rows have to beat.
+    training.print_reading_notes()
     training.ablation()
     for dataset in training.datasets:
         training.ablation(test_datasets = [dataset])

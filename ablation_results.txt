@@ -1,0 +1,422 @@
+==============================================================================================
+== how to read this
+==============================================================================================
+
+Produced by:
+    .venv/bin/python -m src.diffusion_decision_model.diffusion_decision_model_training
+
+One table per held out setting. The first is a random 80/20 split over every
+dataset, which is the reference. The rest hold one dataset out completely: it is
+kept out of training and is the only thing scored, which asks whether any of this
+carries to a benchmark the model has never seen.
+
+Each table has two blocks, one per graded answer, and each block has the eight
+configurations followed by two rows that fit nothing at all.
+
+target    which of the two answers the row was graded against. The run produces
+          two: the one it wrote in its single completion, and the one its ten
+          rollouts voted for. They disagree on one sample in eight, so the two
+          blocks answer different questions and their numbers are not comparable
+          with each other. Use run if the system returns the completion, vote if
+          it returns the majority answer.
+
+loss      total is the Evidence_Accumulation_Loss the run wrote, a sum of
+          negative log probabilities over every token it scored, so it grows with
+          the length of that text. per_token divides each loss by the number of
+          tokens behind it first. The self cons rows fit nothing at all: they take
+          the vote share itself as the confidence. Those two are the bar. A
+          trained row that does not clear them is not worth the compute it costs.
+
+scaled    whether the features were standardised. The standardiser and the column
+          means that fill gaps are fitted on the training half only, never on the
+          held out set.
+
+weight    balanced makes the classifier weigh the rarer class as heavily as the
+          common one. It buys a little ranking and costs a lot of calibration, so
+          read its ECE before believing its ROC.
+
+fit       whether the solver finished. ok means it stopped because it had found
+          the answer. STOP means it reached max_iter=1000 and was cut off, so the
+          coefficients are wherever it had got to. Only the unscaled total rows do
+          this: raw summed losses run into the thousands and the four channels sit
+          on very different scales, which leaves a long narrow valley the solver
+          needs about 4800 rounds to walk. per_token solves the same problem in
+          about 50. Raising max_iter to 10000 makes those rows converge and moves
+          their mean ROC from 0.7444 down to 0.7360, so stopping early is
+          currently flattering them rather than penalising them.
+
+train     how many samples were fitted on, and how many were scored. They differ
+test      between the two blocks because a sample with no vote has no second
+          label and is dropped rather than counted as a wrong one.
+
+minority  how many of the rarer class the scored set holds. READ THIS FIRST. The
+          area under the curve rests on those samples alone. math500 holds 1 and
+          countdown holds 3, so their ROC means nothing whatever, including the
+          row that reports 1.0000. Only gpqa (91), mmlu_pro (105), truthfulqa (85)
+          and mmlu (50) carry enough of both classes to be worth reading.
+
+majority  the share of the commoner class, which is the accuracy of answering the
+          same thing every time. It is identical down a whole block because it
+          describes the data, not the model. An accuracy below it means the row
+          lost to doing nothing.
+
+accuracy  the CLASSIFIER's hit rate, not the language model's answer accuracy. A
+          sample whose answer was wrong and which the classifier correctly flagged
+          as wrong counts as a hit here.
+
+ROC       ranking and calibration. ROC is unmoved by a constant shift in the
+ECE       predicted probabilities and ECE is not, which is why balanced can look
+          fine on one and bad on the other.
+
+what the tables say, averaged over the four held out sets with enough of the
+rarer class to trust:
+
+  per_token beats total under both targets and takes the top rows of each block
+  the trained rows beat the vote share by +0.16 on target run, +0.09 on vote
+  under target vote, plain self consistency beats every total configuration
+  self cons last is near chance on both targets, far below self cons 0
+
+worth knowing before trusting any of it:
+
+  the last evidence step covers about 92 percent of the reasoning rather than all
+  of it, because the chunk loop stops two groups short of the end. changing that
+  needs the generation run done again, it cannot be repaired from the logs
+  these come from logs repaired after the vote counting fix. before it, the
+  rollouts that reached no readable answer grouped together and won the vote,
+  which was written out as a confidence of 1.0 for an answer of nan on 131 samples
+  every table is one run of one model, with no error bars. a single split of this
+  size moves by roughly 0.06 ROC on the random seed alone, so small differences
+  between neighbouring rows are not differences
+
+loaded gpqa run 1: 184 samples
+loaded countdown run 1: 110 samples
+loaded math500 run 1: 140 samples
+loaded gsm8k run 1: 195 samples
+loaded mmlu run 1: 281 samples
+loaded truthfulqa run 1: 299 samples
+loaded mmlu_pro run 1: 274 samples
+loaded aime run 1: 99 samples
+
+==============================================================================================================================================
+== ablation, held out: random split
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+random split       run total             False      none STOP   1265   317       73    0.770   0.8202    0.8528  0.9262  0.8880  0.8470  0.0556
+random split       run total             False  balanced STOP   1265   317       73    0.770   0.7634    0.8967  0.7828  0.8359  0.8413  0.1951
+random split       run total              True      none   ok   1265   317       73    0.770   0.8202    0.8555  0.9221  0.8876  0.8343  0.0497
+random split       run total              True  balanced   ok   1265   317       73    0.770   0.7729    0.9019  0.7910  0.8428  0.8326  0.1882
+random split       run per_token         False      none   ok   1265   317       73    0.770   0.8170    0.8577  0.9139  0.8849  0.8494  0.0487
+random split       run per_token         False  balanced   ok   1265   317       73    0.770   0.7950    0.9124  0.8115  0.8590  0.8445  0.1749
+random split       run per_token          True      none   ok   1265   317       73    0.770   0.8076    0.8588  0.8975  0.8778  0.8342  0.0696
+random split       run per_token          True  balanced   ok   1265   317       73    0.770   0.7855    0.9151  0.7951  0.8509  0.8337  0.1726
+random split       run self cons 0           -         -   ok      0   316       73    0.769   0.7532    0.7835  0.9383  0.8539  0.7001  0.1254
+random split       run self cons last        -         -   ok      0   294       64    0.782   0.7721    0.7880  0.9696  0.8694  0.6353  0.0996
+random split      vote total             False      none STOP   1264   316       68    0.785   0.7753    0.8041  0.9435  0.8683  0.7327  0.0788
+random split      vote total             False  balanced STOP   1264   316       68    0.785   0.7658    0.8718  0.8226  0.8465  0.7456  0.1733
+random split      vote total              True      none   ok   1264   316       68    0.785   0.7690    0.8028  0.9355  0.8641  0.7213  0.0749
+random split      vote total              True  balanced   ok   1264   316       68    0.785   0.7437    0.8553  0.8105  0.8323  0.7221  0.1759
+random split      vote per_token         False      none   ok   1264   316       68    0.785   0.7911    0.8227  0.9355  0.8755  0.7525  0.0546
+random split      vote per_token         False  balanced   ok   1264   316       68    0.785   0.7595    0.8945  0.7863  0.8369  0.7577  0.1818
+random split      vote per_token          True      none   ok   1264   316       68    0.785   0.7911    0.8297  0.9234  0.8740  0.7273  0.0720
+random split      vote per_token          True  balanced   ok   1264   316       68    0.785   0.7373    0.8767  0.7742  0.8223  0.7369  0.1742
+random split      vote self cons 0           -         -   ok      0   316       68    0.785   0.8165    0.8299  0.9637  0.8918  0.7582  0.0754
+random split      vote self cons last        -         -   ok      0   296       60    0.797   0.7703    0.8022  0.9449  0.8677  0.5996  0.1912
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: gpqa
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+gpqa               run total             False      none STOP   1398   184       91    0.505   0.5707    0.5479  0.8602  0.6695  0.6247  0.2689
+gpqa               run total             False  balanced STOP   1398   184       91    0.505   0.5924    0.5833  0.6774  0.6269  0.6299  0.1617
+gpqa               run total              True      none   ok   1398   184       91    0.505   0.5489    0.5333  0.8602  0.6584  0.6153  0.2673
+gpqa               run total              True  balanced   ok   1398   184       91    0.505   0.5924    0.5833  0.6774  0.6269  0.6338  0.1695
+gpqa               run per_token         False      none   ok   1398   184       91    0.505   0.5761    0.5472  0.9355  0.6905  0.6806  0.2536
+gpqa               run per_token         False  balanced   ok   1398   184       91    0.505   0.6304    0.6190  0.6989  0.6566  0.7002  0.1045
+gpqa               run per_token          True      none   ok   1398   184       91    0.505   0.5652    0.5419  0.9032  0.6774  0.6556  0.2659
+gpqa               run per_token          True  balanced   ok   1398   184       91    0.505   0.6359    0.6182  0.7312  0.6700  0.6855  0.1729
+gpqa               run self cons 0           -         -   ok      0   184       91    0.505   0.5380    0.5241  0.9355  0.6718  0.6417  0.2721
+gpqa               run self cons last        -         -   ok      0   153       74    0.516   0.5229    0.5208  0.9494  0.6726  0.5920  0.3246
+gpqa              vote total             False      none STOP   1396   184       84    0.543   0.5761    0.5663  0.9400  0.7068  0.6056  0.2558
+gpqa              vote total             False  balanced STOP   1396   184       84    0.543   0.6087    0.6346  0.6600  0.6471  0.6174  0.1751
+gpqa              vote total              True      none   ok   1396   184       84    0.543   0.5761    0.5687  0.9100  0.7000  0.5973  0.2570
+gpqa              vote total              True  balanced   ok   1396   184       84    0.543   0.5978    0.6275  0.6400  0.6337  0.6120  0.1549
+gpqa              vote per_token         False      none   ok   1396   184       84    0.543   0.6087    0.5886  0.9300  0.7209  0.6258  0.2466
+gpqa              vote per_token         False  balanced   ok   1396   184       84    0.543   0.6304    0.6356  0.7500  0.6881  0.6321  0.1913
+gpqa              vote per_token          True      none   ok   1396   184       84    0.543   0.5924    0.5828  0.8800  0.7012  0.6288  0.2540
+gpqa              vote per_token          True  balanced   ok   1396   184       84    0.543   0.6141    0.6239  0.7300  0.6728  0.6281  0.1931
+gpqa              vote self cons 0           -         -   ok      0   184       84    0.543   0.5978    0.5783  0.9600  0.7218  0.5964  0.2167
+gpqa              vote self cons last        -         -   ok      0   153       68    0.556   0.5490    0.5556  0.9412  0.6987  0.5267  0.3362
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: countdown
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+countdown          run total             False      none STOP   1472   110        3    0.973   0.9364    0.9902  0.9439  0.9665  0.9688  0.1314
+countdown          run total             False  balanced STOP   1472   110        3    0.973   0.9091    1.0000  0.9065  0.9510  0.9595  0.2584
+countdown          run total              True      none   ok   1472   110        3    0.973   0.9364    0.9902  0.9439  0.9665  0.9595  0.1274
+countdown          run total              True  balanced   ok   1472   110        3    0.973   0.9182    1.0000  0.9159  0.9561  0.9595  0.2563
+countdown          run per_token         False      none   ok   1472   110        3    0.973   0.9455    1.0000  0.9439  0.9712  0.9875  0.1400
+countdown          run per_token         False  balanced   ok   1472   110        3    0.973   0.8727    1.0000  0.8692  0.9300  0.9938  0.2914
+countdown          run per_token          True      none   ok   1472   110        3    0.973   0.9455    1.0000  0.9439  0.9712  0.9938  0.1445
+countdown          run per_token          True  balanced   ok   1472   110        3    0.973   0.8818    1.0000  0.8785  0.9353  1.0000  0.3026
+countdown          run self cons 0           -         -   ok      0   109        3    0.972   0.8899    1.0000  0.8868  0.9400  0.9733  0.2781
+countdown          run self cons last        -         -   ok      0   108        3    0.972   0.9722    0.9904  0.9810  0.9856  0.9746  0.0333
+countdown         vote total             False      none STOP   1471   109        6    0.945   0.9358    0.9898  0.9417  0.9652  0.8285  0.1437
+countdown         vote total             False  balanced STOP   1471   109        6    0.945   0.8807    0.9891  0.8835  0.9333  0.8252  0.3060
+countdown         vote total              True      none   ok   1471   109        6    0.945   0.9450    0.9899  0.9515  0.9703  0.8301  0.1433
+countdown         vote total              True  balanced   ok   1471   109        6    0.945   0.8807    0.9891  0.8835  0.9333  0.8269  0.2950
+countdown         vote per_token         False      none   ok   1471   109        6    0.945   0.9266    0.9897  0.9320  0.9600  0.9676  0.1428
+countdown         vote per_token         False  balanced   ok   1471   109        6    0.945   0.8807    1.0000  0.8738  0.9326  0.9741  0.3326
+countdown         vote per_token          True      none   ok   1471   109        6    0.945   0.9266    0.9897  0.9320  0.9600  0.9547  0.1525
+countdown         vote per_token          True  balanced   ok   1471   109        6    0.945   0.8899    1.0000  0.8835  0.9381  0.9595  0.3440
+countdown         vote self cons 0           -         -   ok      0   109        6    0.945   0.9174    1.0000  0.9126  0.9543  0.9871  0.2099
+countdown         vote self cons last        -         -   ok      0   107        6    0.944   0.9626    0.9709  0.9901  0.9804  0.8960  0.0553
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: math500
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+math500            run total             False      none STOP   1442   140        1    0.993   0.9714    1.0000  0.9712  0.9854  0.9856  0.1016
+math500            run total             False  balanced STOP   1442   140        1    0.993   0.9429    1.0000  0.9424  0.9704  0.9784  0.2034
+math500            run total              True      none   ok   1442   140        1    0.993   0.9714    1.0000  0.9712  0.9854  0.9856  0.0976
+math500            run total              True  balanced   ok   1442   140        1    0.993   0.9357    1.0000  0.9353  0.9665  0.9784  0.2025
+math500            run per_token         False      none   ok   1442   140        1    0.993   0.9786    1.0000  0.9784  0.9891  0.9784  0.0787
+math500            run per_token         False  balanced   ok   1442   140        1    0.993   0.9571    1.0000  0.9568  0.9779  0.9856  0.1648
+math500            run per_token          True      none   ok   1442   140        1    0.993   0.9786    1.0000  0.9784  0.9891  0.9784  0.0656
+math500            run per_token          True  balanced   ok   1442   140        1    0.993   0.9571    1.0000  0.9568  0.9779  0.9856  0.1418
+math500            run self cons 0           -         -   ok      0   139        1    0.993   0.9496    0.9925  0.9565  0.9742  0.3333  0.2190
+math500            run self cons last        -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.4856  0.0029
+math500           vote total             False      none STOP   1441   139        7    0.950   0.9784    0.9924  0.9848  0.9886  0.9968  0.1067
+math500           vote total             False  balanced STOP   1441   139        7    0.950   0.9209    1.0000  0.9167  0.9565  0.9935  0.2506
+math500           vote total              True      none   ok   1441   139        7    0.950   0.9856    0.9924  0.9924  0.9924  0.9968  0.1081
+math500           vote total              True  balanced   ok   1441   139        7    0.950   0.9209    1.0000  0.9167  0.9565  0.9935  0.2514
+math500           vote per_token         False      none   ok   1441   139        7    0.950   0.9856    0.9851  1.0000  0.9925  0.9968  0.0824
+math500           vote per_token         False  balanced   ok   1441   139        7    0.950   0.9712    1.0000  0.9697  0.9846  0.9978  0.1911
+math500           vote per_token          True      none   ok   1441   139        7    0.950   0.9856    0.9851  1.0000  0.9925  0.9968  0.0704
+math500           vote per_token          True  balanced   ok   1441   139        7    0.950   0.9784    1.0000  0.9773  0.9885  0.9957  0.1759
+math500           vote self cons 0           -         -   ok      0   139        7    0.950   0.9496    0.9699  0.9773  0.9736  0.7711  0.1418
+math500           vote self cons last        -         -   ok      0   139        7    0.950   0.9496    0.9496  1.0000  0.9742  0.6353  0.0460
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: gsm8k
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+gsm8k              run total             False      none STOP   1387   195       13    0.933   0.9744    0.9890  0.9835  0.9862  0.9518  0.0868
+gsm8k              run total             False  balanced STOP   1387   195       13    0.933   0.9744    0.9890  0.9835  0.9862  0.9544  0.2014
+gsm8k              run total              True      none   ok   1387   195       13    0.933   0.9744    0.9890  0.9835  0.9862  0.9518  0.0831
+gsm8k              run total              True  balanced   ok   1387   195       13    0.933   0.9692    0.9889  0.9780  0.9834  0.9560  0.2014
+gsm8k              run per_token         False      none   ok   1387   195       13    0.933   0.9846    0.9838  1.0000  0.9918  0.9493  0.0487
+gsm8k              run per_token         False  balanced   ok   1387   195       13    0.933   0.9795    0.9890  0.9890  0.9890  0.9349  0.0740
+gsm8k              run per_token          True      none   ok   1387   195       13    0.933   0.9846    0.9838  1.0000  0.9918  0.9489  0.0399
+gsm8k              run per_token          True  balanced   ok   1387   195       13    0.933   0.9846    0.9891  0.9945  0.9918  0.9345  0.0493
+gsm8k              run self cons 0           -         -   ok      0   195       13    0.933   0.9282    0.9330  0.9945  0.9628  0.5763  0.0441
+gsm8k              run self cons last        -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.4945  0.0656
+gsm8k             vote total             False      none STOP   1385   195        4    0.979   0.9538    0.9946  0.9581  0.9760  0.8508  0.1207
+gsm8k             vote total             False  balanced STOP   1385   195        4    0.979   0.9385    0.9945  0.9424  0.9677  0.8613  0.2400
+gsm8k             vote total              True      none   ok   1385   195        4    0.979   0.9538    0.9946  0.9581  0.9760  0.8508  0.1158
+gsm8k             vote total              True  balanced   ok   1385   195        4    0.979   0.9333    0.9944  0.9372  0.9650  0.8586  0.2410
+gsm8k             vote per_token         False      none   ok   1385   195        4    0.979   0.9641    0.9894  0.9738  0.9815  0.8678  0.0760
+gsm8k             vote per_token         False  balanced   ok   1385   195        4    0.979   0.9436    0.9945  0.9476  0.9705  0.8285  0.1763
+gsm8k             vote per_token          True      none   ok   1385   195        4    0.979   0.9590    0.9841  0.9738  0.9789  0.8783  0.0629
+gsm8k             vote per_token          True  balanced   ok   1385   195        4    0.979   0.9436    0.9945  0.9476  0.9705  0.8338  0.1525
+gsm8k             vote self cons 0           -         -   ok      0   195        4    0.979   0.9744    0.9794  0.9948  0.9870  0.8259  0.0021
+gsm8k             vote self cons last        -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.4948  0.0195
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: mmlu
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+mmlu               run total             False      none STOP   1301   281       50    0.822   0.8683    0.8849  0.9654  0.9234  0.7789  0.0464
+mmlu               run total             False  balanced STOP   1301   281       50    0.822   0.8434    0.8979  0.9134  0.9056  0.7867  0.1697
+mmlu               run total              True      none   ok   1301   281       50    0.822   0.8683    0.8849  0.9654  0.9234  0.7656  0.0599
+mmlu               run total              True  balanced   ok   1301   281       50    0.822   0.8327    0.9000  0.8961  0.8980  0.7700  0.1705
+mmlu               run per_token         False      none   ok   1301   281       50    0.822   0.8470    0.8852  0.9351  0.9095  0.8209  0.0488
+mmlu               run per_token         False  balanced   ok   1301   281       50    0.822   0.7865    0.9171  0.8139  0.8624  0.8180  0.2122
+mmlu               run per_token          True      none   ok   1301   281       50    0.822   0.8434    0.8880  0.9264  0.9068  0.8167  0.0730
+mmlu               run per_token          True  balanced   ok   1301   281       50    0.822   0.7651    0.9188  0.7835  0.8458  0.8145  0.2133
+mmlu               run self cons 0           -         -   ok      0   281       50    0.822   0.8149    0.8231  0.9870  0.8976  0.6371  0.1247
+mmlu               run self cons last        -         -   ok      0   279       50    0.821   0.7957    0.8209  0.9607  0.8853  0.5778     nan
+mmlu              vote total             False      none STOP   1299   281       44    0.843   0.8292    0.8621  0.9494  0.9036  0.7457  0.0366
+mmlu              vote total             False  balanced STOP   1299   281       44    0.843   0.8292    0.9091  0.8861  0.8974  0.7510  0.2107
+mmlu              vote total              True      none   ok   1299   281       44    0.843   0.8292    0.8621  0.9494  0.9036  0.7395  0.0437
+mmlu              vote total              True  balanced   ok   1299   281       44    0.843   0.8221    0.9048  0.8819  0.8932  0.7429  0.2032
+mmlu              vote per_token         False      none   ok   1299   281       44    0.843   0.8577    0.8988  0.9367  0.9174  0.7839  0.0742
+mmlu              vote per_token         False  balanced   ok   1299   281       44    0.843   0.7794    0.9187  0.8101  0.8610  0.7803  0.2584
+mmlu              vote per_token          True      none   ok   1299   281       44    0.843   0.8577    0.8988  0.9367  0.9174  0.7703  0.0666
+mmlu              vote per_token          True  balanced   ok   1299   281       44    0.843   0.7544    0.9118  0.7848  0.8435  0.7661  0.2544
+mmlu              vote self cons 0           -         -   ok      0   281       44    0.843   0.8577    0.8556  1.0000  0.9222  0.7035  0.0587
+mmlu              vote self cons last        -         -   ok      0   279       44    0.842   0.8029    0.8358  0.9532  0.8907  0.5323     nan
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: truthfulqa
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+truthfulqa         run total             False      none STOP   1283   299       85    0.716   0.7258    0.8204  0.7897  0.8048  0.7746  0.1056
+truthfulqa         run total             False  balanced STOP   1283   299       85    0.716   0.6823    0.8839  0.6402  0.7425  0.7710  0.2727
+truthfulqa         run total              True      none   ok   1283   299       85    0.716   0.7124    0.8168  0.7710  0.7933  0.7522  0.1309
+truthfulqa         run total              True  balanced   ok   1283   299       85    0.716   0.6555    0.8776  0.6028  0.7147  0.7576  0.2785
+truthfulqa         run per_token         False      none   ok   1283   299       85    0.716   0.7057    0.8182  0.7570  0.7864  0.7802  0.1307
+truthfulqa         run per_token         False  balanced   ok   1283   299       85    0.716   0.6154    0.8960  0.5234  0.6608  0.7794  0.3199
+truthfulqa         run per_token          True      none   ok   1283   299       85    0.716   0.6689    0.8142  0.6963  0.7506  0.7348  0.1694
+truthfulqa         run per_token          True  balanced   ok   1283   299       85    0.716   0.5786    0.8929  0.4673  0.6135  0.7366  0.3422
+truthfulqa         run self cons 0           -         -   ok      0   299       85    0.716   0.7124    0.7207  0.9766  0.8294  0.7153  0.1471
+truthfulqa         run self cons last        -         -   ok      0   252       79    0.687   0.6349    0.6738  0.9075  0.7734  0.5515  0.2352
+truthfulqa        vote total             False      none STOP   1281   299       68    0.773   0.7492    0.7868  0.9264  0.8509  0.7543  0.0811
+truthfulqa        vote total             False  balanced STOP   1281   299       68    0.773   0.6756    0.8681  0.6840  0.7651  0.7269  0.2318
+truthfulqa        vote total              True      none   ok   1281   299       68    0.773   0.7458    0.7860  0.9221  0.8486  0.7461  0.0724
+truthfulqa        vote total              True  balanced   ok   1281   299       68    0.773   0.6589    0.8603  0.6667  0.7512  0.7172  0.2421
+truthfulqa        vote per_token         False      none   ok   1281   299       68    0.773   0.7525    0.8285  0.8571  0.8426  0.7960  0.1092
+truthfulqa        vote per_token         False  balanced   ok   1281   299       68    0.773   0.6622    0.9221  0.6147  0.7377  0.7746  0.3135
+truthfulqa        vote per_token          True      none   ok   1281   299       68    0.773   0.7592    0.8383  0.8528  0.8455  0.7909  0.0953
+truthfulqa        vote per_token          True  balanced   ok   1281   299       68    0.773   0.6187    0.9149  0.5584  0.6935  0.7536  0.3301
+truthfulqa        vote self cons 0           -         -   ok      0   299       68    0.773   0.7826    0.7862  0.9870  0.8752  0.8202  0.1397
+truthfulqa        vote self cons last        -         -   ok      0   252       62    0.754   0.7103    0.7511  0.9211  0.8274  0.5589  0.2099
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: mmlu_pro
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro           run total             False      none STOP   1308   274      105    0.617   0.7664    0.7586  0.9112  0.8280  0.7995  0.0869
+mmlu_pro           run total             False  balanced STOP   1308   274      105    0.617   0.7080    0.8112  0.6864  0.7436  0.7980  0.1636
+mmlu_pro           run total              True      none   ok   1308   274      105    0.617   0.7518    0.7488  0.8994  0.8172  0.7882  0.0763
+mmlu_pro           run total              True  balanced   ok   1308   274      105    0.617   0.6971    0.7986  0.6805  0.7348  0.7953  0.1656
+mmlu_pro           run per_token         False      none   ok   1308   274      105    0.617   0.7591    0.7641  0.8817  0.8187  0.8098  0.0643
+mmlu_pro           run per_token         False  balanced   ok   1308   274      105    0.617   0.7044    0.8143  0.6746  0.7379  0.8119  0.1634
+mmlu_pro           run per_token          True      none   ok   1308   274      105    0.617   0.7555    0.7602  0.8817  0.8164  0.8054  0.0698
+mmlu_pro           run per_token          True  balanced   ok   1308   274      105    0.617   0.7117    0.8358  0.6627  0.7393  0.8068  0.1658
+mmlu_pro           run self cons 0           -         -   ok      0   274      105    0.617   0.6241    0.6398  0.8935  0.7457  0.6585  0.1433
+mmlu_pro           run self cons last        -         -   ok      0   272      104    0.618   0.6324    0.6328  0.9643  0.7642  0.5934  0.2112
+mmlu_pro          vote total             False      none STOP   1306   274       88    0.679   0.6569    0.7110  0.8333  0.7673  0.6915  0.1280
+mmlu_pro          vote total             False  balanced STOP   1306   274       88    0.679   0.6642    0.8406  0.6237  0.7160  0.6998  0.2326
+mmlu_pro          vote total              True      none   ok   1306   274       88    0.679   0.6606    0.7183  0.8226  0.7669  0.6815  0.1400
+mmlu_pro          vote total              True  balanced   ok   1306   274       88    0.679   0.6752    0.8440  0.6398  0.7278  0.6947  0.2311
+mmlu_pro          vote per_token         False      none   ok   1306   274       88    0.679   0.7080    0.7548  0.8441  0.7970  0.7189  0.0885
+mmlu_pro          vote per_token         False  balanced   ok   1306   274       88    0.679   0.6350    0.8413  0.5699  0.6795  0.7111  0.2431
+mmlu_pro          vote per_token          True      none   ok   1306   274       88    0.679   0.7080    0.7598  0.8333  0.7949  0.7160  0.0968
+mmlu_pro          vote per_token          True  balanced   ok   1306   274       88    0.679   0.6241    0.8320  0.5591  0.6688  0.7094  0.2519
+mmlu_pro          vote self cons 0           -         -   ok      0   274       88    0.679   0.6934    0.7161  0.9086  0.8009  0.7144  0.0960
+mmlu_pro          vote self cons last        -         -   ok      0   272       87    0.680   0.6654    0.6836  0.9459  0.7937  0.5391  0.1945
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
+
+==============================================================================================================================================
+== ablation, held out: aime
+==============================================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC     ECE
+----------------------------------------------------------------------------------------------------------------------------------------------
+aime               run total             False      none STOP   1483    99       17    0.828   0.8081    0.9200  0.8415  0.8790  0.7934  0.1536
+aime               run total             False  balanced STOP   1483    99       17    0.828   0.7172    0.9219  0.7195  0.8082  0.7891  0.2790
+aime               run total              True      none   ok   1483    99       17    0.828   0.7980    0.9189  0.8293  0.8718  0.7941  0.1566
+aime               run total              True  balanced   ok   1483    99       17    0.828   0.7374    0.9516  0.7195  0.8194  0.7905  0.2761
+aime               run per_token         False      none   ok   1483    99       17    0.828   0.9091    0.9195  0.9756  0.9467  0.8716  0.1212
+aime               run per_token         False  balanced   ok   1483    99       17    0.828   0.7374    0.9375  0.7317  0.8219  0.8831  0.2289
+aime               run per_token          True      none   ok   1483    99       17    0.828   0.9192    0.9205  0.9878  0.9529  0.8874  0.0913
+aime               run per_token          True  balanced   ok   1483    99       17    0.828   0.7778    0.9412  0.7805  0.8533  0.8902  0.2037
+aime               run self cons 0           -         -   ok      0    99       17    0.828   0.5657    0.8421  0.5854  0.6906  0.6126     nan
+aime               run self cons last        -         -   ok      0    99       17    0.828   0.8384    0.8367  1.0000  0.9111  0.7661  0.2422
+aime              vote total             False      none STOP   1481    99       38    0.616   0.8081    0.8000  0.9180  0.8550  0.8171  0.1009
+aime              vote total             False  balanced STOP   1481    99       38    0.616   0.7475    0.8462  0.7213  0.7788  0.8123  0.1724
+aime              vote total              True      none   ok   1481    99       38    0.616   0.7980    0.7887  0.9180  0.8485  0.8192  0.1018
+aime              vote total              True  balanced   ok   1481    99       38    0.616   0.7475    0.8462  0.7213  0.7788  0.8145  0.1718
+aime              vote per_token         False      none   ok   1481    99       38    0.616   0.6465    0.6383  0.9836  0.7742  0.9236  0.2235
+aime              vote per_token         False  balanced   ok   1481    99       38    0.616   0.8788    0.8769  0.9344  0.9048  0.9245  0.1571
+aime              vote per_token          True      none   ok   1481    99       38    0.616   0.6465    0.6383  0.9836  0.7742  0.9150  0.2228
+aime              vote per_token          True  balanced   ok   1481    99       38    0.616   0.8586    0.8730  0.9016  0.8871  0.9146  0.1488
+aime              vote self cons 0           -         -   ok      0    99       38    0.616   0.7374    0.8070  0.7541  0.7797  0.8132     nan
+aime              vote self cons last        -         -   ok      0    99       38    0.616   0.6263    0.6224  1.0000  0.7673  0.5636  0.3434
+----------------------------------------------------------------------------------------------------------------------------------------------
+minority is how many of the rarer class the held out set holds. The area under the curve
+rests on those alone, so a handful of them means the number is mostly noise.
+fit says whether the solver settled. STOP means it ran out of iterations and stopped
+wherever it had got to, so read that row as a weaker result, not a comparable one.
+the last rows of each block take the vote share as the confidence with nothing fitted,
+and are what the trained rows have to beat to be worth the compute they cost.
+target says which answer was graded: run is the answer the model actually gave,
+vote is the answer the rollouts settled on. They differ on one sample in eight, so
+the two blocks answer different questions and their numbers are not interchangeable.
