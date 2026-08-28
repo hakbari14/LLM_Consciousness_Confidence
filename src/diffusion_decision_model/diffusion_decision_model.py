@@ -9,6 +9,7 @@ from src.datasets.dataset_handler import dataset_handler
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
 from src.utils.utility import my_utils
 from math import ceil
+import math
 import torch
 import numpy as np 
 import numpy as np
@@ -233,6 +234,22 @@ class diffusion_decision_model(ABC):
 
         return log_list
 
+    def is_answer_present(self, answer) -> bool:
+        """True when a rollout reached an answer that can take part in the vote.
+
+        The test this replaces rejected None only. A failed extraction can also
+        leave a not a number behind, and that passed, so the rollouts that
+        found no answer grouped into one block, won the vote, and were written
+        out as a confidence of one for an answer of 'nan'.
+        """
+        if answer is None:
+            return False
+
+        if isinstance(answer, float) and math.isnan(answer):
+            return False
+
+        return str(answer).strip().lower() not in ('', 'nan', 'none')
+
     def calculate_self_consistency_log(self, log: diffusion_decision_model_log_entity) -> diffusion_decision_model_log_entity:
         evidence_filtered_list = list(filter(lambda x: x.index == 0 , log.evidence_list))
         if len(evidence_filtered_list) == 0:
@@ -242,10 +259,14 @@ class diffusion_decision_model(ABC):
         answers = [
             log_detail.compared_final_answer
             for log_detail in evidence_0.consistency_list
-            if log_detail.compared_final_answer is not None
+            if self.is_answer_present(log_detail.compared_final_answer)
         ]
 
         if not answers: 
+            # Not one rollout reached a readable answer, so there is no vote to
+            # report. Leave it empty rather than zero, which would be read back
+            # as a confidence that was measured and found to be nothing.
+            log.self_consistency_confidence = None
             return log
         
         answer_counts = Counter(answers)
@@ -271,10 +292,13 @@ class diffusion_decision_model(ABC):
         answers = [
             log_detail.compared_final_answer
             for log_detail in evidence_last.consistency_list
-            if log_detail.compared_final_answer is not None
+            if self.is_answer_present(log_detail.compared_final_answer)
         ]
 
         if not answers: 
+            # Same as above: no readable answer means no vote, not a vote that
+            # came out at zero.
+            log.self_consistency_completion_confidence = None
             return log
         
         answer_counts = Counter(answers)
