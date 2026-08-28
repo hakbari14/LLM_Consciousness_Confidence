@@ -23,6 +23,10 @@ class diffusion_decision_model_log_entity(log_entity):
     self_consistency_final_answer : Optional[str] = None
     self_consistency_accuracy : Optional[bool] = None
 
+    self_consistency_completion_confidence : Optional[float] = 0.0
+    self_consistency_completion_final_answer : Optional[str] = None
+    self_consistency_completion_accuracy : Optional[bool] = None
+
     driff_rate : Optional[float] = 0.0
     evidence_accumulation_avg : Optional[float] = 0.0
     evidence_list: List[diffusion_decision_model_evidence_log_entity] = field(default_factory=list)

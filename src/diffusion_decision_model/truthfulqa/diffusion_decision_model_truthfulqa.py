@@ -21,7 +21,7 @@ class diffusion_decision_model_truthfulqa(diffusion_decision_model):
         return 5000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
-        return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/truthfulqa/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_truthfulqa{self.get_number_of_evidence_dir()}.csv')
+        return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/truthfulqa/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_truthfulqa{self.get_number_of_evidence_dir()}.csv')
 
 
 t = diffusion_decision_model_truthfulqa(modelname='Qwen/Qwen3-8B', number_of_evidence=20)

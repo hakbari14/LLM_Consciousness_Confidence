@@ -29,21 +29,17 @@ class diffusion_decision_model_training:
             raise Exception('number of evidence is required')
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        self.datasets = ['gpqa', 'countdown', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime']
 
     def train_logistic_regression(self, from_run_number, to_run_number) -> None:
         log_list: list[diffusion_decision_model_log_entity] = []
-        datasets = ['gpqa', 'countdown', 'math500', 'gsm8k', 'mmlu', 'truthfulqa']
         
         X = np.empty((0, 4 * self.number_of_evidence))
         y = np.empty(0)
-        for dataset in datasets:
+        for dataset in self.datasets:
             for run_number in range(from_run_number,to_run_number):
                 logger = diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/{dataset}/qwen-qwen3-8b/run_{run_number}/diffusion_decision_model_{dataset}_nv_{self.number_of_evidence}.csv')
-                df_logs = pd.read_csv(logger.get_log_file_name())
-                df_evidences = pd.read_csv(logger.get_evidence_log_file_name())
-                df_samples = pd.read_csv(logger.get_samples_log_file_name())
-                log_list = diffusion_decision_model.load_logs_list(df_logs, df_evidences, df_samples)
+                log_list = logger.load_logs_list()
 
                 X_b = np.array([
                     [
@@ -58,17 +54,6 @@ class diffusion_decision_model_training:
                     ]
                     for log in log_list
                 ], dtype=float)
-
-                # X_b = np.array([
-                #     [e.delta_evidence_self_consistency for e in log.evidence_list]
-                #     for log in log_list
-                # ], dtype=float)
-
-                # Normalization
-                # mean = np.mean(X_b, axis=0)
-                # std = np.std(X_b, axis=0)
-                # std[std == 0] = 1.0
-                # X_b = (X_b - mean) / std                
 
                 y_b = np.array([1 if log.accuracy else 0 for log in log_list], dtype=int)
                 
@@ -118,6 +103,55 @@ class diffusion_decision_model_training:
         print(f"ROC : {roc_auc:.4f}")
         print(f"ECE : {ece:.4f}")
 
+    def self_consistency_confidence_completion(self, from_run_number, to_run_number) -> None:
+        log_list: list[diffusion_decision_model_log_entity] = []
+        
+        X = np.empty(0)
+        y = np.empty(0)
+        for dataset in self.datasets:
+            for run_number in range(from_run_number,to_run_number):
+                logger = diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/{dataset}/qwen-qwen3-8b/run_{run_number}/diffusion_decision_model_{dataset}_nv_{self.number_of_evidence}.csv')
+                log_list = logger.load_logs_list()
+                
+                X_b = np.array([log.self_consistency_completion_confidence for log in log_list], dtype=float)
+                y_b = np.array([1 if log.self_consistency_completion_accuracy else 0 for log in log_list], dtype=int)
+                
+                X = np.concatenate((X, X_b))                
+                y = np.concatenate((y, y_b))                
+        
+        fpr, tpr, _ = roc_curve(y, X)
+        roc_auc = auc(fpr, tpr)
+
+        ece, _ = self.calculate_ECE_MCE(y, X)        
+        print(f"Accuracy Completion : {np.mean(y):.4f}")
+        print(f"ROC Completion : {roc_auc:.4f}")
+        print(f"ECE Completion : {ece:.4f}")
+
+    def self_consistency_confidence(self, from_run_number, to_run_number) -> None:
+        log_list: list[diffusion_decision_model_log_entity] = []
+        
+        X = np.empty(0)
+        y = np.empty(0)
+        for dataset in self.datasets:
+            for run_number in range(from_run_number,to_run_number):
+                logger = diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/{dataset}/qwen-qwen3-8b/run_{run_number}/diffusion_decision_model_{dataset}_nv_{self.number_of_evidence}.csv')
+                log_list = logger.load_logs_list()
+                
+                X_b = np.array([log.self_consistency_confidence for log in log_list], dtype=float)
+                y_b = np.array([1 if log.self_consistency_accuracy else 0 for log in log_list], dtype=int)
+                
+                X = np.concatenate((X, X_b))                
+                y = np.concatenate((y, y_b))                
+        
+        fpr, tpr, _ = roc_curve(y, X)
+        roc_auc = auc(fpr, tpr)
+
+        ece, _ = self.calculate_ECE_MCE(y, X)        
+        print(f"Accuracy : {np.mean(y):.4f}")
+        print(f"ROC : {roc_auc:.4f}")
+        print(f"ECE : {ece:.4f}")
+        
+
     def calculate_ECE_MCE(df, y_list, confidence_list, n_bins = 10):
         df = pd.DataFrame({
                 "confidence": confidence_list,
@@ -141,4 +175,6 @@ class diffusion_decision_model_training:
 
 
 training = diffusion_decision_model_training(number_of_evidence=20)
-training.train_logistic_regression(from_run_number = 2, to_run_number = 3)
+# training.train_logistic_regression(from_run_number = 1, to_run_number = 2)
+training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
+training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)

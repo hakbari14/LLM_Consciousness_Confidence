@@ -4,5 +4,6 @@
 pyphi.log
 error.log
 live_logs/**
+logs/**
 .vscode/**
 .venv/**

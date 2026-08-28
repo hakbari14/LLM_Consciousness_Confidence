@@ -21,7 +21,7 @@ class diffusion_decision_model_math500(diffusion_decision_model):
         return 15000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
-        return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_math500{self.get_number_of_evidence_dir()}.csv')
+        return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_math500{self.get_number_of_evidence_dir()}.csv')
 
 
 t = diffusion_decision_model_math500(modelname='Qwen/Qwen3-8B', number_of_evidence=20)

@@ -21,8 +21,8 @@ class diffusion_decision_model_aime(diffusion_decision_model):
         return 15000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
-        return diffusion_decision_model_logger(log_file_name = f'src/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_aime{self.get_number_of_evidence_dir()}.csv')
+        return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_aime{self.get_number_of_evidence_dir()}.csv')
 
 
 t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
-t.run(from_run_number=2, to_run_number=3)
+t.run(from_run_number=1, to_run_number=2)
