@@ -575,6 +575,28 @@ worth knowing before trusting any of it:
         print(f"ECE : {ece:.4f}")
         
 
+    def calculate_grouped_averages(self, data: list[list[dict]]) -> None:
+        parameter_keys = ["target", "loss_mode", "standardize", "class_weight"]
+        calculation_keys = ["accuracy", "precision", "recall", "f1", "roc_auc", "ece"]
+
+        records = [
+            item
+            for inner_list in data
+            for item in inner_list
+        ]
+
+        df = pd.DataFrame(records)
+        result = (
+            df.groupby(parameter_keys, dropna=False)[calculation_keys]
+            .mean()
+            .round(3)            
+            .reset_index()
+        )
+        
+        df_summary = pd.DataFrame(result)
+        print()
+        print(df_summary.to_string(index=False))
+
     def calculate_ECE_MCE(df, y_list, confidence_list, n_bins = 10):
         df = pd.DataFrame({
                 "confidence": confidence_list,
@@ -632,5 +654,8 @@ if __name__ == '__main__':
     # take the vote share as it is, which is the bar the trained rows have to beat.
     training.print_reading_notes()
     training.ablation()
+    total_result = []
     for dataset in training.datasets:
-        training.ablation(test_datasets = [dataset])
+        total_result.append(training.ablation(test_datasets = [dataset]))
+        
+    training.calculate_grouped_averages(total_result)    
