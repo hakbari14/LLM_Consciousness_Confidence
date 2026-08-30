@@ -24,5 +24,8 @@ class diffusion_decision_model_mmlu_pro(diffusion_decision_model):
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/mmlu_pro/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_mmlu_pro{self.get_number_of_evidence_dir()}.csv')
 
 
-t = diffusion_decision_model_mmlu_pro(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+# t = diffusion_decision_model_mmlu_pro(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+# t.run(from_run_number=1, to_run_number=2)
+
+t = diffusion_decision_model_mmlu_pro(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=20)
 t.run(from_run_number=1, to_run_number=2)

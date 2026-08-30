@@ -81,7 +81,10 @@ class countdown_dataset(dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        if self.get_enable_thinking():
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        else: 
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
     def generate_wrong_answer(self, latex_expr:str) -> str:
         return None

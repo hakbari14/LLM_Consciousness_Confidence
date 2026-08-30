@@ -24,5 +24,8 @@ class diffusion_decision_model_math500(diffusion_decision_model):
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_math500{self.get_number_of_evidence_dir()}.csv')
 
 
-t = diffusion_decision_model_math500(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+# t = diffusion_decision_model_math500(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+# t.run(from_run_number=1, to_run_number=2)
+
+t = diffusion_decision_model_math500(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=20)
 t.run(from_run_number=1, to_run_number=2)

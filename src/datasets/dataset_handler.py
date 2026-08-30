@@ -158,6 +158,13 @@ class dataset_handler(ABC):
 
         return thinking if len(thinking) >= len(presentation) else presentation
 
+    def get_enable_thinking(self) -> bool:
+        if self.config.get_model_name() == 'Qwen/Qwen3-8B':
+            return True
+        elif self.config.get_model_name() == 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B':
+            return False
+        return False
+
     @abstractmethod
     def final_answer_confidence_extraction(self, prompt, completion, target):
         pass

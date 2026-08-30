@@ -100,7 +100,10 @@ class mmlu_dataset(dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        if self.get_enable_thinking():
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        else: 
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
     def generate_model_prompt_permutation(self, x, num_choice_permutations: int) -> list[dict]:
         unique_id: str = x['unique_id']

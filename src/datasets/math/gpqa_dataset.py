@@ -94,7 +94,10 @@ class gpqa_dataset(math_dataset_handler):
             },
         ]
 
-        return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        if self.get_enable_thinking():
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True, enable_thinking=True)
+        else: 
+            return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
 
 # config = dataset_config('Qwen/Qwen2.5-1.5B')
