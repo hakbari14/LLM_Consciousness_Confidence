@@ -2,6 +2,8 @@ from src.logger.log_entity import log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_evidence_log_entity import diffusion_decision_model_evidence_log_entity
 from dataclasses import dataclass, field
 from typing import Optional, List
+import numpy as np
+import json 
 
 @dataclass
 class diffusion_decision_model_log_entity(log_entity):
@@ -17,7 +19,9 @@ class diffusion_decision_model_log_entity(log_entity):
     completion_loss : Optional[float] = 0.0
     sequence_probability : Optional[float] = 0.0
     length_normalized_sequence_probability : Optional[float] = 0.0
+    mean_entropy : Optional[float] = 0.0
     entropy : Optional[float] = 0.0
+    last_layer_representations : Optional[str] = None
     
     self_consistency_confidence : Optional[float] = 0.0
     self_consistency_final_answer : Optional[str] = None
@@ -37,8 +41,8 @@ class diffusion_decision_model_log_entity(log_entity):
     def validate(self): 
         super().validate()
 
-        # if self.x is None:
-        #     raise Exception('data x is required')
+        if self.x is None:
+            raise Exception('data x is required')
         
         if self.final_answer is None:
             raise Exception('final answer is required')
@@ -49,3 +53,5 @@ class diffusion_decision_model_log_entity(log_entity):
         for e in self.evidence_list: 
             e.validate()
 
+    def get_last_layer_representations_numpy(self) -> np.ndarray: 
+        return np.array(json.loads(self.last_layer_representations),dtype=np.float64)

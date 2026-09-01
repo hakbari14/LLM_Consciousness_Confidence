@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from transformers import AutoTokenizer
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
+from transformers import (AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig)
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity import diffusion_decision_model_log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_evidence_log_entity import diffusion_decision_model_evidence_log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_detail_entity import diffusion_decision_model_log_detail_entity
@@ -16,8 +17,10 @@ import numpy as np
 import traceback
 from collections import Counter
 import logging
-
-
+import pandas as pd
+import torch.nn.functional as F
+import gc
+import json 
 
 logging.basicConfig(
     filename="error.log",
@@ -39,11 +42,13 @@ class diffusion_decision_model(ABC):
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dataset = None
-        self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
-        self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
         
 
     def run(self, from_run_number: int , to_run_number: int) -> None:
+        self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
+        
+        print(f"{'*' * 100}  {self.modelname}  {'*' * 100}")
         for run_number in range(from_run_number,to_run_number):
             print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
             
@@ -54,6 +59,29 @@ class diffusion_decision_model(ABC):
             logger.add_to_buffer_list(log_list)
             logger.write_to_log_file()
             
+            print(f"{'*' * 210}")
+
+    def baseline_features_extractor(self, from_run_number: int , to_run_number: int) -> None:
+        bnb_config = BitsAndBytesConfig(
+        load_in_4bit = True,
+        bnb_4bit_quant_type = "nf4",
+        bnb_4bit_compute_dtype = getattr(torch, "bfloat16"),
+        bnb_4bit_use_double_quant = False,
+        )
+        self.model = AutoModelForCausalLM.from_pretrained(self.modelname, quantization_config = bnb_config)
+        self.model.config.use_cache = False
+        self.model.config.pretraining_tp = 1        
+        self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
+
+        print(f"{'*' * 100}  {self.modelname}  {'*' * 100}")
+        for run_number in range(from_run_number,to_run_number):
+            print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
+            logger = self.create_logger(run_number)
+            df = pd.read_csv(logger.get_log_file_name())
+            
+            df = self.calculate_baseline_features(df)
+            
+            df.to_csv(logger.get_log_file_name(), index=False)            
             print(f"{'*' * 210}")
 
     @torch.inference_mode()
@@ -233,6 +261,83 @@ class diffusion_decision_model(ABC):
 
         return log_list
 
+    def calculate_baseline_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = self.create_columns_baseline_features(df)
+
+        for index, row in tqdm(df.iterrows(), total=len(df)):
+            completion = df.loc[index, "Completion"]
+            
+            with torch.inference_mode():
+                try:
+                    device = next(self.model.parameters()).device
+                    
+                    inputs = self.tokenizer(completion, return_tensors='pt')
+                    inputs = {k: v.to(device) for k, v in inputs.items()}
+                    input_ids = inputs["input_ids"]
+
+                    outputs_last_hidden_state = self.model.model(**inputs, labels=inputs["input_ids"], output_hidden_states=False)
+                    last_hidden_state = outputs_last_hidden_state.last_hidden_state.float().squeeze(0).detach().cpu().numpy()
+
+                    representation = np.mean(last_hidden_state, axis=0)
+                    df.at[index, "Last_Layer_Representations"] = json.dumps(representation.tolist())
+
+                    outputs = self.model(**inputs, labels=inputs["input_ids"])
+                    logits = outputs.logits
+
+                    shift_logits = logits[:, :-1, :]
+                    shift_labels = input_ids[:, 1:]
+
+                    log_probs = F.log_softmax(shift_logits, dim=-1)
+                    probs = torch.exp(log_probs)
+
+                    token_probs = []
+                    token_entropy = []
+
+                    for t in range(shift_labels.shape[1]):
+                        true_token_id = shift_labels[0, t].item()
+                        prob = probs[0, t, true_token_id].item()
+                        token_probs.append(prob)
+                        entropy = -(probs[0, t] * log_probs[0, t]).sum().item()
+                        token_entropy.append(entropy)
+
+                    df.at[index, "Sequence_Probability"] = sum(token_probs)
+                    df.at[index, "Length_Normalized_Sequence_Probability"] = sum(token_probs) / len(token_probs)
+                    df.at[index, "Entropy"] = sum(token_entropy)
+                    df.at[index, "Mean_Entropy"] = sum(token_entropy) / len(token_entropy)
+                except Exception as e:
+                    logging.exception("An exception occurred")                        
+                    print(f"[WARN]: {e}")
+                    traceback.print_exc()                        
+                finally:            
+                    del outputs, outputs_last_hidden_state, last_hidden_state, logits, representation
+                    del inputs, input_ids
+                    del shift_logits, shift_labels, probs, log_probs
+                    gc.collect()
+                    torch.cuda.empty_cache()
+
+        return df 
+    
+    def create_columns_baseline_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        if 'Entropy' not in df.columns:
+            df['Entropy'] = np.nan
+            df['Entropy'] = df['Entropy'].astype('float64')
+        if 'Mean_Entropy' not in df.columns:
+            df['Mean_Entropy'] = np.nan
+            df['Mean_Entropy'] = df['Mean_Entropy'].astype('float64')
+        
+        if 'Sequence_Probability' not in df.columns:
+            df['Sequence_Probability'] = np.nan
+            df['Sequence_Probability'] = df['Sequence_Probability'].astype('float64')
+        if 'Length_Normalized_Sequence_Probability' not in df.columns:
+            df['Length_Normalized_Sequence_Probability'] = np.nan
+            df['Length_Normalized_Sequence_Probability'] = df['Length_Normalized_Sequence_Probability'].astype('float64')
+
+        if 'Last_Layer_Representations' not in df.columns:
+            df['Last_Layer_Representations'] = np.nan
+            df['Last_Layer_Representations'] = df['Last_Layer_Representations'].astype('str')
+        
+        return df 
+        
     def is_answer_present(self, answer) -> bool:
         """True when a rollout reached an answer that can take part in the vote.
 

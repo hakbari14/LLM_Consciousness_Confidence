@@ -27,5 +27,11 @@ class diffusion_decision_model_aime(diffusion_decision_model):
 # t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
 # t.run(from_run_number=1, to_run_number=2)
 
-t = diffusion_decision_model_aime(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=20)
-t.run(from_run_number=1, to_run_number=2)
+# t = diffusion_decision_model_aime(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=20)
+# t.run(from_run_number=1, to_run_number=2)
+
+# t = diffusion_decision_model_aime(modelname='Qwen/Qwen3-8B', number_of_evidence=20)
+# t.baseline_features_extractor(from_run_number=1, to_run_number=2)
+
+# t = diffusion_decision_model_aime(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=20)
+# t.baseline_features_extractor(from_run_number=1, to_run_number=2)

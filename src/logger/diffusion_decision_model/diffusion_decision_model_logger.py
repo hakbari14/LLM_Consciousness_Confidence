@@ -84,6 +84,13 @@ class diffusion_decision_model_logger(logger):
             log.self_consistency_completion_final_answer = a_row["Self_Consistency_Completion_Final_Answer"]
             log.self_consistency_completion_accuracy = a_row["Self_Consistency_Completion_Accuracy"]
 
+            log.sequence_probability = a_row["Sequence_Probability"]
+            log.length_normalized_sequence_probability = a_row["Length_Normalized_Sequence_Probability"]
+            log.mean_entropy = a_row["Mean_Entropy"]
+            log.entropy = a_row["Entropy"]
+            log.last_layer_representations = a_row["Last_Layer_Representations"]
+            log.get_last_layer_representations_numpy()
+
             b_subset = df_evidences[df_evidences["Sample_ID"] == log.sample_ID]
             for _, b_row in b_subset.iterrows():
                 log_evidence = diffusion_decision_model_evidence_log_entity()
@@ -144,6 +151,12 @@ class diffusion_decision_model_logger(logger):
                 'Self_Consistency_Completion_Confidence': log.self_consistency_completion_confidence,
                 'Self_Consistency_Completion_Final_Answer': log.self_consistency_completion_final_answer,
                 'Self_Consistency_Completion_Accuracy': log.self_consistency_completion_accuracy,
+                'Sequence_Probability': log.sequence_probability,
+                'Length_Normalized_Sequence_Probability': log.length_normalized_sequence_probability,
+                'Mean_Entropy': log.mean_entropy,
+                'Entropy': log.entropy,
+                'Last_Layer_Representations': log.last_layer_representations,
+               
                 }
             list.append(b)
         return list
@@ -172,6 +185,11 @@ class diffusion_decision_model_logger(logger):
                 'Self_Consistency_Completion_Confidence',
                 'Self_Consistency_Completion_Final_Answer',
                 'Self_Consistency_Completion_Accuracy',
+                'Sequence_Probability',
+                'Length_Normalized_Sequence_Probability',
+                'Mean_Entropy',
+                'Entropy',
+                'Last_Layer_Representations',
                 ]
 
 
