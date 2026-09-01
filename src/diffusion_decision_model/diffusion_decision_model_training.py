@@ -530,6 +530,14 @@ the earlier number that was a sibling doing the work. Holding the mathematics
 sets out together also makes them readable for the first time: alone they carry
 1, 13 and 17 of the rarer class, and together they carry 31.
 
+The last average is the one to quote. It holds every benchmark out exactly once,
+the two domains together and gpqa, truthfulqa and countdown on their own, so each
+of the eight counts once and none of them sits on both sides of the split. The
+average over the eight single hold outs above it cannot say either of those
+things: it counts math500, whose rarer class holds one sample, as heavily as
+mmlu_pro, whose rarer class holds a hundred and five, which lifts it by about a
+tenth of a point of area under the curve for no reason anyone should trust.
+
 features  which numbers describe a sample, one group per evidence step, so with
           twenty steps the widths are:
             full                80  the two accumulations and their two steps,
@@ -846,7 +854,22 @@ if __name__ == '__main__':
                 print(f'\n\nheld out as a domain: {group_name}')
                 group_result.append(training.ablation(test_datasets = group, feature_set = feature_set))
 
-            print(f"\n\naveraged over the domains held out whole ({', '.join(training.DATASET_GROUPS)}):")
-            training.calculate_grouped_averages(group_result)
+            # The partition. Every benchmark is held out exactly once: those with a
+            # close relative leave together with it, the rest leave alone. Because
+            # no benchmark appears twice, this average counts each of them once and
+            # no problem sits on both sides of it, which the average over the eight
+            # single hold outs cannot say. The tables it draws on are all printed
+            # above, so nothing is fitted a second time to build it.
+            partition = list(group_result)
+            partition_names = list(training.DATASET_GROUPS)
+            for dataset, result in zip(training.datasets, total_result):
+                if any(dataset in group for group in training.DATASET_GROUPS.values()):
+                    continue
+
+                partition.append(result)
+                partition_names.append(dataset)
+
+            print(f"\n\naveraged over every benchmark held out exactly once ({', '.join(partition_names)}):")
+            training.calculate_grouped_averages(partition)
 
         print(f'wrote {output_file_name}')

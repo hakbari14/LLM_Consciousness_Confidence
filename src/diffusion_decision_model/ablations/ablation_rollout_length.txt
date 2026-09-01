@@ -25,6 +25,14 @@ the earlier number that was a sibling doing the work. Holding the mathematics
 sets out together also makes them readable for the first time: alone they carry
 1, 13 and 17 of the rarer class, and together they carry 31.
 
+The last average is the one to quote. It holds every benchmark out exactly once,
+the two domains together and gpqa, truthfulqa and countdown on their own, so each
+of the eight counts once and none of them sits on both sides of the split. The
+average over the eight single hold outs above it cannot say either of those
+things: it counts math500, whose rarer class holds one sample, as heavily as
+mmlu_pro, whose rarer class holds a hundred and five, which lifts it by about a
+tenth of a point of area under the curve for no reason anyone should trust.
+
 features  which numbers describe a sample, one group per evidence step, so with
           twenty steps the widths are:
             full                80  the two accumulations and their two steps,
@@ -479,18 +487,18 @@ vote is the answer the rollouts settled on. They differ on one sample in eight, 
 the two blocks answer different questions and their numbers are not interchangeable.
 
 
-averaged over the domains held out whole (multiple choice knowledge, mathematics):
+averaged over every benchmark held out exactly once (multiple choice knowledge, mathematics, gpqa, countdown, truthfulqa):
 
 target      loss_mode standardize class_weight  accuracy  precision  recall    f1  roc_auc   ece
-   run              -       False     balanced     0.487      0.810   0.436 0.562    0.544 0.352
-   run              -       False         none     0.763      0.835   0.917 0.863    0.542 0.190
-   run              -        True     balanced     0.475      0.816   0.415 0.545    0.542 0.355
-   run              -        True         none     0.768      0.831   0.926 0.867    0.539 0.196
-   run    self cons 0           -            -     0.786      0.839   0.923 0.874    0.690 0.164
-   run self cons last           -            -     0.823      0.830   0.981 0.897    0.625 0.112
-  vote              -       False     balanced     0.681      0.882   0.742 0.787    0.709 0.332
-  vote              -       False         none     0.817      0.846   0.962 0.897    0.716 0.143
-  vote              -        True     balanced     0.683      0.888   0.742 0.788    0.737 0.336
-  vote              -        True         none     0.819      0.846   0.964 0.897    0.740 0.147
-  vote    self cons 0           -            -     0.844      0.871   0.955 0.909    0.826 0.074
-  vote self cons last           -            -     0.812      0.825   0.975 0.893    0.575 0.129
+   run              -       False     balanced     0.467      0.750   0.376 0.494    0.592 0.324
+   run              -       False         none     0.698      0.775   0.911 0.814    0.591 0.233
+   run              -        True     balanced     0.468      0.746   0.375 0.494    0.594 0.331
+   run              -        True         none     0.700      0.773   0.915 0.815    0.593 0.236
+   run    self cons 0           -            -     0.743      0.785   0.929 0.838    0.742 0.205
+   run self cons last           -            -     0.755      0.769   0.960 0.845    0.674 0.163
+  vote              -       False     balanced     0.659      0.810   0.761 0.764    0.685 0.309
+  vote              -       False         none     0.754      0.799   0.946 0.852    0.679 0.197
+  vote              -        True     balanced     0.668      0.813   0.772 0.771    0.699 0.314
+  vote              -        True         none     0.757      0.800   0.950 0.854    0.694 0.200
+  vote    self cons 0           -            -     0.797      0.821   0.954 0.874    0.811 0.143
+  vote self cons last           -            -     0.769      0.786   0.960 0.859    0.626 0.172
