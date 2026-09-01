@@ -75,14 +75,29 @@ class diffusion_decision_model_training:
     #   AGREEING_LENGTH      the same average over only the rollouts that reached
     #                        the answer the run itself gave.
     #   SELF_CONSISTENCY     the agreement alone, with no length and no loss.
+    #   BASELINE_SCALAR   5  how likely the model held its own answer to be and how
+    #                        uncertain it was writing it, each as a total and per
+    #                        token, with the loss of the completion beside them.
+    #   BASELINE_HIDDEN      the mean pooled last hidden state, which asks whether
+    #                        correctness can simply be read off the representation.
     FEATURE_SET_FULL = 'full'
     FEATURE_SET_ROLLOUT_LENGTH = 'rollout_length'
     FEATURE_SET_ROLLOUT_LENGTH_STD = 'rollout_length_std'
     FEATURE_SET_AGREEING_LENGTH = 'agreeing_length'
     FEATURE_SET_SELF_CONSISTENCY = 'self_consistency'
+    FEATURE_SET_BASELINE_SCALAR = 'baseline_scalar'
+    FEATURE_SET_BASELINE_HIDDEN = 'baseline_hidden'
 
     FEATURE_SETS = [FEATURE_SET_FULL, FEATURE_SET_ROLLOUT_LENGTH, FEATURE_SET_ROLLOUT_LENGTH_STD,
-                    FEATURE_SET_AGREEING_LENGTH, FEATURE_SET_SELF_CONSISTENCY]
+                    FEATURE_SET_AGREEING_LENGTH, FEATURE_SET_SELF_CONSISTENCY,
+                    FEATURE_SET_BASELINE_SCALAR, FEATURE_SET_BASELINE_HIDDEN]
+
+    # The last two describe the whole completion rather than any evidence step, and
+    # they are the published baselines rather than anything of ours. They come from
+    # one forward pass over the answer the run already wrote, where everything above
+    # costs two hundred rollouts a sample, so they are the bar that decides whether
+    # any of this is worth its compute.
+    BASELINE_FEATURE_SETS = [FEATURE_SET_BASELINE_SCALAR, FEATURE_SET_BASELINE_HIDDEN]
 
     # Ten seeds rather than the single 42. They change the split of the random
     # split table, and for a held out dataset, where the split is fixed and the
@@ -225,6 +240,33 @@ class diffusion_decision_model_training:
                         per_token_list = [value for value in per_token_list if not math.isnan(value)]
                         accumulation_loss_list.append(float(np.mean(per_token_list)) if per_token_list else float('nan'))
 
+                    if feature_set == self.FEATURE_SET_BASELINE_SCALAR:
+                        # Read from the completion, not from any evidence step.
+                        row = [
+                            self.to_float(log.completion_loss),
+                            self.to_float(log.sequence_probability),
+                            self.to_float(log.length_normalized_sequence_probability),
+                            self.to_float(log.entropy),
+                            self.to_float(log.mean_entropy),
+                            ]
+                        row_list.append(row)
+                        self.append_labels(log, label_list, baseline_list)
+                        continue
+
+                    if feature_set == self.FEATURE_SET_BASELINE_HIDDEN:
+                        # Thousands of numbers against about fourteen hundred
+                        # samples, so this is the one set that can fit the training
+                        # half far better than it can carry to anything else. A
+                        # sample whose vector was never written is left out.
+                        try:
+                            row = list(log.get_last_layer_representations_numpy())
+                        except Exception:
+                            continue
+
+                        row_list.append(row)
+                        self.append_labels(log, label_list, baseline_list)
+                        continue
+
                     row = []
                     for index, evidence_log in enumerate(evidence_list):
                         # The logged steps belong to the totals, so they are read as
@@ -262,31 +304,8 @@ class diffusion_decision_model_training:
                             raise Exception(f'unknown feature set {feature_set}')
 
                     row_list.append(row)
+                    self.append_labels(log, label_list, baseline_list)
 
-                    # Both labels are kept and one is chosen at the end, because
-                    # there are two answers that can be graded: the one the run
-                    # gave, and the one the rollouts voted for. A sample with no
-                    # vote has no second label, and is dropped when that is the
-                    # target rather than counted as a wrong one.
-                    vote_accuracy = str(log.self_consistency_accuracy).strip().lower()
-                    label_list.append([
-                        1.0 if str(log.accuracy).strip().lower() == 'true' else 0.0,
-                        float('nan') if vote_accuracy in ('', 'nan', 'none') else (1.0 if vote_accuracy == 'true' else 0.0),
-                        ])
-
-                    # The vote share on its own, at the first evidence and at the
-                    # last, carried alongside so a table can show what the same
-                    # samples give with no model fitted at all. A sample whose
-                    # rollouts never reached a readable answer has no vote to
-                    # report, and the answer field is where that shows, so it is
-                    # left out rather than scored as a confidence of nothing.
-                    baseline_row = []
-                    for confidence, answer in [(log.self_consistency_confidence, log.self_consistency_final_answer),
-                                               (log.self_consistency_completion_confidence, log.self_consistency_completion_final_answer)]:
-                        has_answer = str(answer).strip().lower() not in ('', 'nan', 'none')
-                        baseline_row.append(self.to_float(confidence) if has_answer else float('nan'))
-
-                    baseline_list.append(baseline_row)
 
         if target not in (self.TARGET_RUN, self.TARGET_VOTE):
             raise Exception(f'unknown target {target}')
@@ -298,6 +317,48 @@ class diffusion_decision_model_training:
         target_index = 0 if target == self.TARGET_RUN else 1
         keep = ~np.isnan(labels[:, target_index])
         return X[keep], labels[keep, target_index].astype(int), baseline[keep]
+
+    def append_labels(self, log, label_list, baseline_list) -> None:
+        """The two labels and the two untrained confidences of one sample.
+
+        Both labels are kept and one is chosen at the end, because there are two
+        answers that can be graded: the one the run gave, and the one the rollouts
+        voted for. A sample with no vote has no second label and is dropped when
+        that is the target, rather than counted as a wrong one. The vote share is
+        carried alongside so a table can show what the same samples give with
+        nothing fitted; a sample whose rollouts reached no readable answer has no
+        vote to report, and its answer field is where that shows.
+        """
+        vote_accuracy = str(log.self_consistency_accuracy).strip().lower()
+        label_list.append([
+            1.0 if str(log.accuracy).strip().lower() == 'true' else 0.0,
+            float('nan') if vote_accuracy in ('', 'nan', 'none') else (1.0 if vote_accuracy == 'true' else 0.0),
+            ])
+
+        baseline_row = []
+        for confidence, answer in [(log.self_consistency_confidence, log.self_consistency_final_answer),
+                                   (log.self_consistency_completion_confidence, log.self_consistency_completion_final_answer)]:
+            has_answer = str(answer).strip().lower() not in ('', 'nan', 'none')
+            baseline_row.append(self.to_float(confidence) if has_answer else float('nan'))
+
+        # The published measures, taken the way their papers take them: as the score
+        # itself, with nothing fitted. Malinin and Gales score a sequence by its log
+        # likelihood and by that divided by its length; LM-Polygraph scores it by the
+        # mean entropy of its tokens. Every one is turned so that larger means more
+        # likely to be right, which for a loss or an entropy means negating it.
+        # Completion_Loss is already the summed negative log likelihood of the
+        # completion, so the first two are exact without needing anything rebuilt.
+        completion_loss = self.to_float(log.completion_loss)
+        token_count = self.to_float(log.token_count)
+        baseline_row.extend([
+            -completion_loss,
+            -completion_loss / token_count if token_count > 0 else float('nan'),
+            -self.to_float(log.entropy),
+            -self.to_float(log.mean_entropy),
+            self.to_float(log.length_normalized_sequence_probability),
+            ])
+
+        baseline_list.append(baseline_row)
 
     def evaluate(self, test_datasets: list[str] = None, from_run_number: int = 1, to_run_number: int = 2,
                  loss_mode: str = LOSS_MODE_TOTAL, standardize: bool = True, class_weight = None,
@@ -387,11 +448,24 @@ class diffusion_decision_model_training:
 
         # The last draw of the loop is the one whose samples the untrained rows and
         # the class counts describe, so they are read from it.
+        # The untrained rows. The two vote shares are proportions, so a threshold and
+        # a calibration curve mean something for them. The published measures are log
+        # likelihoods and entropies, which are not probabilities of anything, so only
+        # the ranking is reported for those and the rest is left empty rather than
+        # filled with a number that would read as if it meant something.
         baseline_rows = []
-        for position, name in [(0, 'self cons 0'), (1, 'self cons last')]:
+        for position, name, is_probability in [
+                (0, 'self cons 0', True),
+                (1, 'self cons last', True),
+                (2, 'seq logprob', False),
+                (3, 'seq logprob/tok', False),
+                (4, 'entropy total', False),
+                (5, 'mean token ent', False),
+                (6, 'mean token prob', True),
+                ]:
             confidence = baseline_test[:, position]
             keep = ~np.isnan(confidence)
-            baseline_rows.append(self.score_confidence(held_out, name, confidence[keep], y_test[keep], target))
+            baseline_rows.append(self.score_confidence(held_out, name, confidence[keep], y_test[keep], target, is_probability))
 
         result = {
             'baseline_rows': baseline_rows,
@@ -431,9 +505,26 @@ class diffusion_decision_model_training:
             'ece': ece,
             }
 
-    def score_confidence(self, held_out: str, name: str, confidence, y_true, target: str) -> dict:
-        """Score a confidence that needed no training, in the shape of a trained row."""
+    def score_confidence(self, held_out: str, name: str, confidence, y_true, target: str, is_probability: bool = True) -> dict:
+        """Score a confidence that needed no training, in the shape of a trained row.
+
+        Ranking is reported for anything. A threshold and a calibration error are
+        reported only for a score that is already a probability: a log likelihood or
+        an entropy can be ranked but cannot be called well or badly calibrated, and
+        cutting it at one half would mean nothing at all.
+        """
         roc_auc = float(roc_auc_score(y_true, confidence)) if len(np.unique(y_true)) > 1 and len(y_true) else float('nan')
+        if not is_probability:
+            return {
+                'baseline_rows': [], 'held_out': held_out, 'target': target, 'feature_set': '-',
+                'loss_mode': name, 'standardize': '-', 'class_weight': '-', 'train_count': 0,
+                'test_count': len(y_true),
+                'minority_count': int(min(np.sum(y_true == 1), np.sum(y_true == 0))) if len(y_true) else 0,
+                'majority_rate': float(max(np.mean(y_true), 1.0 - np.mean(y_true))) if len(y_true) else float('nan'),
+                'accuracy': float('nan'), 'precision': float('nan'), 'recall': float('nan'), 'f1': float('nan'),
+                'roc_auc': roc_auc, 'ece': float('nan'), 'roc_auc_sd': 0.0, 'ece_sd': 0.0, 'converged': True,
+                }
+
         try:
             ece, _ = self.calculate_ECE_MCE(y_true, confidence)
         except Exception:
@@ -551,8 +642,34 @@ features  which numbers describe a sample, one group per evidence step, so with
             agreeing_length     20  the same average over only the rollouts that
                                     reached the answer the run itself gave
             self_consistency    20  the agreement alone, no length, no loss
+            baseline_scalar      5  the published confidence signals, read from the
+                                    completion the run already wrote: the loss of
+                                    it, how likely the model held its own answer to
+                                    be, and how uncertain it was writing it, each as
+                                    a total and per token
+            baseline_hidden   4096  the mean pooled last hidden state, asking
+                                    whether correctness can be read straight off the
+                                    representation
           Only full carries a loss, so only its tables sweep the loss column; the
           others show a dash there and have four configurations per block.
+
+          The last two are the ones that decide whether any of this is worth its
+          price. They need one forward pass over an answer the model has already
+          written. Everything above them needs two hundred rollouts a sample. A
+          feature set of ours that does not clearly beat them is not a result.
+
+          Note that baseline_scalar trains a classifier over those five numbers,
+          which is not how the papers that introduced them use them. There they are
+          the score itself, with nothing fitted, and that is how they appear in the
+          untrained rows at the foot of every block. Read those rows as the real
+          baseline. The trained set is kept beside them because it answers a
+          different and narrower question, whether a classifier can do better with
+          the same five numbers, and on a held out benchmark it can do considerably
+          worse: a direction learned on one set of benchmarks can point the wrong
+          way on another, which a raw score cannot do.
+          baseline_hidden carries four thousand numbers against about fourteen
+          hundred training samples, so it can fit the training half far better than
+          it can carry to anything else; read its held out rows, not its fit.
 
 target    which of the two answers the row was graded against. The run produces
           two: the one it wrote in its single completion, and the one its ten
@@ -662,8 +779,18 @@ worth knowing before trusting any of it:
         print('rests on those alone, so a handful of them means the number is mostly noise.')
         print('fit says whether the solver settled. STOP means it ran out of iterations and stopped')
         print('wherever it had got to, so read that row as a weaker result, not a comparable one.')
-        print('the last rows of each block take the vote share as the confidence with nothing fitted,')
-        print('and are what the trained rows have to beat to be worth the compute they cost.')
+        print('the last rows of each block fit nothing at all. They are the bar the trained rows')
+        print('have to clear to be worth the compute they cost. self cons 0 and self cons last are')
+        print('the vote share at the first and last evidence. The rest are the published measures,')
+        print('taken as their papers take them, as the score itself rather than as something to')
+        print('train on: seq logprob and seq logprob/tok are the sequence log likelihood and the')
+        print('same per token (Malinin and Gales), entropy total and mean token ent are the summed')
+        print('and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),')
+        print('mean token prob is the average probability the model gave its own tokens. All are')
+        print('turned so larger means more likely correct. Four of them are log likelihoods or')
+        print('entropies rather than probabilities, so only their ranking is reported and their')
+        print('accuracy and calibration columns are left empty: they can be ranked, but cutting')
+        print('them at one half or calling them well calibrated would mean nothing.')
         print('target says which answer was graded: run is the answer the model actually gave,')
         print('vote is the answer the rollouts settled on. They differ on one sample in eight, so')
         print('the two blocks answer different questions and their numbers are not interchangeable.')
