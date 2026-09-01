@@ -96,6 +96,17 @@ class diffusion_decision_model_training:
     # such sample and countdown three, so they are left out of the second average.
     MINORITY_FLOOR = 30
 
+    # Benchmarks that ask the same kind of question, held out together so that none
+    # of them can lean on a sibling. Holding mmlu out on its own leaves mmlu_pro in
+    # the training half, which is very nearly the same task, so the number says less
+    # about reaching a new domain than it appears to. Held out as a group there is
+    # no sibling left, and the question becomes whether any of this survives a
+    # change of domain rather than a change of benchmark.
+    DATASET_GROUPS = {
+        'multiple choice knowledge': ['mmlu', 'mmlu_pro'],
+        'mathematics': ['gsm8k', 'math500', 'aime'],
+        }
+
     def __init__(self, number_of_evidence: int, modelname_dir: str = 'qwen-qwen3-8b') -> None:
         self.number_of_evidence = number_of_evidence
         self.modelname_dir = modelname_dir
@@ -509,6 +520,16 @@ configurations followed by two rows that fit nothing at all. There is one file
 per feature set, named after it, since the feature sets answer separate
 questions and are not rows of one table.
 
+Held out one benchmark at a time, a benchmark that has a close relative can lean
+on it: mmlu held out alone still leaves mmlu_pro in the training half, and the
+three mathematics sets cover for each other the same way. The tables at the foot
+of each file hold whole domains out instead, mmlu with mmlu_pro and gsm8k with
+math500 and aime, which is the harder and more honest question. Read the drop
+between a benchmark held out alone and its domain held out whole as the part of
+the earlier number that was a sibling doing the work. Holding the mathematics
+sets out together also makes them readable for the first time: alone they carry
+1, 13 and 17 of the rarer class, and together they carry 31.
+
 features  which numbers describe a sample, one group per evidence step, so with
           twenty steps the widths are:
             full                80  the two accumulations and their two steps,
@@ -816,5 +837,16 @@ if __name__ == '__main__':
             names = [dataset for dataset, result in zip(training.datasets, total_result) if result[0]['minority_count'] >= training.MINORITY_FLOOR]
             print(f"\n\naveraged over the held out datasets carrying at least {training.MINORITY_FLOOR} of the rarer class ({', '.join(names)}):")
             training.calculate_grouped_averages(enough)
+
+            # The same again with whole domains held out rather than single
+            # benchmarks, which is the harder question: one benchmark held out on
+            # its own can still lean on a sibling left in the training half.
+            group_result = []
+            for group_name, group in training.DATASET_GROUPS.items():
+                print(f'\n\nheld out as a domain: {group_name}')
+                group_result.append(training.ablation(test_datasets = group, feature_set = feature_set))
+
+            print(f"\n\naveraged over the domains held out whole ({', '.join(training.DATASET_GROUPS)}):")
+            training.calculate_grouped_averages(group_result)
 
         print(f'wrote {output_file_name}')
