@@ -391,7 +391,7 @@ class diffusion_decision_model_training:
             if not train_datasets:
                 raise Exception('every dataset was held out, nothing is left to train on')
 
-            X_train, y_train, _ = self.build_matrix(train_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
+            X_train, y_train, baseline_train = self.build_matrix(train_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             X_test, y_test, baseline_test = self.build_matrix(test_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             held_out = ','.join(test_datasets)
         else:
@@ -433,7 +433,7 @@ class diffusion_decision_model_training:
             train_count, test_count = len(y_train), len(y_test)
         else:
             for seed in seeds:
-                X_train, X_test, y_train, y_test, _, baseline_test = train_test_split(X, y, baseline, test_size=0.2, random_state=seed, stratify=y)
+                X_train, X_test, y_train, y_test, baseline_train, baseline_test = train_test_split(X, y, baseline, test_size=0.2, random_state=seed, stratify=y)
                 y_pred, y_prob, fit_ok = fit_and_predict(X_train, y_train, X_test)
                 converged = converged and fit_ok
                 measurement_list.append(self.measure(y_test, y_pred, y_prob))
@@ -465,7 +465,8 @@ class diffusion_decision_model_training:
                 ]:
             confidence = baseline_test[:, position]
             keep = ~np.isnan(confidence)
-            baseline_rows.append(self.score_confidence(held_out, name, confidence[keep], y_test[keep], target, is_probability))
+            calibration = (baseline_train[:, position], y_train)
+            baseline_rows.append(self.score_confidence(held_out, name, confidence[keep], y_test[keep], target, is_probability, calibration))
 
         result = {
             'baseline_rows': baseline_rows,
@@ -505,16 +506,22 @@ class diffusion_decision_model_training:
             'ece': ece,
             }
 
-    def score_confidence(self, held_out: str, name: str, confidence, y_true, target: str, is_probability: bool = True) -> dict:
+    def score_confidence(self, held_out: str, name: str, confidence, y_true, target: str, is_probability: bool = True, calibration = None) -> dict:
         """Score a confidence that needed no training, in the shape of a trained row.
 
-        Ranking is reported for anything. A threshold and a calibration error are
-        reported only for a score that is already a probability: a log likelihood or
-        an entropy can be ranked but cannot be called well or badly calibrated, and
-        cutting it at one half would mean nothing at all.
+        A log likelihood or an entropy ranks samples perfectly well but is not a
+        probability of anything, so a calibration error cannot be read off it as it
+        stands, and cutting it at one half would mean nothing. Such a score is first
+        put through Platt scaling: one logistic curve from that single number to
+        correctness, fitted on the training half, the same half every trained row
+        learns from, and applied here. The curve only ever rises, so the ranking and
+        the area under it are untouched to the last decimal; all it does is put the
+        score on the probability scale where a threshold and a calibration error
+        mean something. A score that is already a proportion is left alone.
         """
         roc_auc = float(roc_auc_score(y_true, confidence)) if len(np.unique(y_true)) > 1 and len(y_true) else float('nan')
-        if not is_probability:
+
+        def unscorable():
             return {
                 'baseline_rows': [], 'held_out': held_out, 'target': target, 'feature_set': '-',
                 'loss_mode': name, 'standardize': '-', 'class_weight': '-', 'train_count': 0,
@@ -524,6 +531,26 @@ class diffusion_decision_model_training:
                 'accuracy': float('nan'), 'precision': float('nan'), 'recall': float('nan'), 'f1': float('nan'),
                 'roc_auc': roc_auc, 'ece': float('nan'), 'roc_auc_sd': 0.0, 'ece_sd': 0.0, 'converged': True,
                 }
+
+        if not is_probability:
+            if calibration is None or not len(y_true):
+                return unscorable()
+
+            train_confidence, train_label = calibration
+            train_confidence = np.asarray(train_confidence, dtype=float)
+            keep = ~np.isnan(train_confidence)
+            if keep.sum() < 2 or len(np.unique(np.asarray(train_label)[keep])) < 2:
+                return unscorable()
+
+            # These scores run to the thousands, so the curve is fitted on a
+            # standardised copy to keep the solver on comfortable ground.
+            scaler = StandardScaler().fit(train_confidence[keep].reshape(-1, 1))
+            calibrator = LogisticRegression(max_iter = self.MAX_ITER, random_state = 42)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category = ConvergenceWarning)
+                calibrator.fit(scaler.transform(train_confidence[keep].reshape(-1, 1)), np.asarray(train_label)[keep])
+
+            confidence = calibrator.predict_proba(scaler.transform(np.asarray(confidence, dtype=float).reshape(-1, 1)))[:, 1]
 
         try:
             ece, _ = self.calculate_ECE_MCE(y_true, confidence)
@@ -788,9 +815,14 @@ worth knowing before trusting any of it:
         print('and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),')
         print('mean token prob is the average probability the model gave its own tokens. All are')
         print('turned so larger means more likely correct. Four of them are log likelihoods or')
-        print('entropies rather than probabilities, so only their ranking is reported and their')
-        print('accuracy and calibration columns are left empty: they can be ranked, but cutting')
-        print('them at one half or calling them well calibrated would mean nothing.')
+        print('entropies rather than probabilities, so a calibration error cannot be read off')
+        print('them as they stand. Those four are put through Platt scaling first: one logistic')
+        print('curve from the single number to correctness, fitted on the training half, the same')
+        print('half every trained row learns from, and applied to the held out half. The curve')
+        print('only rises, so the ranking and the area under it are unchanged to the last decimal')
+        print('and only the accuracy and calibration columns become readable. This is why their')
+        print('ROC is the same whether the scaling is applied or not, and why their ECE should be')
+        print('read as the calibration of the scaled score rather than of the raw measure.')
         print('target says which answer was graded: run is the answer the model actually gave,')
         print('vote is the answer the rollouts settled on. They differ on one sample in eight, so')
         print('the two blocks answer different questions and their numbers are not interchangeable.')
@@ -898,9 +930,15 @@ worth knowing before trusting any of it:
                 "accuracy_reward": y_list
             })
              
+        # A coarse confidence, such as a vote share out of ten where most samples
+        # land on one value, leaves qcut with a bin that no sample falls into. Kept
+        # as a category, that empty bin has a mean of not a number, and it poisons
+        # the sum so the whole error comes back empty. Counting only the bins that
+        # have samples in them is the same calculation everywhere else and gives an
+        # answer here too.
         df['binned_confidence'] = pd.qcut(df['confidence'], q=n_bins, duplicates='drop')
-        agg_perplexity = df.groupby('binned_confidence', observed=False)['confidence'].agg(['mean'])
-        agg_accuracy = df.groupby('binned_confidence', observed=False)['accuracy_reward'].agg(['mean'])
+        agg_perplexity = df.groupby('binned_confidence', observed=True)['confidence'].agg(['mean'])
+        agg_accuracy = df.groupby('binned_confidence', observed=True)['accuracy_reward'].agg(['mean'])
 
         expected_calibration_error = 0
         maximum_calibration_error = 0
