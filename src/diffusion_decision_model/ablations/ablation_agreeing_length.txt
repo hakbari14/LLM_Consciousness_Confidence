@@ -1,835 +1,476 @@
-==============================================================================================
-== how to read this
-==============================================================================================
+================================================================================
+how to read this
+================================================================================
+One table per held out setting, then the averages.  Each table has two blocks,
+one per graded answer, each ending with the rows that fit nothing at all.
 
-Produced by:
-    .venv/bin/python -m src.diffusion_decision_model.diffusion_decision_model_training
+COLUMNS
+  target     which answer was graded.  run = the one the model wrote,
+             vote = the one the ten rollouts agreed on.  They disagree on one
+             sample in eight, so the two blocks are not comparable with each other.
+  loss       total = the summed loss the run logged, per_token = the same divided
+             by the tokens behind it.  A dash means the feature set carries no loss.
+  scaled     were the features standardised.  Fitted on the training half only.
+  weight     balanced weighs the rarer class as heavily as the common one.
+  fit        ok = the solver finished, STOP = it hit max_iter and stopped early.
+  minority   how many of the rarer class the held out set holds.  READ THIS FIRST.
+             Everything right of it rests on those samples alone.  math500 has 1
+             and countdown has 3, so their numbers are noise.
+  ROC        over every pair of one right and one wrong answer, how often the right
+             one scored higher.  Taken from the raw score, so nothing is fitted for
+             it.  ROCsd is its spread over ten seeds.
+  ECE        calibration under Platt scaling: one logistic curve from the score to
+             correctness, fitted on the training half.  Uses the labels.
+  ECEminmax  calibration under the rescaling used elsewhere in this repo,
+             x / (max - min), which uses no labels at all.
 
-One table per held out setting. The first is a random 80/20 split over every
-dataset, which is the reference. The rest hold one dataset out completely: it is
-kept out of training and is the only thing scored, which asks whether any of this
-carries to a benchmark the model has never seen.
+FEATURE SETS (one file each)
+  full 80             the two accumulations and their two steps
+  rollout_length 20   how long the ten rollouts ran, averaged.  No loss, no
+                      agreement, only length.  The control the loss must beat.
+  rollout_length_std 40   that average with its spread
+  agreeing_length 20  the same over only rollouts that matched the run's answer
+  self_consistency 20 the agreement alone
+  baseline_scalar 5   published: the completion's loss, how likely the model held
+                      its own answer, and its entropy, each total and per token
+  baseline_hidden 4096  published: the mean pooled last hidden state
 
-Each table has two blocks, one per graded answer, and each block has the
-configurations followed by two rows that fit nothing at all. There is one file
-per feature set, named after it, since the feature sets answer separate
-questions and are not rows of one table.
+THE UNTRAINED ROWS
+  self cons 0 / last  the vote share at the first and last evidence step
+  seq logprob         the sequence log likelihood (Malinin and Gales)
+  seq logprob/tok     the same per token, their length normalised score
+  entropy total       summed predictive entropy
+  mean token ent      averaged predictive entropy (LM-Polygraph's measure)
+  mean token prob     the average probability the model gave its own tokens
+  All are turned so larger means more likely correct, and all are used as the
+  score itself, which is how their papers use them.  These are the bar: a trained
+  row that does not clear them is not worth its compute.
 
-Held out one benchmark at a time, a benchmark that has a close relative can lean
-on it: mmlu held out alone still leaves mmlu_pro in the training half, and the
-three mathematics sets cover for each other the same way. The tables at the foot
-of each file hold whole domains out instead, mmlu with mmlu_pro and gsm8k with
-math500 and aime, which is the harder and more honest question. Read the drop
-between a benchmark held out alone and its domain held out whole as the part of
-the earlier number that was a sibling doing the work. Holding the mathematics
-sets out together also makes them readable for the first time: alone they carry
-1, 13 and 17 of the rarer class, and together they carry 31.
+THE TWO ECE COLUMNS
+  A log likelihood or an entropy is not a probability, so a calibration error
+  cannot be read off it directly.  Something has to put it on the probability
+  scale first, and the two columns are the two ways of doing that.
 
-The last average is the one to quote. It holds every benchmark out exactly once,
-the two domains together and gpqa, truthfulqa and countdown on their own, so each
-of the eight counts once and none of them sits on both sides of the split. The
-average over the eight single hold outs above it cannot say either of those
-things: it counts math500, whose rarer class holds one sample, as heavily as
-mmlu_pro, whose rarer class holds a hundred and five, which lifts it by about a
-tenth of a point of area under the curve for no reason anyone should trust.
+  ECE uses Platt scaling: a logistic curve fitted on the training half, so it has
+  seen how often answers there are correct.  Its slope can come out negative,
+  which reverses the ranking, so it is used for this column only and never for ROC.
 
-features  which numbers describe a sample, one group per evidence step, so with
-          twenty steps the widths are:
-            full                80  the two accumulations and their two steps,
-                                    the feature this pipeline has always built
-            rollout_length      20  how long the ten rollouts ran, averaged.
-                                    No loss and no agreement, only length. This
-                                    is the control: a loss channel that cannot
-                                    beat it is not carrying anything beyond how
-                                    much text it happened to score
-            rollout_length_std  40  that average with its spread beside it
-            agreeing_length     20  the same average over only the rollouts that
-                                    reached the answer the run itself gave
-            self_consistency    20  the agreement alone, no length, no loss
-            baseline_scalar      5  the published confidence signals, read from the
-                                    completion the run already wrote: the loss of
-                                    it, how likely the model held its own answer to
-                                    be, and how uncertain it was writing it, each as
-                                    a total and per token
-            baseline_hidden   4096  the mean pooled last hidden state, asking
-                                    whether correctness can be read straight off the
-                                    representation
-          Only full carries a loss, so only its tables sweep the loss column; the
-          others show a dash there and have four configurations per block.
+  ECEminmax uses x / (max - min), which sees only the spread of the scores and no
+  labels at all.  It therefore cannot know how often the held out benchmark is
+  answered correctly, and the level it lands on is whatever the spread gives.
 
-          The last two are the ones that decide whether any of this is worth its
-          price. They need one forward pass over an answer the model has already
-          written. Everything above them needs two hundred rollouts a sample. A
-          feature set of ours that does not clearly beat them is not a result.
-
-          Note that baseline_scalar trains a classifier over those five numbers,
-          which is not how the papers that introduced them use them. There they are
-          the score itself, with nothing fitted, and that is how they appear in the
-          untrained rows at the foot of every block. Read those rows as the real
-          baseline. The trained set is kept beside them because it answers a
-          different and narrower question, whether a classifier can do better with
-          the same five numbers, and on a held out benchmark it can do considerably
-          worse: a direction learned on one set of benchmarks can point the wrong
-          way on another, which a raw score cannot do.
-          baseline_hidden carries four thousand numbers against about fourteen
-          hundred training samples, so it can fit the training half far better than
-          it can carry to anything else; read its held out rows, not its fit.
-
-target    which of the two answers the row was graded against. The run produces
-          two: the one it wrote in its single completion, and the one its ten
-          rollouts voted for. They disagree on one sample in eight, so the two
-          blocks answer different questions and their numbers are not comparable
-          with each other. Use run if the system returns the completion, vote if
-          it returns the majority answer.
-
-loss      total is the Evidence_Accumulation_Loss the run wrote, a sum of
-          negative log probabilities over every token it scored, so it grows with
-          the length of that text. per_token divides each loss by the number of
-          tokens behind it first. The self cons rows fit nothing at all: they take
-          the vote share itself as the confidence. Those two are the bar. A
-          trained row that does not clear them is not worth the compute it costs.
-
-scaled    whether the features were standardised. The standardiser and the column
-          means that fill gaps are fitted on the training half only, never on the
-          held out set.
-
-weight    balanced makes the classifier weigh the rarer class as heavily as the
-          common one. It buys a little ranking and costs a lot of calibration, so
-          read its ECE before believing its ROC.
-
-fit       whether the solver finished. ok means it stopped because it had found
-          the answer, STOP means it used its whole budget and was cut off with the
-          coefficients wherever they had got to. The budget is max_iter=10000,
-          raised from the usual thousand because the unscaled total loss needs
-          about 4800 rounds: raw summed losses run into the thousands and the four
-          channels sit on very different scales, which leaves a long narrow valley
-          to walk. The normalized loss reaches the same place in about fifty. At
-          the old limit those rows were cut off and scored 0.7444, slightly above
-          the 0.7360 they settle at once allowed to finish, so stopping early had
-          been flattering them rather than holding them back.
-
-train     how many samples were fitted on, and how many were scored. They differ
-test      between the two blocks because a sample with no vote has no second
-          label and is dropped rather than counted as a wrong one.
-
-minority  how many of the rarer class the scored set holds. READ THIS FIRST. The
-          area under the curve rests on those samples alone. math500 holds 1 and
-          countdown holds 3, so their ROC means nothing whatever, including the
-          row that reports 1.0000. Only gpqa (91), mmlu_pro (105), truthfulqa (85)
-          and mmlu (50) carry enough of both classes to be worth reading.
-
-majority  the share of the commoner class, which is the accuracy of answering the
-          same thing every time. It is identical down a whole block because it
-          describes the data, not the model. An accuracy below it means the row
-          lost to doing nothing.
-
-accuracy  the CLASSIFIER's hit rate, not the language model's answer accuracy. A
-          sample whose answer was wrong and which the classifier correctly flagged
-          as wrong counts as a hit here.
-
-ROC       ranking and calibration. ROC is unmoved by a constant shift in the
-ECE       predicted probabilities and ECE is not, which is why balanced can look
-          fine on one and bad on the other.
-
-ROCsd     how far the score moved over ten seeds, and what a seed does depends on
-ECEsd     the row. On the random split it redraws the split, so every seed is a
-          fresh model and the spread is the spread over models. On a held out
-          dataset a seed can change nothing at all: the split is decided by which
-          dataset was named and the solver is deterministic, so all ten seeds
-          return the identical fit. There the seeds redraw the held out samples
-          instead, and the spread answers the question actually worth asking,
-          how much the number rests on which problems the benchmark happens to
-          contain. Two rows whose difference is smaller than their spread are not
-          different. The untrained rows read 0.0000 because they are a fixed
-          confidence over a fixed set with nothing to redraw.
-
-what the tables say, averaged over the four held out sets with enough of the
-rarer class to trust:
-
-  per_token beats total under both targets and takes the top rows of each block
-  the trained rows beat the vote share by +0.16 on target run, +0.09 on vote
-  under target vote, plain self consistency beats every total configuration
-  self cons last is near chance on both targets, far below self cons 0
-
-worth knowing before trusting any of it:
-
-  the last evidence step covers about 92 percent of the reasoning rather than all
-  of it, because the chunk loop stops two groups short of the end. changing that
-  needs the generation run done again, it cannot be repaired from the logs
-  these come from logs repaired after the vote counting fix. before it, the
-  rollouts that reached no readable answer grouped together and won the vote,
-  which was written out as a confidence of 1.0 for an answer of nan on 131 samples
-  every table is one generation run of one model. the spread columns cover the
-  seed and the sample draw, nothing else: a second generation run of the same
-  model would move these further than any of the switches do
+  Neither is the truth.  On the same scores in the same order a min max map, a
+  quantile map and a fitted logistic map gave 0.42, 0.17 and 0.09, so the number
+  depends heavily on which map was chosen.  And most of what is left after fitting
+  is not about the measure: the curve learns its level where the model answers
+  about eighty per cent correctly and is applied where it may answer half, which
+  on gpqa was roughly two thirds of an ECE of 0.30.  Read ROC as the statement
+  about the confidence and the two ECE columns as a statement about the rescaling.
+================================================================================
 
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: random split
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-random split       run -                 False      none   ok   1265   317       73    0.770   0.7694    0.7757  0.9852  0.8680  0.6094  0.0336  0.0698  0.0130
-random split       run -                 False  balanced   ok   1265   317       73    0.770   0.6341    0.8198  0.6730  0.7382  0.6156  0.0335  0.2490  0.0057
-random split       run -                  True      none   ok   1265   317       73    0.770   0.7694    0.7750  0.9869  0.8682  0.6127  0.0333  0.0730  0.0127
-random split       run -                  True  balanced   ok   1265   317       73    0.770   0.6363    0.8195  0.6770  0.7405  0.6178  0.0335  0.2511  0.0053
-random split       run self cons 0           -         -   ok      0   317       73    0.770   0.7476    0.7808  0.9344  0.8507  0.7220  0.0000  0.1161  0.0000
-random split       run self cons last        -         -   ok      0   304       72    0.763   0.7401    0.7611  0.9612  0.8495  0.6277  0.0000  0.1576  0.0000
-random split       run seq logprob           -         -   ok      0   317       73    0.770   0.7697    0.7697  1.0000  0.8699  0.5688  0.0000  0.1047  0.0000
-random split       run seq logprob/tok       -         -   ok      0   317       73    0.770   0.7666    0.7707  0.9918  0.8674  0.7252  0.0000  0.0679  0.0000
-random split       run entropy total         -         -   ok      0   317       73    0.770   0.7697    0.7697  1.0000  0.8699  0.5701  0.0000  0.0886  0.0000
-random split       run mean token ent        -         -   ok      0   317       73    0.770   0.7697    0.7697  1.0000  0.8699  0.6420  0.0000  0.0839  0.0000
-random split       run mean token prob       -         -   ok      0   317       73    0.770   0.7256    0.7625  0.9344  0.8398  0.6241  0.0000  0.1020  0.0000
-random split      vote -                 False      none   ok   1264   316       68    0.785   0.7788    0.7902  0.9778  0.8740  0.6580  0.0244  0.0701  0.0145
-random split      vote -                 False  balanced   ok   1264   316       68    0.785   0.7085    0.8345  0.7847  0.8083  0.6582  0.0205  0.2629  0.0088
-random split      vote -                  True      none   ok   1264   316       68    0.785   0.7791    0.7904  0.9778  0.8742  0.6632  0.0229  0.0686  0.0141
-random split      vote -                  True  balanced   ok   1264   316       68    0.785   0.7130    0.8349  0.7911  0.8119  0.6628  0.0202  0.2633  0.0085
-random split      vote self cons 0           -         -   ok      0   316       68    0.785   0.8165    0.8209  0.9798  0.8934  0.7770  0.0000  0.0924  0.0000
-random split      vote self cons last        -         -   ok      0   300       66    0.780   0.7733    0.7882  0.9701  0.8697  0.5985  0.0000  0.1739  0.0000
-random split      vote seq logprob           -         -   ok      0   316       68    0.785   0.7816    0.7859  0.9919  0.8770  0.6076  0.0000  0.0768  0.0000
-random split      vote seq logprob/tok       -         -   ok      0   316       68    0.785   0.7848    0.7866  0.9960  0.8790  0.6667  0.0000  0.0437  0.0000
-random split      vote entropy total         -         -   ok      0   316       68    0.785   0.7816    0.7859  0.9919  0.8770  0.6130  0.0000  0.0526  0.0000
-random split      vote mean token ent        -         -   ok      0   316       68    0.785   0.7816    0.7841  0.9960  0.8774  0.5968  0.0000  0.0835  0.0000
-random split      vote mean token prob       -         -   ok      0   316       68    0.785   0.7405    0.7785  0.9355  0.8498  0.5766  0.0000  0.0609  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+random split       run -                 False      none   ok   1265   317       73   0.609   0.034     0.070      0.131
+random split       run -                 False  balanced   ok   1265   317       73   0.616   0.033     0.249      0.234
+random split       run -                  True      none   ok   1265   317       73   0.613   0.033     0.073      0.156
+random split       run -                  True  balanced   ok   1265   317       73   0.618   0.033     0.251      0.231
+random split       run self cons 0           -         -   ok      0   317       73   0.722   0.000     0.116      0.183
+random split       run self cons last        -         -   ok      0   304       72   0.628   0.000     0.158      0.214
+random split       run seq logprob           -         -   ok      0   317       73   0.569   0.000     0.105      0.891
+random split       run seq logprob/tok       -         -   ok      0   317       73   0.725   0.000     0.068      1.263
+random split       run entropy total         -         -   ok      0   317       73   0.570   0.000     0.089      0.908
+random split       run mean token ent        -         -   ok      0   317       73   0.642   0.000     0.084      1.004
+random split       run mean token prob       -         -   ok      0   317       73   0.624   0.000     0.102      0.303
+random split      vote -                 False      none   ok   1264   316       68   0.658   0.024     0.070      0.102
+random split      vote -                 False  balanced   ok   1264   316       68   0.658   0.021     0.263      0.253
+random split      vote -                  True      none   ok   1264   316       68   0.663   0.023     0.069      0.109
+random split      vote -                  True  balanced   ok   1264   316       68   0.663   0.020     0.263      0.251
+random split      vote self cons 0           -         -   ok      0   316       68   0.777   0.000     0.092      0.162
+random split      vote self cons last        -         -   ok      0   300       66   0.598   0.000     0.174      0.223
+random split      vote seq logprob           -         -   ok      0   316       68   0.608   0.000     0.077      0.878
+random split      vote seq logprob/tok       -         -   ok      0   316       68   0.667   0.000     0.044      1.305
+random split      vote entropy total         -         -   ok      0   316       68   0.613   0.000     0.053      0.893
+random split      vote mean token ent        -         -   ok      0   316       68   0.597   0.000     0.083      0.958
+random split      vote mean token prob       -         -   ok      0   316       68   0.577   0.000     0.061      0.290
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: gpqa
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-gpqa               run -                 False      none   ok   1398   184       91    0.505   0.4973    0.4957  0.9703  0.6554  0.5010  0.0539  0.2732  0.0342
-gpqa               run -                 False  balanced   ok   1398   184       91    0.505   0.5033    0.4986  0.3133  0.3830  0.5052  0.0514  0.1507  0.0392
-gpqa               run -                  True      none   ok   1398   184       91    0.505   0.4897    0.4919  0.9703  0.6520  0.5027  0.0524  0.2787  0.0314
-gpqa               run -                  True  balanced   ok   1398   184       91    0.505   0.4978    0.4900  0.3133  0.3805  0.5114  0.0520  0.1501  0.0425
-gpqa               run self cons 0           -         -   ok      0   184       91    0.505   0.5380    0.5241  0.9355  0.6718  0.6417  0.0000  0.2721  0.0000
-gpqa               run self cons last        -         -   ok      0   153       74    0.516   0.5229    0.5208  0.9494  0.6726  0.5920  0.0000  0.3246  0.0000
-gpqa               run seq logprob           -         -   ok      0   184       91    0.505   0.5054    0.5054  1.0000  0.6715  0.5678  0.0000  0.2991  0.0000
-gpqa               run seq logprob/tok       -         -   ok      0   184       91    0.505   0.5163    0.5112  0.9785  0.6716  0.5978  0.0000  0.2759  0.0000
-gpqa               run entropy total         -         -   ok      0   184       91    0.505   0.5054    0.5054  1.0000  0.6715  0.5681  0.0000  0.3017  0.0000
-gpqa               run mean token ent        -         -   ok      0   184       91    0.505   0.5054    0.5054  1.0000  0.6715  0.5669  0.0000  0.3081  0.0000
-gpqa               run mean token prob       -         -   ok      0   184       91    0.505   0.4891    0.4968  0.8387  0.6240  0.5565  0.0000  0.2816  0.0000
-gpqa              vote -                 False      none   ok   1396   184       84    0.543   0.5326    0.5364  0.9746  0.6915  0.4759  0.0438  0.2813  0.0312
-gpqa              vote -                 False  balanced   ok   1396   184       84    0.543   0.4745    0.5125  0.4556  0.4818  0.4742  0.0404  0.1459  0.0156
-gpqa              vote -                  True      none   ok   1396   184       84    0.543   0.5402    0.5400  0.9888  0.6980  0.4779  0.0438  0.2834  0.0362
-gpqa              vote -                  True  balanced   ok   1396   184       84    0.543   0.4745    0.5125  0.4556  0.4818  0.4737  0.0398  0.1497  0.0160
-gpqa              vote self cons 0           -         -   ok      0   184       84    0.543   0.5978    0.5783  0.9600  0.7218  0.5964  0.0000  0.2167  0.0000
-gpqa              vote self cons last        -         -   ok      0   153       68    0.556   0.5490    0.5556  0.9412  0.6987  0.5267  0.0000  0.3362  0.0000
-gpqa              vote seq logprob           -         -   ok      0   184       84    0.543   0.5380    0.5414  0.9800  0.6975  0.4989  0.0000  0.2899  0.0000
-gpqa              vote seq logprob/tok       -         -   ok      0   184       84    0.543   0.5489    0.5475  0.9800  0.7025  0.5852  0.0000  0.2614  0.0000
-gpqa              vote entropy total         -         -   ok      0   184       84    0.543   0.5380    0.5414  0.9800  0.6975  0.5026  0.0000  0.2942  0.0000
-gpqa              vote mean token ent        -         -   ok      0   184       84    0.543   0.5435    0.5435  1.0000  0.7042  0.6026  0.0000  0.2624  0.0000
-gpqa              vote mean token prob       -         -   ok      0   184       84    0.543   0.5380    0.5478  0.8600  0.6693  0.5942  0.0000  0.2369  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+gpqa               run -                 False      none   ok   1398   184       91   0.501   0.054     0.273      0.557
+gpqa               run -                 False  balanced   ok   1398   184       91   0.505   0.051     0.151      0.205
+gpqa               run -                  True      none   ok   1398   184       91   0.503   0.052     0.279      0.619
+gpqa               run -                  True  balanced   ok   1398   184       91   0.511   0.052     0.150      0.221
+gpqa               run self cons 0           -         -   ok      0   184       91   0.642   0.000     0.272      0.589
+gpqa               run self cons last        -         -   ok      0   153       74   0.592   0.000     0.325      0.409
+gpqa               run seq logprob           -         -   ok      0   184       91   0.568   0.000     0.299      0.579
+gpqa               run seq logprob/tok       -         -   ok      0   184       91   0.598   0.000     0.276      1.004
+gpqa               run entropy total         -         -   ok      0   184       91   0.568   0.000     0.302      0.594
+gpqa               run mean token ent        -         -   ok      0   184       91   0.567   0.000     0.308      0.775
+gpqa               run mean token prob       -         -   ok      0   184       91   0.557   0.000     0.282      0.491
+gpqa              vote -                 False      none   ok   1396   184       84   0.476   0.044     0.281      0.671
+gpqa              vote -                 False  balanced   ok   1396   184       84   0.474   0.040     0.146      0.250
+gpqa              vote -                  True      none   ok   1396   184       84   0.478   0.044     0.283      0.753
+gpqa              vote -                  True  balanced   ok   1396   184       84   0.474   0.040     0.150      0.263
+gpqa              vote self cons 0           -         -   ok      0   184       84   0.596   0.000     0.217      0.533
+gpqa              vote self cons last        -         -   ok      0   153       68   0.527   0.000     0.336      0.399
+gpqa              vote seq logprob           -         -   ok      0   184       84   0.499   0.000     0.290      0.617
+gpqa              vote seq logprob/tok       -         -   ok      0   184       84   0.585   0.000     0.261      1.041
+gpqa              vote entropy total         -         -   ok      0   184       84   0.503   0.000     0.294      0.631
+gpqa              vote mean token ent        -         -   ok      0   184       84   0.603   0.000     0.262      0.813
+gpqa              vote mean token prob       -         -   ok      0   184       84   0.594   0.000     0.237      0.454
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: countdown
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-countdown          run -                 False      none   ok   1472   110        3    0.973   0.9409    0.9719  0.9673  0.9695  0.3348  0.1297  0.2222  0.0146
-countdown          run -                 False  balanced   ok   1472   110        3    0.973   0.6873    0.9726  0.6981  0.8126  0.4028  0.1632  0.4519  0.0156
-countdown          run -                  True      none   ok   1472   110        3    0.973   0.9409    0.9719  0.9673  0.9695  0.2412  0.1175  0.2225  0.0123
-countdown          run -                  True  balanced   ok   1472   110        3    0.973   0.6864    0.9619  0.7056  0.8137  0.3777  0.1459  0.4515  0.0150
-countdown          run self cons 0           -         -   ok      0   109        3    0.972   0.8899    1.0000  0.8868  0.9400  0.9733  0.0000  0.2781  0.0000
-countdown          run self cons last        -         -   ok      0   108        3    0.972   0.9722    0.9904  0.9810  0.9856  0.9746  0.0000  0.0333  0.0000
-countdown          run seq logprob           -         -   ok      0   110        3    0.973   0.9727    0.9727  1.0000  0.9862  1.0000  0.0000  0.2289  0.0000
-countdown          run seq logprob/tok       -         -   ok      0   110        3    0.973   0.9727    0.9727  1.0000  0.9862  0.3427  0.0000  0.1814  0.0000
-countdown          run entropy total         -         -   ok      0   110        3    0.973   0.9727    0.9727  1.0000  0.9862  1.0000  0.0000  0.2276  0.0000
-countdown          run mean token ent        -         -   ok      0   110        3    0.973   0.9727    0.9727  1.0000  0.9862  0.0000  0.0000  0.2125  0.0000
-countdown          run mean token prob       -         -   ok      0   110        3    0.973   0.9727    0.9727  1.0000  0.9862  0.0000  0.0000  0.1827  0.0000
-countdown         vote -                 False      none   ok   1471   109        6    0.945   0.9128    0.9486  0.9605  0.9543  0.4419  0.1726  0.1928  0.0181
-countdown         vote -                 False  balanced   ok   1471   109        6    0.945   0.8202    0.9576  0.8485  0.8995  0.4416  0.1752  0.4098  0.0211
-countdown         vote -                  True      none   ok   1471   109        6    0.945   0.9128    0.9486  0.9605  0.9543  0.4491  0.1701  0.1922  0.0166
-countdown         vote -                  True  balanced   ok   1471   109        6    0.945   0.8202    0.9576  0.8485  0.8995  0.4461  0.1750  0.4101  0.0224
-countdown         vote self cons 0           -         -   ok      0   109        6    0.945   0.9174    1.0000  0.9126  0.9543  0.9871  0.0000  0.2099  0.0000
-countdown         vote self cons last        -         -   ok      0   107        6    0.944   0.9626    0.9709  0.9901  0.9804  0.8960  0.0000  0.0553  0.0000
-countdown         vote seq logprob           -         -   ok      0   109        6    0.945   0.9450    0.9450  1.0000  0.9717  0.7168  0.0000  0.1808  0.0000
-countdown         vote seq logprob/tok       -         -   ok      0   109        6    0.945   0.9450    0.9450  1.0000  0.9717  0.3479  0.0000  0.1461  0.0000
-countdown         vote entropy total         -         -   ok      0   109        6    0.945   0.9450    0.9450  1.0000  0.9717  0.7201  0.0000  0.1794  0.0000
-countdown         vote mean token ent        -         -   ok      0   109        6    0.945   0.9450    0.9450  1.0000  0.9717  0.1731  0.0000  0.1696  0.0000
-countdown         vote mean token prob       -         -   ok      0   109        6    0.945   0.9450    0.9450  1.0000  0.9717  0.1861  0.0000  0.1737  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+countdown          run -                 False      none   ok   1472   110        3   0.335   0.130     0.222      0.123
+countdown          run -                 False  balanced   ok   1472   110        3   0.403   0.163     0.452      0.398
+countdown          run -                  True      none   ok   1472   110        3   0.241   0.117     0.223      0.130
+countdown          run -                  True  balanced   ok   1472   110        3   0.378   0.146     0.452      0.389
+countdown          run self cons 0           -         -   ok      0   109        3   0.973   0.000     0.278      0.261
+countdown          run self cons last        -         -   ok      0   108        3   0.975   0.000     0.033      0.177
+countdown          run seq logprob           -         -   ok      0   110        3   1.000   0.000     0.229      1.100
+countdown          run seq logprob/tok       -         -   ok      0   110        3   0.343   0.000     0.181      1.757
+countdown          run entropy total         -         -   ok      0   110        3   1.000   0.000     0.228      1.121
+countdown          run mean token ent        -         -   ok      0   110        3   0.000   0.000     0.213      1.549
+countdown          run mean token prob       -         -   ok      0   110        3   0.000   0.000     0.183      1.866
+countdown         vote -                 False      none   ok   1471   109        6   0.442   0.173     0.193      0.168
+countdown         vote -                 False  balanced   ok   1471   109        6   0.442   0.175     0.410      0.371
+countdown         vote -                  True      none   ok   1471   109        6   0.449   0.170     0.192      0.163
+countdown         vote -                  True  balanced   ok   1471   109        6   0.446   0.175     0.410      0.361
+countdown         vote self cons 0           -         -   ok      0   109        6   0.987   0.000     0.210      0.193
+countdown         vote self cons last        -         -   ok      0   107        6   0.896   0.000     0.055      0.266
+countdown         vote seq logprob           -         -   ok      0   109        6   0.717   0.000     0.181      1.071
+countdown         vote seq logprob/tok       -         -   ok      0   109        6   0.348   0.000     0.146      1.729
+countdown         vote entropy total         -         -   ok      0   109        6   0.720   0.000     0.179      1.092
+countdown         vote mean token ent        -         -   ok      0   109        6   0.173   0.000     0.170      1.523
+countdown         vote mean token prob       -         -   ok      0   109        6   0.186   0.000     0.174      1.892
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: math500
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-math500            run -                 False      none   ok   1442   140        1    0.993   0.9750    0.9934  0.9813  0.9873  0.6740  0.0202  0.2179  0.0119
-math500            run -                 False  balanced   ok   1442   140        1    0.993   0.7407    0.9916  0.7456  0.8507  0.7449  0.0155  0.4416  0.0137
-math500            run -                  True      none   ok   1442   140        1    0.993   0.9821    0.9935  0.9885  0.9909  0.6668  0.0235  0.2195  0.0117
-math500            run -                  True  balanced   ok   1442   140        1    0.993   0.7386    0.9916  0.7435  0.8493  0.7558  0.0137  0.4437  0.0134
-math500            run self cons 0           -         -   ok      0   139        1    0.993   0.9496    0.9925  0.9565  0.9742  0.3333  0.0000  0.2190  0.0000
-math500            run self cons last        -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.4856  0.0000  0.0029  0.0000
-math500            run seq logprob           -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.4460  0.0000  0.2566  0.0000
-math500            run seq logprob/tok       -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.0576  0.0000  0.1594  0.0000
-math500            run entropy total         -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.4101  0.0000  0.2579  0.0000
-math500            run mean token ent        -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.0144  0.0000  0.2261  0.0000
-math500            run mean token prob       -         -   ok      0   140        1    0.993   0.9929    0.9929  1.0000  0.9964  0.0072  0.0000  0.1103  0.0000
-math500           vote -                 False      none   ok   1441   139        7    0.950   0.9403    0.9786  0.9587  0.9685  0.8334  0.1371  0.1986  0.0105
-math500           vote -                 False  balanced   ok   1441   139        7    0.950   0.7288    0.9877  0.7259  0.8366  0.8220  0.1472  0.4415  0.0120
-math500           vote -                  True      none   ok   1441   139        7    0.950   0.9324    0.9784  0.9504  0.9641  0.8343  0.1361  0.2003  0.0104
-math500           vote -                  True  balanced   ok   1441   139        7    0.950   0.7360    0.9879  0.7334  0.8416  0.8250  0.1459  0.4448  0.0119
-math500           vote self cons 0           -         -   ok      0   139        7    0.950   0.9496    0.9699  0.9773  0.9736  0.7711  0.0000  0.1418  0.0000
-math500           vote self cons last        -         -   ok      0   139        7    0.950   0.9496    0.9496  1.0000  0.9742  0.6353  0.0000  0.0460  0.0000
-math500           vote seq logprob           -         -   ok      0   139        7    0.950   0.9137    0.9615  0.9470  0.9542  0.8712  0.0000  0.2349  0.0000
-math500           vote seq logprob/tok       -         -   ok      0   139        7    0.950   0.9496    0.9496  1.0000  0.9742  0.5909  0.0000  0.0982  0.0000
-math500           vote entropy total         -         -   ok      0   139        7    0.950   0.9281    0.9621  0.9621  0.9621  0.8701  0.0000  0.2312  0.0000
-math500           vote mean token ent        -         -   ok      0   139        7    0.950   0.9496    0.9496  1.0000  0.9742  0.5097  0.0000  0.1594  0.0000
-math500           vote mean token prob       -         -   ok      0   139        7    0.950   0.9496    0.9496  1.0000  0.9742  0.4859  0.0000  0.0839  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+math500            run -                 False      none   ok   1442   140        1   0.674   0.020     0.218      0.345
+math500            run -                 False  balanced   ok   1442   140        1   0.745   0.016     0.442      0.324
+math500            run -                  True      none   ok   1442   140        1   0.667   0.024     0.220      0.416
+math500            run -                  True  balanced   ok   1442   140        1   0.756   0.014     0.444      0.301
+math500            run self cons 0           -         -   ok      0   139        1   0.333   0.000     0.219      0.211
+math500            run self cons last        -         -   ok      0   140        1   0.486   0.000     0.003      3.986
+math500            run seq logprob           -         -   ok      0   140        1   0.446   0.000     0.257      1.219
+math500            run seq logprob/tok       -         -   ok      0   140        1   0.058   0.000     0.159      1.794
+math500            run entropy total         -         -   ok      0   140        1   0.410   0.000     0.258      1.230
+math500            run mean token ent        -         -   ok      0   140        1   0.014   0.000     0.226      1.879
+math500            run mean token prob       -         -   ok      0   140        1   0.007   0.000     0.110      6.316
+math500           vote -                 False      none   ok   1441   139        7   0.833   0.137     0.199      0.106
+math500           vote -                 False  balanced   ok   1441   139        7   0.822   0.147     0.442      0.286
+math500           vote -                  True      none   ok   1441   139        7   0.834   0.136     0.200      0.103
+math500           vote -                  True  balanced   ok   1441   139        7   0.825   0.146     0.445      0.267
+math500           vote self cons 0           -         -   ok      0   139        7   0.771   0.000     0.142      0.183
+math500           vote self cons last        -         -   ok      0   139        7   0.635   0.000     0.046      4.029
+math500           vote seq logprob           -         -   ok      0   139        7   0.871   0.000     0.235      1.174
+math500           vote seq logprob/tok       -         -   ok      0   139        7   0.591   0.000     0.098      1.751
+math500           vote entropy total         -         -   ok      0   139        7   0.870   0.000     0.231      1.185
+math500           vote mean token ent        -         -   ok      0   139        7   0.510   0.000     0.159      1.836
+math500           vote mean token prob       -         -   ok      0   139        7   0.486   0.000     0.084      6.358
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: gsm8k
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-gsm8k              run -                 False      none   ok   1387   195       13    0.933   0.9287    0.9449  0.9807  0.9625  0.5329  0.1311  0.1864  0.0190
-gsm8k              run -                 False  balanced   ok   1387   195       13    0.933   0.8733    0.9458  0.9172  0.9310  0.5256  0.1269  0.3843  0.0187
-gsm8k              run -                  True      none   ok   1387   195       13    0.933   0.9215    0.9380  0.9807  0.9588  0.5353  0.1316  0.1833  0.0199
-gsm8k              run -                  True  balanced   ok   1387   195       13    0.933   0.8733    0.9458  0.9172  0.9310  0.5389  0.1300  0.3844  0.0193
-gsm8k              run self cons 0           -         -   ok      0   195       13    0.933   0.9282    0.9330  0.9945  0.9628  0.5763  0.0000  0.0441  0.0000
-gsm8k              run self cons last        -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.4945  0.0000  0.0656  0.0000
-gsm8k              run seq logprob           -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.7426  0.0000  0.1925  0.0000
-gsm8k              run seq logprob/tok       -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.3622  0.0000  0.1097  0.0000
-gsm8k              run entropy total         -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.7616  0.0000  0.1902  0.0000
-gsm8k              run mean token ent        -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.2811  0.0000  0.1832  0.0000
-gsm8k              run mean token prob       -         -   ok      0   195       13    0.933   0.9333    0.9333  1.0000  0.9655  0.1936  0.0000  0.1461  0.0000
-gsm8k             vote -                 False      none   ok   1385   195        4    0.979   0.9631    0.9816  0.9806  0.9810  0.9210  0.0294  0.1795  0.0120
-gsm8k             vote -                 False  balanced   ok   1385   195        4    0.979   0.9179    0.9807  0.9344  0.9569  0.9226  0.0288  0.3916  0.0130
-gsm8k             vote -                  True      none   ok   1385   195        4    0.979   0.9672    0.9817  0.9848  0.9832  0.9240  0.0276  0.1786  0.0118
-gsm8k             vote -                  True  balanced   ok   1385   195        4    0.979   0.9251    0.9808  0.9417  0.9608  0.9276  0.0305  0.3913  0.0129
-gsm8k             vote self cons 0           -         -   ok      0   195        4    0.979   0.9744    0.9794  0.9948  0.9870  0.8259  0.0000  0.0021  0.0000
-gsm8k             vote self cons last        -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.4948  0.0000  0.0195  0.0000
-gsm8k             vote seq logprob           -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.9005  0.0000  0.2071  0.0000
-gsm8k             vote seq logprob/tok       -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.8220  0.0000  0.1252  0.0000
-gsm8k             vote entropy total         -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.9031  0.0000  0.2070  0.0000
-gsm8k             vote mean token ent        -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.7094  0.0000  0.2064  0.0000
-gsm8k             vote mean token prob       -         -   ok      0   195        4    0.979   0.9795    0.9795  1.0000  0.9896  0.5079  0.0000  0.1280  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+gsm8k              run -                 False      none   ok   1387   195       13   0.533   0.131     0.186      0.174
+gsm8k              run -                 False  balanced   ok   1387   195       13   0.526   0.127     0.384      0.367
+gsm8k              run -                  True      none   ok   1387   195       13   0.535   0.132     0.183      0.216
+gsm8k              run -                  True  balanced   ok   1387   195       13   0.539   0.130     0.384      0.358
+gsm8k              run self cons 0           -         -   ok      0   195       13   0.576   0.000     0.044      0.463
+gsm8k              run self cons last        -         -   ok      0   195       13   0.495   0.000     0.066      9.056
+gsm8k              run seq logprob           -         -   ok      0   195       13   0.743   0.000     0.192      1.095
+gsm8k              run seq logprob/tok       -         -   ok      0   195       13   0.362   0.000     0.110      1.350
+gsm8k              run entropy total         -         -   ok      0   195       13   0.762   0.000     0.190      1.155
+gsm8k              run mean token ent        -         -   ok      0   195       13   0.281   0.000     0.183      1.536
+gsm8k              run mean token prob       -         -   ok      0   195       13   0.194   0.000     0.146      2.634
+gsm8k             vote -                 False      none   ok   1385   195        4   0.921   0.029     0.179      0.149
+gsm8k             vote -                 False  balanced   ok   1385   195        4   0.923   0.029     0.392      0.313
+gsm8k             vote -                  True      none   ok   1385   195        4   0.924   0.028     0.179      0.221
+gsm8k             vote -                  True  balanced   ok   1385   195        4   0.928   0.030     0.391      0.299
+gsm8k             vote self cons 0           -         -   ok      0   195        4   0.826   0.000     0.002      0.417
+gsm8k             vote self cons last        -         -   ok      0   195        4   0.495   0.000     0.019      9.010
+gsm8k             vote seq logprob           -         -   ok      0   195        4   0.901   0.000     0.207      1.141
+gsm8k             vote seq logprob/tok       -         -   ok      0   195        4   0.822   0.000     0.125      1.396
+gsm8k             vote entropy total         -         -   ok      0   195        4   0.903   0.000     0.207      1.201
+gsm8k             vote mean token ent        -         -   ok      0   195        4   0.709   0.000     0.206      1.582
+gsm8k             vote mean token prob       -         -   ok      0   195        4   0.508   0.000     0.128      2.588
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: mmlu
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-mmlu               run -                 False      none   ok   1301   281       50    0.822   0.8185    0.8185  1.0000  0.9001  0.4683  0.0485  0.1045  0.0189
-mmlu               run -                 False  balanced   ok   1301   281       50    0.822   0.5665    0.8194  0.6037  0.6948  0.4843  0.0492  0.3074  0.0163
-mmlu               run -                  True      none   ok   1301   281       50    0.822   0.8185    0.8185  1.0000  0.9001  0.4674  0.0477  0.1069  0.0170
-mmlu               run -                  True  balanced   ok   1301   281       50    0.822   0.5665    0.8194  0.6037  0.6948  0.4839  0.0490  0.3079  0.0170
-mmlu               run self cons 0           -         -   ok      0   281       50    0.822   0.8149    0.8231  0.9870  0.8976  0.6371  0.0000  0.1247  0.0000
-mmlu               run self cons last        -         -   ok      0   279       50    0.821   0.7957    0.8209  0.9607  0.8853  0.5778  0.0000  0.1556  0.0000
-mmlu               run seq logprob           -         -   ok      0   281       50    0.822   0.8221    0.8221  1.0000  0.9023  0.6348  0.0000  0.0877  0.0000
-mmlu               run seq logprob/tok       -         -   ok      0   281       50    0.822   0.7936    0.8264  0.9481  0.8831  0.6407  0.0000  0.1272  0.0000
-mmlu               run entropy total         -         -   ok      0   281       50    0.822   0.8221    0.8221  1.0000  0.9023  0.6153  0.0000  0.1078  0.0000
-mmlu               run mean token ent        -         -   ok      0   281       50    0.822   0.8221    0.8221  1.0000  0.9023  0.5404  0.0000  0.0921  0.0000
-mmlu               run mean token prob       -         -   ok      0   281       50    0.822   0.8114    0.8225  0.9827  0.8955  0.5171  0.0000  0.1218  0.0000
-mmlu              vote -                 False      none   ok   1299   281       44    0.843   0.8370    0.8409  0.9945  0.9111  0.5766  0.0476  0.0933  0.0138
-mmlu              vote -                 False  balanced   ok   1299   281       44    0.843   0.7861    0.8562  0.8965  0.8757  0.5883  0.0434  0.3062  0.0193
-mmlu              vote -                  True      none   ok   1299   281       44    0.843   0.8370    0.8409  0.9945  0.9111  0.5819  0.0467  0.0917  0.0113
-mmlu              vote -                  True  balanced   ok   1299   281       44    0.843   0.7826    0.8528  0.8965  0.8739  0.5906  0.0421  0.3061  0.0202
-mmlu              vote self cons 0           -         -   ok      0   281       44    0.843   0.8577    0.8556  1.0000  0.9222  0.7035  0.0000  0.0587  0.0000
-mmlu              vote self cons last        -         -   ok      0   279       44    0.842   0.8029    0.8358  0.9532  0.8907  0.5323  0.0000  0.1749  0.0000
-mmlu              vote seq logprob           -         -   ok      0   281       44    0.843   0.8434    0.8434  1.0000  0.9151  0.6876  0.0000  0.1028  0.0000
-mmlu              vote seq logprob/tok       -         -   ok      0   281       44    0.843   0.8292    0.8462  0.9747  0.9059  0.6994  0.0000  0.1236  0.0000
-mmlu              vote entropy total         -         -   ok      0   281       44    0.843   0.8434    0.8434  1.0000  0.9151  0.6822  0.0000  0.1157  0.0000
-mmlu              vote mean token ent        -         -   ok      0   281       44    0.843   0.8434    0.8434  1.0000  0.9151  0.5932  0.0000  0.0884  0.0000
-mmlu              vote mean token prob       -         -   ok      0   281       44    0.843   0.8327    0.8442  0.9831  0.9084  0.5703  0.0000  0.1182  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+mmlu               run -                 False      none   ok   1301   281       50   0.468   0.049     0.105      2.029
+mmlu               run -                 False  balanced   ok   1301   281       50   0.484   0.049     0.307      0.499
+mmlu               run -                  True      none   ok   1301   281       50   0.467   0.048     0.107      2.234
+mmlu               run -                  True  balanced   ok   1301   281       50   0.484   0.049     0.308      0.609
+mmlu               run self cons 0           -         -   ok      0   281       50   0.637   0.000     0.125      0.623
+mmlu               run self cons last        -         -   ok      0   279       50   0.578   0.000     0.156      0.268
+mmlu               run seq logprob           -         -   ok      0   281       50   0.635   0.000     0.088      0.970
+mmlu               run seq logprob/tok       -         -   ok      0   281       50   0.641   0.000     0.127      1.439
+mmlu               run entropy total         -         -   ok      0   281       50   0.615   0.000     0.108      1.009
+mmlu               run mean token ent        -         -   ok      0   281       50   0.540   0.000     0.092      1.087
+mmlu               run mean token prob       -         -   ok      0   281       50   0.517   0.000     0.122      0.381
+mmlu              vote -                 False      none   ok   1299   281       44   0.577   0.048     0.093      0.878
+mmlu              vote -                 False  balanced   ok   1299   281       44   0.588   0.043     0.306      0.179
+mmlu              vote -                  True      none   ok   1299   281       44   0.582   0.047     0.092      0.980
+mmlu              vote -                  True  balanced   ok   1299   281       44   0.591   0.042     0.306      0.217
+mmlu              vote self cons 0           -         -   ok      0   281       44   0.704   0.000     0.059      0.601
+mmlu              vote self cons last        -         -   ok      0   279       44   0.532   0.000     0.175      0.287
+mmlu              vote seq logprob           -         -   ok      0   281       44   0.688   0.000     0.103      0.992
+mmlu              vote seq logprob/tok       -         -   ok      0   281       44   0.699   0.000     0.124      1.461
+mmlu              vote entropy total         -         -   ok      0   281       44   0.682   0.000     0.116      1.031
+mmlu              vote mean token ent        -         -   ok      0   281       44   0.593   0.000     0.088      1.109
+mmlu              vote mean token prob       -         -   ok      0   281       44   0.570   0.000     0.118      0.359
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: truthfulqa
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-truthfulqa         run -                 False      none   ok   1283   299       85    0.716   0.7097    0.7097  1.0000  0.8300  0.5446  0.0305  0.1204  0.0151
-truthfulqa         run -                 False  balanced   ok   1283   299       85    0.716   0.6706    0.7434  0.8178  0.7787  0.5477  0.0326  0.2046  0.0229
-truthfulqa         run -                  True      none   ok   1283   299       85    0.716   0.7097    0.7097  1.0000  0.8300  0.5506  0.0322  0.1190  0.0145
-truthfulqa         run -                  True  balanced   ok   1283   299       85    0.716   0.6729    0.7395  0.8320  0.7829  0.5535  0.0338  0.2064  0.0242
-truthfulqa         run self cons 0           -         -   ok      0   299       85    0.716   0.7124    0.7207  0.9766  0.8294  0.7153  0.0000  0.1471  0.0000
-truthfulqa         run self cons last        -         -   ok      0   252       79    0.687   0.6349    0.6738  0.9075  0.7734  0.5515  0.0000  0.2352  0.0000
-truthfulqa         run seq logprob           -         -   ok      0   299       85    0.716   0.7157    0.7157  1.0000  0.8343  0.6484  0.0000  0.1189  0.0000
-truthfulqa         run seq logprob/tok       -         -   ok      0   299       85    0.716   0.7258    0.7260  0.9907  0.8379  0.6610  0.0000  0.0621  0.0000
-truthfulqa         run entropy total         -         -   ok      0   299       85    0.716   0.7157    0.7157  1.0000  0.8343  0.6374  0.0000  0.1152  0.0000
-truthfulqa         run mean token ent        -         -   ok      0   299       85    0.716   0.5753    0.6805  0.7664  0.7209  0.4675  0.0000  0.1392  0.0000
-truthfulqa         run mean token prob       -         -   ok      0   299       85    0.716   0.5753    0.6805  0.7664  0.7209  0.4622  0.0000  0.1083  0.0000
-truthfulqa        vote -                 False      none   ok   1281   299       68    0.773   0.7676    0.7676  1.0000  0.8681  0.5123  0.0382  0.0874  0.0256
-truthfulqa        vote -                 False  balanced   ok   1281   299       68    0.773   0.7064    0.7717  0.8767  0.8205  0.4976  0.0351  0.2217  0.0262
-truthfulqa        vote -                  True      none   ok   1281   299       68    0.773   0.7676    0.7676  1.0000  0.8681  0.5185  0.0374  0.0836  0.0280
-truthfulqa        vote -                  True  balanced   ok   1281   299       68    0.773   0.7395    0.7804  0.9189  0.8437  0.5037  0.0366  0.2188  0.0267
-truthfulqa        vote self cons 0           -         -   ok      0   299       68    0.773   0.7826    0.7862  0.9870  0.8752  0.8202  0.0000  0.1397  0.0000
-truthfulqa        vote self cons last        -         -   ok      0   252       62    0.754   0.7103    0.7511  0.9211  0.8274  0.5589  0.0000  0.2099  0.0000
-truthfulqa        vote seq logprob           -         -   ok      0   299       68    0.773   0.7726    0.7726  1.0000  0.8717  0.6820  0.0000  0.1011  0.0000
-truthfulqa        vote seq logprob/tok       -         -   ok      0   299       68    0.773   0.7826    0.7823  0.9957  0.8762  0.7141  0.0000  0.1005  0.0000
-truthfulqa        vote entropy total         -         -   ok      0   299       68    0.773   0.7726    0.7726  1.0000  0.8717  0.6675  0.0000  0.1019  0.0000
-truthfulqa        vote mean token ent        -         -   ok      0   299       68    0.773   0.6555    0.7540  0.8225  0.7867  0.5273  0.0000  0.1467  0.0000
-truthfulqa        vote mean token prob       -         -   ok      0   299       68    0.773   0.6254    0.7469  0.7792  0.7627  0.5205  0.0000  0.1755  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+truthfulqa         run -                 False      none   ok   1283   299       85   0.545   0.031     0.120      2.467
+truthfulqa         run -                 False  balanced   ok   1283   299       85   0.548   0.033     0.205      0.495
+truthfulqa         run -                  True      none   ok   1283   299       85   0.551   0.032     0.119      2.742
+truthfulqa         run -                  True  balanced   ok   1283   299       85   0.553   0.034     0.206      0.559
+truthfulqa         run self cons 0           -         -   ok      0   299       85   0.715   0.000     0.147      0.484
+truthfulqa         run self cons last        -         -   ok      0   252       79   0.552   0.000     0.235      0.301
+truthfulqa         run seq logprob           -         -   ok      0   299       85   0.648   0.000     0.119      0.826
+truthfulqa         run seq logprob/tok       -         -   ok      0   299       85   0.661   0.000     0.062      1.335
+truthfulqa         run entropy total         -         -   ok      0   299       85   0.637   0.000     0.115      0.862
+truthfulqa         run mean token ent        -         -   ok      0   299       85   0.467   0.000     0.139      1.002
+truthfulqa         run mean token prob       -         -   ok      0   299       85   0.462   0.000     0.108      0.349
+truthfulqa        vote -                 False      none   ok   1281   299       68   0.512   0.038     0.087      2.736
+truthfulqa        vote -                 False  balanced   ok   1281   299       68   0.498   0.035     0.222      0.473
+truthfulqa        vote -                  True      none   ok   1281   299       68   0.519   0.037     0.084      2.970
+truthfulqa        vote -                  True  balanced   ok   1281   299       68   0.504   0.037     0.219      0.546
+truthfulqa        vote self cons 0           -         -   ok      0   299       68   0.820   0.000     0.140      0.447
+truthfulqa        vote self cons last        -         -   ok      0   252       62   0.559   0.000     0.210      0.273
+truthfulqa        vote seq logprob           -         -   ok      0   299       68   0.682   0.000     0.101      0.883
+truthfulqa        vote seq logprob/tok       -         -   ok      0   299       68   0.714   0.000     0.100      1.392
+truthfulqa        vote entropy total         -         -   ok      0   299       68   0.667   0.000     0.102      0.917
+truthfulqa        vote mean token ent        -         -   ok      0   299       68   0.527   0.000     0.147      1.058
+truthfulqa        vote mean token prob       -         -   ok      0   299       68   0.521   0.000     0.176      0.303
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: mmlu_pro
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-mmlu_pro           run -                 False      none   ok   1308   274      105    0.617   0.6095    0.6118  0.9876  0.7551  0.5235  0.0182  0.1819  0.0264
-mmlu_pro           run -                 False  balanced   ok   1308   274      105    0.617   0.4321    0.5618  0.3214  0.4083  0.5129  0.0166  0.1872  0.0197
-mmlu_pro           run -                  True      none   ok   1308   274      105    0.617   0.6095    0.6118  0.9876  0.7551  0.5210  0.0179  0.1797  0.0217
-mmlu_pro           run -                  True  balanced   ok   1308   274      105    0.617   0.4318    0.5616  0.3210  0.4078  0.5085  0.0165  0.1903  0.0228
-mmlu_pro           run self cons 0           -         -   ok      0   274      105    0.617   0.6241    0.6398  0.8935  0.7457  0.6585  0.0000  0.1433  0.0000
-mmlu_pro           run self cons last        -         -   ok      0   272      104    0.618   0.6324    0.6328  0.9643  0.7642  0.5934  0.0000  0.2112  0.0000
-mmlu_pro           run seq logprob           -         -   ok      0   274      105    0.617   0.6168    0.6168  1.0000  0.7630  0.6277  0.0000  0.2152  0.0000
-mmlu_pro           run seq logprob/tok       -         -   ok      0   274      105    0.617   0.6095    0.6165  0.9704  0.7540  0.6359  0.0000  0.1317  0.0000
-mmlu_pro           run entropy total         -         -   ok      0   274      105    0.617   0.6168    0.6168  1.0000  0.7630  0.6287  0.0000  0.2085  0.0000
-mmlu_pro           run mean token ent        -         -   ok      0   274      105    0.617   0.6168    0.6168  1.0000  0.7630  0.5972  0.0000  0.1889  0.0000
-mmlu_pro           run mean token prob       -         -   ok      0   274      105    0.617   0.6022    0.6111  0.9763  0.7517  0.5830  0.0000  0.1463  0.0000
-mmlu_pro          vote -                 False      none   ok   1306   274       88    0.679   0.6675    0.6695  0.9935  0.7996  0.5771  0.0210  0.1541  0.0251
-mmlu_pro          vote -                 False  balanced   ok   1306   274       88    0.679   0.6015    0.7058  0.6943  0.6992  0.5650  0.0214  0.1701  0.0272
-mmlu_pro          vote -                  True      none   ok   1306   274       88    0.679   0.6675    0.6695  0.9935  0.7996  0.5808  0.0224  0.1470  0.0259
-mmlu_pro          vote -                  True  balanced   ok   1306   274       88    0.679   0.5949    0.7030  0.6848  0.6928  0.5685  0.0213  0.1723  0.0277
-mmlu_pro          vote self cons 0           -         -   ok      0   274       88    0.679   0.6934    0.7161  0.9086  0.8009  0.7144  0.0000  0.0960  0.0000
-mmlu_pro          vote self cons last        -         -   ok      0   272       87    0.680   0.6654    0.6836  0.9459  0.7937  0.5391  0.0000  0.1945  0.0000
-mmlu_pro          vote seq logprob           -         -   ok      0   274       88    0.679   0.6752    0.6803  0.9839  0.8044  0.5959  0.0000  0.1450  0.0000
-mmlu_pro          vote seq logprob/tok       -         -   ok      0   274       88    0.679   0.6825    0.6827  0.9946  0.8096  0.6543  0.0000  0.0954  0.0000
-mmlu_pro          vote entropy total         -         -   ok      0   274       88    0.679   0.6788    0.6815  0.9892  0.8070  0.6068  0.0000  0.1278  0.0000
-mmlu_pro          vote mean token ent        -         -   ok      0   274       88    0.679   0.6788    0.6788  1.0000  0.8087  0.6356  0.0000  0.1317  0.0000
-mmlu_pro          vote mean token prob       -         -   ok      0   274       88    0.679   0.6715    0.6778  0.9839  0.8026  0.6243  0.0000  0.1212  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+mmlu_pro           run -                 False      none   ok   1308   274      105   0.524   0.018     0.182      0.668
+mmlu_pro           run -                 False  balanced   ok   1308   274      105   0.513   0.017     0.187      0.156
+mmlu_pro           run -                  True      none   ok   1308   274      105   0.521   0.018     0.180      0.748
+mmlu_pro           run -                  True  balanced   ok   1308   274      105   0.509   0.017     0.190      0.151
+mmlu_pro           run self cons 0           -         -   ok      0   274      105   0.658   0.000     0.143      0.207
+mmlu_pro           run self cons last        -         -   ok      0   272      104   0.593   0.000     0.211      0.297
+mmlu_pro           run seq logprob           -         -   ok      0   274      105   0.628   0.000     0.215      0.748
+mmlu_pro           run seq logprob/tok       -         -   ok      0   274      105   0.636   0.000     0.132      1.206
+mmlu_pro           run entropy total         -         -   ok      0   274      105   0.629   0.000     0.209      0.771
+mmlu_pro           run mean token ent        -         -   ok      0   274      105   0.597   0.000     0.189      0.786
+mmlu_pro           run mean token prob       -         -   ok      0   274      105   0.583   0.000     0.146      0.571
+mmlu_pro          vote -                 False      none   ok   1306   274       88   0.577   0.021     0.154      0.557
+mmlu_pro          vote -                 False  balanced   ok   1306   274       88   0.565   0.021     0.170      0.141
+mmlu_pro          vote -                  True      none   ok   1306   274       88   0.581   0.022     0.147      0.623
+mmlu_pro          vote -                  True  balanced   ok   1306   274       88   0.569   0.021     0.172      0.138
+mmlu_pro          vote self cons 0           -         -   ok      0   274       88   0.714   0.000     0.096      0.146
+mmlu_pro          vote self cons last        -         -   ok      0   272       87   0.539   0.000     0.194      0.256
+mmlu_pro          vote seq logprob           -         -   ok      0   274       88   0.596   0.000     0.145      0.811
+mmlu_pro          vote seq logprob/tok       -         -   ok      0   274       88   0.654   0.000     0.095      1.268
+mmlu_pro          vote entropy total         -         -   ok      0   274       88   0.607   0.000     0.128      0.834
+mmlu_pro          vote mean token ent        -         -   ok      0   274       88   0.636   0.000     0.132      0.848
+mmlu_pro          vote mean token prob       -         -   ok      0   274       88   0.624   0.000     0.121      0.508
+--------------------------------------------------------------------------------------------------------------------------
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: aime
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-aime               run -                 False      none   ok   1483    99       17    0.828   0.7121    0.8266  0.8172  0.8214  0.6368  0.0620  0.2058  0.0320
-aime               run -                 False  balanced   ok   1483    99       17    0.828   0.5333    0.8346  0.5322  0.6482  0.6258  0.0618  0.3405  0.0319
-aime               run -                  True      none   ok   1483    99       17    0.828   0.7051    0.8192  0.8172  0.8178  0.6302  0.0613  0.1983  0.0354
-aime               run -                  True  balanced   ok   1483    99       17    0.828   0.5333    0.8346  0.5322  0.6482  0.6239  0.0617  0.3459  0.0331
-aime               run self cons 0           -         -   ok      0    99       17    0.828   0.5657    0.8421  0.5854  0.6906  0.6126  0.0000  0.2269  0.0000
-aime               run self cons last        -         -   ok      0    99       17    0.828   0.8384    0.8367  1.0000  0.9111  0.7661  0.0000  0.2422  0.0000
-aime               run seq logprob           -         -   ok      0    99       17    0.828   0.8283    0.8283  1.0000  0.9061  0.2977  0.0000  0.1618  0.0000
-aime               run seq logprob/tok       -         -   ok      0    99       17    0.828   0.8283    0.8283  1.0000  0.9061  0.7095  0.0000  0.1283  0.0000
-aime               run entropy total         -         -   ok      0    99       17    0.828   0.8283    0.8283  1.0000  0.9061  0.2826  0.0000  0.1897  0.0000
-aime               run mean token ent        -         -   ok      0    99       17    0.828   0.8283    0.8283  1.0000  0.9061  0.6664  0.0000  0.1339  0.0000
-aime               run mean token prob       -         -   ok      0    99       17    0.828   0.8283    0.8283  1.0000  0.9061  0.6155  0.0000  0.1271  0.0000
-aime              vote -                 False      none   ok   1481    99       38    0.616   0.5848    0.6320  0.8245  0.7144  0.4576  0.0515  0.2453  0.0422
-aime              vote -                 False  balanced   ok   1481    99       38    0.616   0.4394    0.6163  0.3102  0.4101  0.5000  0.0517  0.3586  0.0290
-aime              vote -                  True      none   ok   1481    99       38    0.616   0.5798    0.6283  0.8245  0.7120  0.4620  0.0517  0.2530  0.0473
-aime              vote -                  True  balanced   ok   1481    99       38    0.616   0.4434    0.6290  0.2949  0.3988  0.5003  0.0504  0.3569  0.0312
-aime              vote self cons 0           -         -   ok      0    99       38    0.616   0.7374    0.8070  0.7541  0.7797  0.8132  0.0000  0.0905  0.0000
-aime              vote self cons last        -         -   ok      0    99       38    0.616   0.6263    0.6224  1.0000  0.7673  0.5636  0.0000  0.3434  0.0000
-aime              vote seq logprob           -         -   ok      0    99       38    0.616   0.6162    0.6162  1.0000  0.7625  0.6165  0.0000  0.1599  0.0000
-aime              vote seq logprob/tok       -         -   ok      0    99       38    0.616   0.6162    0.6162  1.0000  0.7625  0.6592  0.0000  0.2661  0.0000
-aime              vote entropy total         -         -   ok      0    99       38    0.616   0.6263    0.6224  1.0000  0.7673  0.6005  0.0000  0.1412  0.0000
-aime              vote mean token ent        -         -   ok      0    99       38    0.616   0.6162    0.6162  1.0000  0.7625  0.6031  0.0000  0.2146  0.0000
-aime              vote mean token prob       -         -   ok      0    99       38    0.616   0.6162    0.6162  1.0000  0.7625  0.5552  0.0000  0.2669  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+aime               run -                 False      none   ok   1483    99       17   0.637   0.062     0.206      0.201
+aime               run -                 False  balanced   ok   1483    99       17   0.626   0.062     0.340      0.336
+aime               run -                  True      none   ok   1483    99       17   0.630   0.061     0.198      0.194
+aime               run -                  True  balanced   ok   1483    99       17   0.624   0.062     0.346      0.341
+aime               run self cons 0           -         -   ok      0    99       17   0.613   0.000     0.227      0.225
+aime               run self cons last        -         -   ok      0    99       17   0.766   0.000     0.242      0.834
+aime               run seq logprob           -         -   ok      0    99       17   0.298   0.000     0.162      1.152
+aime               run seq logprob/tok       -         -   ok      0    99       17   0.709   0.000     0.128      1.449
+aime               run entropy total         -         -   ok      0    99       17   0.283   0.000     0.190      1.164
+aime               run mean token ent        -         -   ok      0    99       17   0.666   0.000     0.134      1.539
+aime               run mean token prob       -         -   ok      0    99       17   0.615   0.000     0.127      5.713
+aime              vote -                 False      none   ok   1481    99       38   0.458   0.051     0.245      0.266
+aime              vote -                 False  balanced   ok   1481    99       38   0.500   0.052     0.359      0.353
+aime              vote -                  True      none   ok   1481    99       38   0.462   0.052     0.253      0.273
+aime              vote -                  True  balanced   ok   1481    99       38   0.500   0.050     0.357      0.349
+aime              vote self cons 0           -         -   ok      0    99       38   0.813   0.000     0.091      0.124
+aime              vote self cons last        -         -   ok      0    99       38   0.564   0.000     0.343      0.935
+aime              vote seq logprob           -         -   ok      0    99       38   0.616   0.000     0.160      0.941
+aime              vote seq logprob/tok       -         -   ok      0    99       38   0.659   0.000     0.266      1.232
+aime              vote entropy total         -         -   ok      0    99       38   0.601   0.000     0.141      0.953
+aime              vote mean token ent        -         -   ok      0    99       38   0.603   0.000     0.215      1.325
+aime              vote mean token prob       -         -   ok      0    99       38   0.555   0.000     0.267      5.925
+--------------------------------------------------------------------------------------------------------------------------
 
 
 averaged over every held out dataset:
 
-target       loss_mode standardize class_weight  accuracy  precision  recall    f1  roc_auc   ece
-   run               -       False     balanced     0.626      0.796   0.619 0.688    0.544 0.309
-   run               -       False         none     0.774      0.797   0.963 0.860    0.527 0.189
-   run               -        True     balanced     0.625      0.793   0.621 0.689    0.544 0.310
-   run               -        True         none     0.772      0.794   0.964 0.859    0.514 0.188
-   run   entropy total           -            -     0.798      0.798   1.000 0.878    0.613 0.200
-   run  mean token ent           -            -     0.781      0.794   0.971 0.864    0.392 0.186
-   run mean token prob           -            -     0.776      0.792   0.946 0.856    0.367 0.153
-   run     self cons 0           -            -     0.753      0.809   0.902 0.839    0.644 0.182
-   run  self cons last           -            -     0.790      0.800   0.970 0.869    0.629 0.159
-   run     seq logprob           -            -     0.798      0.798   1.000 0.878    0.621 0.195
-   run seq logprob/tok           -            -     0.797      0.801   0.986 0.875    0.501 0.147
-  vote               -       False     balanced     0.684      0.799   0.718 0.748    0.601 0.306
-  vote               -       False         none     0.776      0.794   0.961 0.861    0.599 0.179
-  vote               -        True     balanced     0.690      0.801   0.722 0.749    0.604 0.306
-  vote               -        True         none     0.776      0.794   0.962 0.861    0.604 0.179
-  vote   entropy total           -            -     0.789      0.793   0.991 0.873    0.694 0.175
-  vote  mean token ent           -            -     0.776      0.789   0.978 0.864    0.544 0.172
-  vote mean token prob           -            -     0.770      0.788   0.951 0.855    0.506 0.163
-  vote     self cons 0           -            -     0.814      0.837   0.937 0.877    0.779 0.119
-  vote  self cons last           -            -     0.781      0.794   0.969 0.865    0.593 0.172
-  vote     seq logprob           -            -     0.785      0.792   0.989 0.871    0.696 0.178
-  vote seq logprob/tok           -            -     0.792      0.794   0.993 0.874    0.634 0.152
+target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
+   run               -       False     balanced    0.544 0.309       0.348
+   run               -       False         none    0.527 0.189       0.820
+   run               -        True     balanced    0.544 0.310       0.366
+   run               -        True         none    0.514 0.188       0.912
+   run   entropy total           -            -    0.613 0.200       0.988
+   run  mean token ent           -            -    0.392 0.186       1.269
+   run mean token prob           -            -    0.367 0.153       2.290
+   run     self cons 0           -            -    0.644 0.182       0.383
+   run  self cons last           -            -    0.629 0.159       1.916
+   run     seq logprob           -            -    0.621 0.195       0.961
+   run seq logprob/tok           -            -    0.501 0.147       1.417
+  vote               -       False     balanced    0.601 0.306       0.296
+  vote               -       False         none    0.599 0.179       0.691
+  vote               -        True     balanced    0.604 0.306       0.305
+  vote               -        True         none    0.604 0.179       0.761
+  vote   entropy total           -            -    0.694 0.175       0.981
+  vote  mean token ent           -            -    0.544 0.172       1.262
+  vote mean token prob           -            -    0.506 0.163       2.299
+  vote     self cons 0           -            -    0.779 0.119       0.330
+  vote  self cons last           -            -    0.593 0.172       1.932
+  vote     seq logprob           -            -    0.696 0.178       0.954
+  vote seq logprob/tok           -            -    0.634 0.152       1.409
 
 
 averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, mmlu, truthfulqa, mmlu_pro):
 
-target       loss_mode standardize class_weight  accuracy  precision  recall    f1  roc_auc   ece
-   run               -       False     balanced     0.543      0.656   0.514 0.566    0.513 0.212
-   run               -       False         none     0.659      0.659   0.989 0.785    0.509 0.170
-   run               -        True     balanced     0.542      0.653   0.518 0.567    0.514 0.214
-   run               -        True         none     0.657      0.658   0.989 0.784    0.510 0.171
-   run   entropy total           -            -     0.665      0.665   1.000 0.793    0.612 0.183
-   run  mean token ent           -            -     0.630      0.656   0.942 0.764    0.543 0.182
-   run mean token prob           -            -     0.619      0.653   0.891 0.748    0.530 0.164
-   run     self cons 0           -            -     0.672      0.677   0.948 0.786    0.663 0.172
-   run  self cons last           -            -     0.646      0.662   0.945 0.774    0.579 0.232
-   run     seq logprob           -            -     0.665      0.665   1.000 0.793    0.620 0.180
-   run seq logprob/tok           -            -     0.661      0.670   0.972 0.787    0.634 0.149
-  vote               -       False     balanced     0.642      0.712   0.731 0.719    0.531 0.211
-  vote               -       False         none     0.701      0.704   0.991 0.818    0.535 0.154
-  vote               -        True     balanced     0.648      0.712   0.739 0.723    0.534 0.212
-  vote               -        True         none     0.703      0.704   0.994 0.819    0.540 0.151
-  vote   entropy total           -            -     0.708      0.710   0.992 0.823    0.615 0.160
-  vote  mean token ent           -            -     0.680      0.705   0.956 0.804    0.590 0.157
-  vote mean token prob           -            -     0.667      0.704   0.902 0.786    0.577 0.163
-  vote     self cons 0           -            -     0.733      0.734   0.964 0.830    0.709 0.128
-  vote  self cons last           -            -     0.682      0.707   0.940 0.803    0.539 0.229
-  vote     seq logprob           -            -     0.707      0.709   0.991 0.822    0.616 0.160
-  vote seq logprob/tok           -            -     0.711      0.715   0.986 0.824    0.663 0.145
+target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
+   run               -       False     balanced    0.513 0.212       0.339
+   run               -       False         none    0.509 0.170       1.430
+   run               -        True     balanced    0.514 0.214       0.385
+   run               -        True         none    0.510 0.171       1.586
+   run   entropy total           -            -    0.612 0.183       0.809
+   run  mean token ent           -            -    0.543 0.182       0.912
+   run mean token prob           -            -    0.530 0.164       0.448
+   run     self cons 0           -            -    0.663 0.172       0.476
+   run  self cons last           -            -    0.579 0.232       0.319
+   run     seq logprob           -            -    0.620 0.180       0.781
+   run seq logprob/tok           -            -    0.634 0.149       1.246
+  vote               -       False     balanced    0.531 0.211       0.261
+  vote               -       False         none    0.535 0.154       1.210
+  vote               -        True     balanced    0.534 0.212       0.291
+  vote               -        True         none    0.540 0.151       1.332
+  vote   entropy total           -            -    0.615 0.160       0.853
+  vote  mean token ent           -            -    0.590 0.157       0.957
+  vote mean token prob           -            -    0.577 0.163       0.406
+  vote     self cons 0           -            -    0.709 0.128       0.432
+  vote  self cons last           -            -    0.539 0.229       0.304
+  vote     seq logprob           -            -    0.616 0.160       0.826
+  vote seq logprob/tok           -            -    0.663 0.145       1.291
 
 
 held out as a domain: multiple choice knowledge
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: mmlu,mmlu_pro
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-mmlu,mmlu_pro      run -                 False      none   ok   1027   555      155    0.721   0.7290    0.7299  0.9955  0.8422  0.5107  0.0278  0.1190  0.0139
-mmlu,mmlu_pro      run -                 False  balanced   ok   1027   555      155    0.721   0.4461    0.7116  0.4003  0.5119  0.5093  0.0267  0.2566  0.0066
-mmlu,mmlu_pro      run -                  True      none   ok   1027   555      155    0.721   0.7254    0.7272  0.9955  0.8404  0.5142  0.0280  0.1122  0.0164
-mmlu,mmlu_pro      run -                  True  balanced   ok   1027   555      155    0.721   0.4494    0.7183  0.3990  0.5126  0.5122  0.0267  0.2541  0.0062
-mmlu,mmlu_pro      run self cons 0           -         -   ok      0   555      155    0.721   0.7207    0.7388  0.9475  0.8302  0.6952  0.0000  0.1127  0.0000
-mmlu,mmlu_pro      run self cons last        -         -   ok      0   551      154    0.721   0.7151    0.7290  0.9622  0.8295  0.6019  0.0000  0.1628  0.0000
-mmlu,mmlu_pro      run seq logprob           -         -   ok      0   555      155    0.721   0.7207    0.7207  1.0000  0.8377  0.6563  0.0000  0.1361  0.0000
-mmlu,mmlu_pro      run seq logprob/tok       -         -   ok      0   555      155    0.721   0.7135    0.7295  0.9575  0.8281  0.6327  0.0000  0.0632  0.0000
-mmlu,mmlu_pro      run entropy total         -         -   ok      0   555      155    0.721   0.7207    0.7207  1.0000  0.8377  0.6466  0.0000  0.1270  0.0000
-mmlu,mmlu_pro      run mean token ent        -         -   ok      0   555      155    0.721   0.7189    0.7202  0.9975  0.8365  0.5572  0.0000  0.0884  0.0000
-mmlu,mmlu_pro      run mean token prob       -         -   ok      0   555      155    0.721   0.7081    0.7179  0.9800  0.8288  0.5405  0.0000  0.0724  0.0000
-mmlu,mmlu_pro     vote -                 False      none   ok   1025   555      132    0.762   0.7667    0.7706  0.9925  0.8675  0.5987  0.0271  0.0822  0.0156
-mmlu,mmlu_pro     vote -                 False  balanced   ok   1025   555      132    0.762   0.6984    0.7995  0.8127  0.8057  0.5913  0.0276  0.2413  0.0180
-mmlu,mmlu_pro     vote -                  True      none   ok   1025   555      132    0.762   0.7685    0.7710  0.9948  0.8687  0.6050  0.0266  0.0848  0.0164
-mmlu,mmlu_pro     vote -                  True  balanced   ok   1025   555      132    0.762   0.6962    0.7955  0.8157  0.8052  0.5990  0.0266  0.2411  0.0181
-mmlu,mmlu_pro     vote self cons 0           -         -   ok      0   555      132    0.762   0.7766    0.7914  0.9598  0.8675  0.7464  0.0000  0.0670  0.0000
-mmlu,mmlu_pro     vote self cons last        -         -   ok      0   551      131    0.762   0.7350    0.7615  0.9500  0.8453  0.5519  0.0000  0.1541  0.0000
-mmlu,mmlu_pro     vote seq logprob           -         -   ok      0   555      132    0.762   0.7604    0.7627  0.9953  0.8636  0.6541  0.0000  0.0878  0.0000
-mmlu,mmlu_pro     vote seq logprob/tok       -         -   ok      0   555      132    0.762   0.7604    0.7695  0.9787  0.8616  0.6660  0.0000  0.0420  0.0000
-mmlu,mmlu_pro     vote entropy total         -         -   ok      0   555      132    0.762   0.7622    0.7631  0.9976  0.8648  0.6520  0.0000  0.0779  0.0000
-mmlu,mmlu_pro     vote mean token ent        -         -   ok      0   555      132    0.762   0.7622    0.7622  1.0000  0.8650  0.6022  0.0000  0.0565  0.0000
-mmlu,mmlu_pro     vote mean token prob       -         -   ok      0   555      132    0.762   0.7532    0.7619  0.9835  0.8586  0.5864  0.0000  0.0590  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro      run -                 False      none   ok   1027   555      155   0.511   0.028     0.119      0.454
+mmlu,mmlu_pro      run -                 False  balanced   ok   1027   555      155   0.509   0.027     0.257      0.209
+mmlu,mmlu_pro      run -                  True      none   ok   1027   555      155   0.514   0.028     0.112      0.623
+mmlu,mmlu_pro      run -                  True  balanced   ok   1027   555      155   0.512   0.027     0.254      0.191
+mmlu,mmlu_pro      run self cons 0           -         -   ok      0   555      155   0.695   0.000     0.113      0.165
+mmlu,mmlu_pro      run self cons last        -         -   ok      0   551      154   0.602   0.000     0.163      0.233
+mmlu,mmlu_pro      run seq logprob           -         -   ok      0   555      155   0.656   0.000     0.136      0.823
+mmlu,mmlu_pro      run seq logprob/tok       -         -   ok      0   555      155   0.633   0.000     0.063      1.310
+mmlu,mmlu_pro      run entropy total         -         -   ok      0   555      155   0.647   0.000     0.127      0.847
+mmlu,mmlu_pro      run mean token ent        -         -   ok      0   555      155   0.557   0.000     0.088      0.899
+mmlu,mmlu_pro      run mean token prob       -         -   ok      0   555      155   0.540   0.000     0.072      0.446
+mmlu,mmlu_pro     vote -                 False      none   ok   1025   555      132   0.599   0.027     0.082      0.307
+mmlu,mmlu_pro     vote -                 False  balanced   ok   1025   555      132   0.591   0.028     0.241      0.195
+mmlu,mmlu_pro     vote -                  True      none   ok   1025   555      132   0.605   0.027     0.085      0.396
+mmlu,mmlu_pro     vote -                  True  balanced   ok   1025   555      132   0.599   0.027     0.241      0.180
+mmlu,mmlu_pro     vote self cons 0           -         -   ok      0   555      132   0.746   0.000     0.067      0.130
+mmlu,mmlu_pro     vote self cons last        -         -   ok      0   551      131   0.552   0.000     0.154      0.214
+mmlu,mmlu_pro     vote seq logprob           -         -   ok      0   555      132   0.654   0.000     0.088      0.865
+mmlu,mmlu_pro     vote seq logprob/tok       -         -   ok      0   555      132   0.666   0.000     0.042      1.352
+mmlu,mmlu_pro     vote entropy total         -         -   ok      0   555      132   0.652   0.000     0.078      0.889
+mmlu,mmlu_pro     vote mean token ent        -         -   ok      0   555      132   0.602   0.000     0.056      0.941
+mmlu,mmlu_pro     vote mean token prob       -         -   ok      0   555      132   0.586   0.000     0.059      0.404
+--------------------------------------------------------------------------------------------------------------------------
 
 
 held out as a domain: mathematics
 
-==============================================================================================================================================================
+==========================================================================================================================
 == ablation, features: agreeing_length, held out: gsm8k,math500,aime
-==============================================================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority majority accuracy precision  recall      F1     ROC   ROCsd     ECE   ECEsd
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-gsm8k,math500,aime   run -                 False      none   ok   1148   434       31    0.929   0.7576    0.9275  0.8002  0.8591  0.5129  0.0692  0.2836  0.0179
-gsm8k,math500,aime   run -                 False  balanced   ok   1148   434       31    0.929   0.6104    0.9373  0.6199  0.7460  0.5280  0.0689  0.4643  0.0159
-gsm8k,math500,aime   run -                  True      none   ok   1148   434       31    0.929   0.7576    0.9275  0.8002  0.8591  0.5137  0.0672  0.2842  0.0177
-gsm8k,math500,aime   run -                  True  balanced   ok   1148   434       31    0.929   0.6081    0.9371  0.6174  0.7441  0.5309  0.0679  0.4661  0.0153
-gsm8k,math500,aime   run self cons 0           -         -   ok      0   433       31    0.928   0.8522    0.9401  0.8980  0.9186  0.6848  0.0000  0.2153  0.0000
-gsm8k,math500,aime   run self cons last        -         -   ok      0   434       31    0.929   0.9309    0.9307  1.0000  0.9641  0.6485  0.0000  0.0613  0.0000
-gsm8k,math500,aime   run seq logprob           -         -   ok      0   434       31    0.929   0.9147    0.9316  0.9801  0.9553  0.5750  0.0000  0.2493  0.0000
-gsm8k,math500,aime   run seq logprob/tok       -         -   ok      0   434       31    0.929   0.9286    0.9286  1.0000  0.9630  0.5510  0.0000  0.1249  0.0000
-gsm8k,math500,aime   run entropy total         -         -   ok      0   434       31    0.929   0.9055    0.9330  0.9677  0.9501  0.5693  0.0000  0.2523  0.0000
-gsm8k,math500,aime   run mean token ent        -         -   ok      0   434       31    0.929   0.9286    0.9286  1.0000  0.9630  0.4444  0.0000  0.2210  0.0000
-gsm8k,math500,aime   run mean token prob       -         -   ok      0   434       31    0.929   0.9286    0.9286  1.0000  0.9630  0.3616  0.0000  0.1022  0.0000
-gsm8k,math500,aime  vote -                 False      none   ok   1147   433       49    0.887   0.8155    0.9132  0.8743  0.8933  0.6327  0.0661  0.2005  0.0118
-gsm8k,math500,aime  vote -                 False  balanced   ok   1147   433       49    0.887   0.6822    0.9367  0.6868  0.7923  0.6443  0.0662  0.3960  0.0068
-gsm8k,math500,aime  vote -                  True      none   ok   1147   433       49    0.887   0.8224    0.9139  0.8821  0.8977  0.6667  0.0566  0.1899  0.0078
-gsm8k,math500,aime  vote -                  True  balanced   ok   1147   433       49    0.887   0.6808    0.9366  0.6853  0.7912  0.6741  0.0532  0.3998  0.0078
-gsm8k,math500,aime  vote self cons 0           -         -   ok      0   433       49    0.887   0.9122    0.9505  0.9505  0.9505  0.9066  0.0000  0.0802  0.0000
-gsm8k,math500,aime  vote self cons last        -         -   ok      0   433       49    0.887   0.8891    0.8889  1.0000  0.9412  0.5987  0.0000  0.1030  0.0000
-gsm8k,math500,aime  vote seq logprob           -         -   ok      0   433       49    0.887   0.8822    0.8936  0.9844  0.9368  0.8345  0.0000  0.1746  0.0000
-gsm8k,math500,aime  vote seq logprob/tok       -         -   ok      0   433       49    0.887   0.8868    0.8868  1.0000  0.9400  0.7180  0.0000  0.0622  0.0000
-gsm8k,math500,aime  vote entropy total         -         -   ok      0   433       49    0.887   0.8845    0.8995  0.9792  0.9377  0.8227  0.0000  0.1809  0.0000
-gsm8k,math500,aime  vote mean token ent        -         -   ok      0   433       49    0.887   0.8868    0.8868  1.0000  0.9400  0.4996  0.0000  0.1267  0.0000
-gsm8k,math500,aime  vote mean token prob       -         -   ok      0   433       49    0.887   0.8868    0.8868  1.0000  0.9400  0.4150  0.0000  0.0768  0.0000
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-minority is how many of the rarer class the held out set holds. The area under the curve
-rests on those alone, so a handful of them means the number is mostly noise.
-fit says whether the solver settled. STOP means it ran out of iterations and stopped
-wherever it had got to, so read that row as a weaker result, not a comparable one.
-the last rows of each block fit nothing at all. They are the bar the trained rows
-have to clear to be worth the compute they cost. self cons 0 and self cons last are
-the vote share at the first and last evidence. The rest are the published measures,
-taken as their papers take them, as the score itself rather than as something to
-train on: seq logprob and seq logprob/tok are the sequence log likelihood and the
-same per token (Malinin and Gales), entropy total and mean token ent are the summed
-and averaged predictive entropy (mean token entropy is the LM-Polygraph measure),
-mean token prob is the average probability the model gave its own tokens. All are
-turned so larger means more likely correct. Four of them are log likelihoods or
-entropies rather than probabilities, so a calibration error cannot be read off
-them as they stand. Those four are put through Platt scaling first: one logistic
-curve from the single number to correctness, fitted on the training half, the same
-half every trained row learns from, and applied to the held out half. The curve
-only rises, so the ranking and the area under it are unchanged to the last decimal
-and only the accuracy and calibration columns become readable. This is why their
-ROC is the same whether the scaling is applied or not, and why their ECE should be
-read as the calibration of the scaled score rather than of the raw measure.
-target says which answer was graded: run is the answer the model actually gave,
-vote is the answer the rollouts settled on. They differ on one sample in eight, so
-the two blocks answer different questions and their numbers are not interchangeable.
+==========================================================================================================================
+held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime   run -                 False      none   ok   1148   434       31   0.513   0.069     0.284      0.280
+gsm8k,math500,aime   run -                 False  balanced   ok   1148   434       31   0.528   0.069     0.464      0.462
+gsm8k,math500,aime   run -                  True      none   ok   1148   434       31   0.514   0.067     0.284      0.279
+gsm8k,math500,aime   run -                  True  balanced   ok   1148   434       31   0.531   0.068     0.466      0.462
+gsm8k,math500,aime   run self cons 0           -         -   ok      0   433       31   0.685   0.000     0.215      0.240
+gsm8k,math500,aime   run self cons last        -         -   ok      0   434       31   0.648   0.000     0.061      0.721
+gsm8k,math500,aime   run seq logprob           -         -   ok      0   434       31   0.575   0.000     0.249      1.088
+gsm8k,math500,aime   run seq logprob/tok       -         -   ok      0   434       31   0.551   0.000     0.125      1.354
+gsm8k,math500,aime   run entropy total         -         -   ok      0   434       31   0.569   0.000     0.252      1.104
+gsm8k,math500,aime   run mean token ent        -         -   ok      0   434       31   0.444   0.000     0.221      1.486
+gsm8k,math500,aime   run mean token prob       -         -   ok      0   434       31   0.362   0.000     0.102      2.713
+gsm8k,math500,aime  vote -                 False      none   ok   1147   433       49   0.633   0.066     0.200      0.200
+gsm8k,math500,aime  vote -                 False  balanced   ok   1147   433       49   0.644   0.066     0.396      0.396
+gsm8k,math500,aime  vote -                  True      none   ok   1147   433       49   0.667   0.057     0.190      0.188
+gsm8k,math500,aime  vote -                  True  balanced   ok   1147   433       49   0.674   0.053     0.400      0.399
+gsm8k,math500,aime  vote self cons 0           -         -   ok      0   433       49   0.907   0.000     0.080      0.139
+gsm8k,math500,aime  vote self cons last        -         -   ok      0   433       49   0.599   0.000     0.103      0.763
+gsm8k,math500,aime  vote seq logprob           -         -   ok      0   433       49   0.835   0.000     0.175      1.047
+gsm8k,math500,aime  vote seq logprob/tok       -         -   ok      0   433       49   0.718   0.000     0.062      1.313
+gsm8k,math500,aime  vote entropy total         -         -   ok      0   433       49   0.823   0.000     0.181      1.063
+gsm8k,math500,aime  vote mean token ent        -         -   ok      0   433       49   0.500   0.000     0.127      1.443
+gsm8k,math500,aime  vote mean token prob       -         -   ok      0   433       49   0.415   0.000     0.077      2.755
+--------------------------------------------------------------------------------------------------------------------------
 
 
 averaged over every benchmark held out exactly once (multiple choice knowledge, mathematics, gpqa, countdown, truthfulqa):
 
-target       loss_mode standardize class_weight  accuracy  precision  recall    f1  roc_auc   ece
-   run               -       False     balanced     0.584      0.773   0.570 0.646    0.499 0.306
-   run               -       False         none     0.727      0.767   0.947 0.831    0.481 0.204
-   run               -        True     balanced     0.583      0.769   0.573 0.647    0.497 0.306
-   run               -        True         none     0.725      0.766   0.947 0.830    0.464 0.203
-   run   entropy total           -            -     0.764      0.770   0.994 0.856    0.684 0.205
-   run  mean token ent           -            -     0.740      0.761   0.953 0.836    0.407 0.194
-   run mean token prob           -            -     0.735      0.759   0.917 0.825    0.384 0.149
-   run     self cons 0           -            -     0.743      0.785   0.929 0.838    0.742 0.205
-   run  self cons last           -            -     0.755      0.769   0.960 0.845    0.674 0.163
-   run     seq logprob           -            -     0.766      0.769   0.996 0.857    0.689 0.206
-   run seq logprob/tok           -            -     0.771      0.774   0.985 0.857    0.557 0.142
-  vote               -       False     balanced     0.676      0.796   0.736 0.760    0.530 0.283
-  vote               -       False         none     0.759      0.787   0.960 0.855    0.532 0.169
-  vote               -        True     balanced     0.682      0.797   0.745 0.764    0.539 0.284
-  vote               -        True         none     0.762      0.788   0.965 0.857    0.543 0.167
-  vote   entropy total           -            -     0.780      0.784   0.991 0.869    0.673 0.167
-  vote  mean token ent           -            -     0.759      0.778   0.965 0.854    0.481 0.152
-  vote mean token prob           -            -     0.750      0.778   0.925 0.840    0.460 0.144
-  vote     self cons 0           -            -     0.797      0.821   0.954 0.874    0.811 0.143
-  vote  self cons last           -            -     0.769      0.786   0.960 0.859    0.626 0.172
-  vote     seq logprob           -            -     0.780      0.783   0.992 0.868    0.677 0.167
-  vote seq logprob/tok           -            -     0.785      0.786   0.991 0.870    0.606 0.122
+target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
+   run               -       False     balanced    0.499 0.306       0.354
+   run               -       False         none    0.481 0.204       0.776
+   run               -        True     balanced    0.497 0.306       0.364
+   run               -        True         none    0.464 0.203       0.878
+   run   entropy total           -            -    0.684 0.205       0.905
+   run  mean token ent           -            -    0.407 0.194       1.142
+   run mean token prob           -            -    0.384 0.149       1.173
+   run     self cons 0           -            -    0.742 0.205       0.348
+   run  self cons last           -            -    0.674 0.163       0.368
+   run     seq logprob           -            -    0.689 0.206       0.883
+   run seq logprob/tok           -            -    0.557 0.142       1.352
+  vote               -       False     balanced    0.530 0.283       0.337
+  vote               -       False         none    0.532 0.169       0.816
+  vote               -        True     balanced    0.539 0.284       0.350
+  vote               -        True         none    0.543 0.167       0.894
+  vote   entropy total           -            -    0.673 0.167       0.918
+  vote  mean token ent           -            -    0.481 0.152       1.156
+  vote mean token prob           -            -    0.460 0.144       1.162
+  vote     self cons 0           -            -    0.811 0.143       0.288
+  vote  self cons last           -            -    0.626 0.172       0.383
+  vote     seq logprob           -            -    0.677 0.167       0.896
+  vote seq logprob/tok           -            -    0.606 0.122       1.365
