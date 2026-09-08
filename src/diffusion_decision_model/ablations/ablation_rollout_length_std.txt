@@ -1,476 +1,418 @@
-================================================================================
-how to read this
-================================================================================
-One table per held out setting, then the averages.  Each table has two blocks,
-one per graded answer, each ending with the rows that fit nothing at all.
 
-COLUMNS
-  target     which answer was graded.  run = the one the model wrote,
-             vote = the one the ten rollouts agreed on.  They disagree on one
-             sample in eight, so the two blocks are not comparable with each other.
-  loss       total = the summed loss the run logged, per_token = the same divided
-             by the tokens behind it.  A dash means the feature set carries no loss.
-  scaled     were the features standardised.  Fitted on the training half only.
-  weight     balanced weighs the rarer class as heavily as the common one.
-  fit        ok = the solver finished, STOP = it hit max_iter and stopped early.
-  minority   how many of the rarer class the held out set holds.  READ THIS FIRST.
-             Everything right of it rests on those samples alone.  math500 has 1
-             and countdown has 3, so their numbers are noise.
-  ROC        over every pair of one right and one wrong answer, how often the right
-             one scored higher.  Taken from the raw score, so nothing is fitted for
-             it.  ROCsd is its spread over ten seeds.
-  ECE        calibration under Platt scaling: one logistic curve from the score to
-             correctness, fitted on the training half.  Uses the labels.
-  ECEminmax  calibration under the rescaling used elsewhere in this repo,
-             x / (max - min), which uses no labels at all.
+self consistency confidence, every dataset pooled, nothing held out
+--------------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.7854
+ROC : 0.7764
+ECE : 0.0577
+Accuracy Completion : 0.8004
+ROC Completion : 0.6332
+ECE Completion : 0.1273
+--------------------------------------------------------------------------------------------------------------------------------------
 
-FEATURE SETS (one file each)
-  full 80             the two accumulations and their two steps
-  rollout_length 20   how long the ten rollouts ran, averaged.  No loss, no
-                      agreement, only length.  The control the loss must beat.
-  rollout_length_std 40   that average with its spread
-  agreeing_length 20  the same over only rollouts that matched the run's answer
-  self_consistency 20 the agreement alone
-  baseline_scalar 5   published: the completion's loss, how likely the model held
-                      its own answer, and its entropy, each total and per token
-  baseline_hidden 4096  published: the mean pooled last hidden state
-
-THE UNTRAINED ROWS
-  self cons 0 / last  the vote share at the first and last evidence step
-  seq logprob         the sequence log likelihood (Malinin and Gales)
-  seq logprob/tok     the same per token, their length normalised score
-  entropy total       summed predictive entropy
-  mean token ent      averaged predictive entropy (LM-Polygraph's measure)
-  mean token prob     the average probability the model gave its own tokens
-  All are turned so larger means more likely correct, and all are used as the
-  score itself, which is how their papers use them.  These are the bar: a trained
-  row that does not clear them is not worth its compute.
-
-THE TWO ECE COLUMNS
-  A log likelihood or an entropy is not a probability, so a calibration error
-  cannot be read off it directly.  Something has to put it on the probability
-  scale first, and the two columns are the two ways of doing that.
-
-  ECE uses Platt scaling: a logistic curve fitted on the training half, so it has
-  seen how often answers there are correct.  Its slope can come out negative,
-  which reverses the ranking, so it is used for this column only and never for ROC.
-
-  ECEminmax uses x / (max - min), which sees only the spread of the scores and no
-  labels at all.  It therefore cannot know how often the held out benchmark is
-  answered correctly, and the level it lands on is whatever the spread gives.
-
-  Neither is the truth.  On the same scores in the same order a min max map, a
-  quantile map and a fitted logistic map gave 0.42, 0.17 and 0.09, so the number
-  depends heavily on which map was chosen.  And most of what is left after fitting
-  is not about the measure: the curve learns its level where the model answers
-  about eighty per cent correctly and is applied where it may answer half, which
-  on gpqa was roughly two thirds of an ECE of 0.30.  Read ROC as the statement
-  about the confidence and the two ECE columns as a statement about the rescaling.
-================================================================================
-
-
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: random split
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-random split       run -                 False      none   ok   1265   317       73   0.587   0.028     0.070      0.077
-random split       run -                 False  balanced   ok   1265   317       73   0.578   0.025     0.253      0.253
-random split       run -                  True      none   ok   1265   317       73   0.594   0.024     0.066      0.087
-random split       run -                  True  balanced   ok   1265   317       73   0.591   0.025     0.256      0.254
-random split       run self cons 0           -         -   ok      0   317       73   0.722   0.000     0.116      0.183
-random split       run self cons last        -         -   ok      0   304       72   0.628   0.000     0.158      0.214
-random split       run seq logprob           -         -   ok      0   317       73   0.569   0.000     0.105      0.891
-random split       run seq logprob/tok       -         -   ok      0   317       73   0.725   0.000     0.068      1.263
-random split       run entropy total         -         -   ok      0   317       73   0.570   0.000     0.089      0.908
-random split       run mean token ent        -         -   ok      0   317       73   0.642   0.000     0.084      1.004
-random split       run mean token prob       -         -   ok      0   317       73   0.624   0.000     0.102      0.303
-random split      vote -                 False      none   ok   1264   316       68   0.641   0.027     0.065      0.066
-random split      vote -                 False  balanced   ok   1264   316       68   0.638   0.024     0.255      0.252
-random split      vote -                  True      none   ok   1264   316       68   0.646   0.020     0.065      0.066
-random split      vote -                  True  balanced   ok   1264   316       68   0.641   0.021     0.256      0.247
-random split      vote self cons 0           -         -   ok      0   316       68   0.777   0.000     0.092      0.162
-random split      vote self cons last        -         -   ok      0   300       66   0.598   0.000     0.174      0.223
-random split      vote seq logprob           -         -   ok      0   316       68   0.608   0.000     0.077      0.878
-random split      vote seq logprob/tok       -         -   ok      0   316       68   0.667   0.000     0.044      1.305
-random split      vote entropy total         -         -   ok      0   316       68   0.613   0.000     0.053      0.893
-random split      vote mean token ent        -         -   ok      0   316       68   0.597   0.000     0.083      0.958
-random split      vote mean token prob       -         -   ok      0   316       68   0.577   0.000     0.061      0.290
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+random split           run -                           False      none   ok   1265   317       73   0.587   0.028     0.070      0.071
+random split           run -                           False  balanced   ok   1265   317       73   0.578   0.025     0.253      0.253
+random split           run -                            True      none   ok   1265   317       73   0.594   0.024     0.066      0.068
+random split           run -                            True  balanced   ok   1265   317       73   0.591   0.025     0.256      0.257
+random split           run baseline self cons 0            -         -   ok      0   317       73   0.722   0.000     0.116      0.112
+random split           run baseline self cons last         -         -   ok      0   304       72   0.628   0.000     0.158      0.169
+random split           run baseline cot loss               -         -   ok      0   317       73   0.569   0.000       nan      0.202
+random split           run baseline cot loss/tok           -         -   ok      0   317       73   0.725   0.000       nan      0.246
+random split           run baseline entropy total          -         -   ok      0   317       73   0.596   0.000       nan      0.179
+random split           run baseline mean token ent         -         -   ok      0   317       73   0.676   0.000       nan      0.129
+random split           run baseline arith mean prob        -         -   ok      0   317       73   0.653   0.000     0.087      0.106
+random split          vote -                           False      none   ok   1264   316       68   0.641   0.027     0.065      0.065
+random split          vote -                           False  balanced   ok   1264   316       68   0.638   0.024     0.255      0.252
+random split          vote -                            True      none   ok   1264   316       68   0.646   0.020     0.065      0.066
+random split          vote -                            True  balanced   ok   1264   316       68   0.641   0.021     0.256      0.248
+random split          vote baseline self cons 0            -         -   ok      0   316       68   0.777   0.000     0.092      0.084
+random split          vote baseline self cons last         -         -   ok      0   300       66   0.598   0.000     0.174      0.186
+random split          vote baseline cot loss               -         -   ok      0   316       68   0.608   0.000       nan      0.141
+random split          vote baseline cot loss/tok           -         -   ok      0   316       68   0.667   0.000       nan      0.271
+random split          vote baseline entropy total          -         -   ok      0   316       68   0.635   0.000       nan      0.130
+random split          vote baseline mean token ent         -         -   ok      0   316       68   0.621   0.000       nan      0.148
+random split          vote baseline arith mean prob        -         -   ok      0   316       68   0.601   0.000     0.094      0.157
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: gpqa
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-gpqa               run -                 False      none   ok   1398   184       91   0.506   0.036     0.318      0.985
-gpqa               run -                 False  balanced   ok   1398   184       91   0.512   0.034     0.164      0.167
-gpqa               run -                  True      none   ok   1398   184       91   0.504   0.034     0.316      1.389
-gpqa               run -                  True  balanced   ok   1398   184       91   0.511   0.032     0.158      0.173
-gpqa               run self cons 0           -         -   ok      0   184       91   0.642   0.000     0.272      0.589
-gpqa               run self cons last        -         -   ok      0   153       74   0.592   0.000     0.325      0.409
-gpqa               run seq logprob           -         -   ok      0   184       91   0.568   0.000     0.299      0.579
-gpqa               run seq logprob/tok       -         -   ok      0   184       91   0.598   0.000     0.276      1.004
-gpqa               run entropy total         -         -   ok      0   184       91   0.568   0.000     0.302      0.594
-gpqa               run mean token ent        -         -   ok      0   184       91   0.567   0.000     0.308      0.775
-gpqa               run mean token prob       -         -   ok      0   184       91   0.557   0.000     0.282      0.491
-gpqa              vote -                 False      none   ok   1396   184       84   0.504   0.029     0.282      0.634
-gpqa              vote -                 False  balanced   ok   1396   184       84   0.499   0.027     0.191      0.192
-gpqa              vote -                  True      none   ok   1396   184       84   0.506   0.030     0.280      0.697
-gpqa              vote -                  True  balanced   ok   1396   184       84   0.500   0.028     0.170      0.174
-gpqa              vote self cons 0           -         -   ok      0   184       84   0.596   0.000     0.217      0.533
-gpqa              vote self cons last        -         -   ok      0   153       68   0.527   0.000     0.336      0.399
-gpqa              vote seq logprob           -         -   ok      0   184       84   0.499   0.000     0.290      0.617
-gpqa              vote seq logprob/tok       -         -   ok      0   184       84   0.585   0.000     0.261      1.041
-gpqa              vote entropy total         -         -   ok      0   184       84   0.503   0.000     0.294      0.631
-gpqa              vote mean token ent        -         -   ok      0   184       84   0.603   0.000     0.262      0.813
-gpqa              vote mean token prob       -         -   ok      0   184       84   0.594   0.000     0.237      0.454
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run -                           False      none   ok   1398   184       91   0.506   0.036     0.318      0.197
+gpqa                   run -                           False  balanced   ok   1398   184       91   0.512   0.034     0.164      0.168
+gpqa                   run -                            True      none   ok   1398   184       91   0.504   0.034     0.316      0.177
+gpqa                   run -                            True  balanced   ok   1398   184       91   0.511   0.032     0.158      0.162
+gpqa                   run baseline self cons 0            -         -   ok      0   184       91   0.642   0.000     0.272      0.215
+gpqa                   run baseline self cons last         -         -   ok      0   153       74   0.592   0.000     0.325      0.298
+gpqa                   run baseline cot loss               -         -   ok      0   184       91   0.568   0.000       nan      0.421
+gpqa                   run baseline cot loss/tok           -         -   ok      0   184       91   0.598   0.000       nan      0.177
+gpqa                   run baseline entropy total          -         -   ok      0   184       91   0.559   0.000       nan      0.397
+gpqa                   run baseline mean token ent         -         -   ok      0   184       91   0.581   0.000       nan      0.237
+gpqa                   run baseline arith mean prob        -         -   ok      0   184       91   0.564   0.000     0.273      0.205
+gpqa                  vote -                           False      none   ok   1396   184       84   0.504   0.029     0.282      0.238
+gpqa                  vote -                           False  balanced   ok   1396   184       84   0.499   0.027     0.191      0.192
+gpqa                  vote -                            True      none   ok   1396   184       84   0.506   0.030     0.280      0.221
+gpqa                  vote -                            True  balanced   ok   1396   184       84   0.500   0.028     0.170      0.172
+gpqa                  vote baseline self cons 0            -         -   ok      0   184       84   0.596   0.000     0.217      0.229
+gpqa                  vote baseline self cons last         -         -   ok      0   153       68   0.527   0.000     0.336      0.343
+gpqa                  vote baseline cot loss               -         -   ok      0   184       84   0.499   0.000       nan      0.383
+gpqa                  vote baseline cot loss/tok           -         -   ok      0   184       84   0.585   0.000       nan      0.181
+gpqa                  vote baseline entropy total          -         -   ok      0   184       84   0.476   0.000       nan      0.359
+gpqa                  vote baseline mean token ent         -         -   ok      0   184       84   0.600   0.000       nan      0.180
+gpqa                  vote baseline arith mean prob        -         -   ok      0   184       84   0.597   0.000     0.225      0.167
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: countdown
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-countdown          run -                 False      none   ok   1472   110        3   0.933   0.034     0.336      0.327
-countdown          run -                 False  balanced   ok   1472   110        3   0.943   0.035     0.531      0.517
-countdown          run -                  True      none   ok   1472   110        3   0.949   0.032     0.337      0.318
-countdown          run -                  True  balanced   ok   1472   110        3   0.953   0.032     0.537      0.516
-countdown          run self cons 0           -         -   ok      0   109        3   0.973   0.000     0.278      0.261
-countdown          run self cons last        -         -   ok      0   108        3   0.975   0.000     0.033      0.177
-countdown          run seq logprob           -         -   ok      0   110        3   1.000   0.000     0.229      1.100
-countdown          run seq logprob/tok       -         -   ok      0   110        3   0.343   0.000     0.181      1.757
-countdown          run entropy total         -         -   ok      0   110        3   1.000   0.000     0.228      1.121
-countdown          run mean token ent        -         -   ok      0   110        3   0.000   0.000     0.213      1.549
-countdown          run mean token prob       -         -   ok      0   110        3   0.000   0.000     0.183      1.866
-countdown         vote -                 False      none   ok   1471   109        6   0.977   0.017     0.328      0.299
-countdown         vote -                 False  balanced   ok   1471   109        6   0.980   0.013     0.535      0.481
-countdown         vote -                  True      none   ok   1471   109        6   0.977   0.017     0.323      0.287
-countdown         vote -                  True  balanced   ok   1471   109        6   0.979   0.015     0.532      0.471
-countdown         vote self cons 0           -         -   ok      0   109        6   0.987   0.000     0.210      0.193
-countdown         vote self cons last        -         -   ok      0   107        6   0.896   0.000     0.055      0.266
-countdown         vote seq logprob           -         -   ok      0   109        6   0.717   0.000     0.181      1.071
-countdown         vote seq logprob/tok       -         -   ok      0   109        6   0.348   0.000     0.146      1.729
-countdown         vote entropy total         -         -   ok      0   109        6   0.720   0.000     0.179      1.092
-countdown         vote mean token ent        -         -   ok      0   109        6   0.173   0.000     0.170      1.523
-countdown         vote mean token prob       -         -   ok      0   109        6   0.186   0.000     0.174      1.892
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+countdown              run -                           False      none   ok   1472   110        3   0.933   0.034     0.336      0.327
+countdown              run -                           False  balanced   ok   1472   110        3   0.943   0.035     0.531      0.517
+countdown              run -                            True      none   ok   1472   110        3   0.949   0.032     0.337      0.318
+countdown              run -                            True  balanced   ok   1472   110        3   0.953   0.032     0.537      0.516
+countdown              run baseline self cons 0            -         -   ok      0   109        3   0.973   0.000     0.278      0.317
+countdown              run baseline self cons last         -         -   ok      0   108        3   0.975   0.000     0.033      0.073
+countdown              run baseline cot loss               -         -   ok      0   110        3   1.000   0.000       nan      0.087
+countdown              run baseline cot loss/tok           -         -   ok      0   110        3   0.343   0.000       nan      0.296
+countdown              run baseline entropy total          -         -   ok      0   110        3   1.000   0.000       nan      0.084
+countdown              run baseline mean token ent         -         -   ok      0   110        3   0.022   0.000       nan      0.264
+countdown              run baseline arith mean prob        -         -   ok      0   110        3   0.000   0.000     0.158      0.275
+countdown             vote -                           False      none   ok   1471   109        6   0.977   0.017     0.328      0.299
+countdown             vote -                           False  balanced   ok   1471   109        6   0.980   0.013     0.535      0.481
+countdown             vote -                            True      none   ok   1471   109        6   0.977   0.017     0.323      0.287
+countdown             vote -                            True  balanced   ok   1471   109        6   0.979   0.015     0.532      0.471
+countdown             vote baseline self cons 0            -         -   ok      0   109        6   0.987   0.000     0.210      0.248
+countdown             vote baseline self cons last         -         -   ok      0   107        6   0.896   0.000     0.055      0.016
+countdown             vote baseline cot loss               -         -   ok      0   109        6   0.717   0.000       nan      0.082
+countdown             vote baseline cot loss/tok           -         -   ok      0   109        6   0.348   0.000       nan      0.287
+countdown             vote baseline entropy total          -         -   ok      0   109        6   0.722   0.000       nan      0.080
+countdown             vote baseline mean token ent         -         -   ok      0   109        6   0.197   0.000       nan      0.224
+countdown             vote baseline arith mean prob        -         -   ok      0   109        6   0.188   0.000     0.131      0.248
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: math500
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-math500            run -                 False      none   ok   1442   140        1   0.863   0.029     0.211      0.207
-math500            run -                 False  balanced   ok   1442   140        1   0.892   0.020     0.426      0.353
-math500            run -                  True      none   ok   1442   140        1   0.740   0.044     0.212      0.377
-math500            run -                  True  balanced   ok   1442   140        1   0.826   0.034     0.437      0.263
-math500            run self cons 0           -         -   ok      0   139        1   0.333   0.000     0.219      0.211
-math500            run self cons last        -         -   ok      0   140        1   0.486   0.000     0.003      3.986
-math500            run seq logprob           -         -   ok      0   140        1   0.446   0.000     0.257      1.219
-math500            run seq logprob/tok       -         -   ok      0   140        1   0.058   0.000     0.159      1.794
-math500            run entropy total         -         -   ok      0   140        1   0.410   0.000     0.258      1.230
-math500            run mean token ent        -         -   ok      0   140        1   0.014   0.000     0.226      1.879
-math500            run mean token prob       -         -   ok      0   140        1   0.007   0.000     0.110      6.316
-math500           vote -                 False      none   ok   1441   139        7   0.708   0.182     0.210      0.178
-math500           vote -                 False  balanced   ok   1441   139        7   0.729   0.179     0.425      0.382
-math500           vote -                  True      none   ok   1441   139        7   0.791   0.132     0.210      0.134
-math500           vote -                  True  balanced   ok   1441   139        7   0.793   0.140     0.446      0.312
-math500           vote self cons 0           -         -   ok      0   139        7   0.771   0.000     0.142      0.183
-math500           vote self cons last        -         -   ok      0   139        7   0.635   0.000     0.046      4.029
-math500           vote seq logprob           -         -   ok      0   139        7   0.871   0.000     0.235      1.174
-math500           vote seq logprob/tok       -         -   ok      0   139        7   0.591   0.000     0.098      1.751
-math500           vote entropy total         -         -   ok      0   139        7   0.870   0.000     0.231      1.185
-math500           vote mean token ent        -         -   ok      0   139        7   0.510   0.000     0.159      1.836
-math500           vote mean token prob       -         -   ok      0   139        7   0.486   0.000     0.084      6.358
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+math500                run -                           False      none   ok   1442   140        1   0.863   0.029     0.211      0.270
+math500                run -                           False  balanced   ok   1442   140        1   0.892   0.020     0.426      0.472
+math500                run -                            True      none   ok   1442   140        1   0.740   0.044     0.212      0.356
+math500                run -                            True  balanced   ok   1442   140        1   0.826   0.034     0.437      0.549
+math500                run baseline self cons 0            -         -   ok      0   139        1   0.333   0.000     0.219      0.273
+math500                run baseline self cons last         -         -   ok      0   140        1   0.486   0.000     0.003      0.014
+math500                run baseline cot loss               -         -   ok      0   140        1   0.446   0.000       nan      0.188
+math500                run baseline cot loss/tok           -         -   ok      0   140        1   0.058   0.000       nan      0.353
+math500                run baseline entropy total          -         -   ok      0   140        1   0.439   0.000       nan      0.187
+math500                run baseline mean token ent         -         -   ok      0   140        1   0.029   0.000       nan      0.324
+math500                run baseline arith mean prob        -         -   ok      0   140        1   0.014   0.000     0.097      0.341
+math500               vote -                           False      none   ok   1441   139        7   0.708   0.182     0.210      0.184
+math500               vote -                           False  balanced   ok   1441   139        7   0.729   0.179     0.425      0.385
+math500               vote -                            True      none   ok   1441   139        7   0.791   0.132     0.210      0.138
+math500               vote -                            True  balanced   ok   1441   139        7   0.793   0.140     0.446      0.324
+math500               vote baseline self cons 0            -         -   ok      0   139        7   0.771   0.000     0.142      0.196
+math500               vote baseline self cons last         -         -   ok      0   139        7   0.635   0.000     0.046      0.029
+math500               vote baseline cot loss               -         -   ok      0   139        7   0.871   0.000       nan      0.143
+math500               vote baseline cot loss/tok           -         -   ok      0   139        7   0.591   0.000       nan      0.309
+math500               vote baseline entropy total          -         -   ok      0   139        7   0.877   0.000       nan      0.142
+math500               vote baseline mean token ent         -         -   ok      0   139        7   0.532   0.000       nan      0.282
+math500               vote baseline arith mean prob        -         -   ok      0   139        7   0.484   0.000     0.067      0.311
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: gsm8k
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-gsm8k              run -                 False      none   ok   1387   195       13   0.760   0.145     0.220      0.188
-gsm8k              run -                 False  balanced   ok   1387   195       13   0.760   0.146     0.425      0.398
-gsm8k              run -                  True      none   ok   1387   195       13   0.747   0.142     0.217      0.160
-gsm8k              run -                  True  balanced   ok   1387   195       13   0.751   0.143     0.432      0.413
-gsm8k              run self cons 0           -         -   ok      0   195       13   0.576   0.000     0.044      0.463
-gsm8k              run self cons last        -         -   ok      0   195       13   0.495   0.000     0.066      9.056
-gsm8k              run seq logprob           -         -   ok      0   195       13   0.743   0.000     0.192      1.095
-gsm8k              run seq logprob/tok       -         -   ok      0   195       13   0.362   0.000     0.110      1.350
-gsm8k              run entropy total         -         -   ok      0   195       13   0.762   0.000     0.190      1.155
-gsm8k              run mean token ent        -         -   ok      0   195       13   0.281   0.000     0.183      1.536
-gsm8k              run mean token prob       -         -   ok      0   195       13   0.194   0.000     0.146      2.634
-gsm8k             vote -                 False      none   ok   1385   195        4   0.877   0.050     0.186      0.088
-gsm8k             vote -                 False  balanced   ok   1385   195        4   0.875   0.055     0.410      0.333
-gsm8k             vote -                  True      none   ok   1385   195        4   0.879   0.062     0.184      0.244
-gsm8k             vote -                  True  balanced   ok   1385   195        4   0.874   0.064     0.414      0.305
-gsm8k             vote self cons 0           -         -   ok      0   195        4   0.826   0.000     0.002      0.417
-gsm8k             vote self cons last        -         -   ok      0   195        4   0.495   0.000     0.019      9.010
-gsm8k             vote seq logprob           -         -   ok      0   195        4   0.901   0.000     0.207      1.141
-gsm8k             vote seq logprob/tok       -         -   ok      0   195        4   0.822   0.000     0.125      1.396
-gsm8k             vote entropy total         -         -   ok      0   195        4   0.903   0.000     0.207      1.201
-gsm8k             vote mean token ent        -         -   ok      0   195        4   0.709   0.000     0.206      1.582
-gsm8k             vote mean token prob       -         -   ok      0   195        4   0.508   0.000     0.128      2.588
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run -                           False      none   ok   1387   195       13   0.760   0.145     0.220      0.215
+gsm8k                  run -                           False  balanced   ok   1387   195       13   0.760   0.146     0.425      0.407
+gsm8k                  run -                            True      none   ok   1387   195       13   0.747   0.142     0.217      0.237
+gsm8k                  run -                            True  balanced   ok   1387   195       13   0.751   0.143     0.432      0.439
+gsm8k                  run baseline self cons 0            -         -   ok      0   195       13   0.576   0.000     0.044      0.034
+gsm8k                  run baseline self cons last         -         -   ok      0   195       13   0.495   0.000     0.066      0.056
+gsm8k                  run baseline cot loss               -         -   ok      0   195       13   0.743   0.000       nan      0.087
+gsm8k                  run baseline cot loss/tok           -         -   ok      0   195       13   0.362   0.000       nan      0.358
+gsm8k                  run baseline entropy total          -         -   ok      0   195       13   0.744   0.000       nan      0.099
+gsm8k                  run baseline mean token ent         -         -   ok      0   195       13   0.311   0.000       nan      0.476
+gsm8k                  run baseline arith mean prob        -         -   ok      0   195       13   0.256   0.000     0.120      0.487
+gsm8k                 vote -                           False      none   ok   1385   195        4   0.877   0.050     0.186      0.192
+gsm8k                 vote -                           False  balanced   ok   1385   195        4   0.875   0.055     0.410      0.348
+gsm8k                 vote -                            True      none   ok   1385   195        4   0.879   0.062     0.184      0.251
+gsm8k                 vote -                            True  balanced   ok   1385   195        4   0.874   0.064     0.414      0.381
+gsm8k                 vote baseline self cons 0            -         -   ok      0   195        4   0.826   0.000     0.002      0.012
+gsm8k                 vote baseline self cons last         -         -   ok      0   195        4   0.495   0.000     0.019      0.010
+gsm8k                 vote baseline cot loss               -         -   ok      0   195        4   0.901   0.000       nan      0.128
+gsm8k                 vote baseline cot loss/tok           -         -   ok      0   195        4   0.822   0.000       nan      0.371
+gsm8k                 vote baseline entropy total          -         -   ok      0   195        4   0.902   0.000       nan      0.143
+gsm8k                 vote baseline mean token ent         -         -   ok      0   195        4   0.766   0.000       nan      0.480
+gsm8k                 vote baseline arith mean prob        -         -   ok      0   195        4   0.645   0.000     0.097      0.492
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: mmlu
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-mmlu               run -                 False      none   ok   1301   281       50   0.449   0.033     0.128      0.535
-mmlu               run -                 False  balanced   ok   1301   281       50   0.453   0.039     0.325      0.184
-mmlu               run -                  True      none   ok   1301   281       50   0.441   0.033     0.124      0.687
-mmlu               run -                  True  balanced   ok   1301   281       50   0.456   0.039     0.325      0.159
-mmlu               run self cons 0           -         -   ok      0   281       50   0.637   0.000     0.125      0.623
-mmlu               run self cons last        -         -   ok      0   279       50   0.578   0.000     0.156      0.268
-mmlu               run seq logprob           -         -   ok      0   281       50   0.635   0.000     0.088      0.970
-mmlu               run seq logprob/tok       -         -   ok      0   281       50   0.641   0.000     0.127      1.439
-mmlu               run entropy total         -         -   ok      0   281       50   0.615   0.000     0.108      1.009
-mmlu               run mean token ent        -         -   ok      0   281       50   0.540   0.000     0.092      1.087
-mmlu               run mean token prob       -         -   ok      0   281       50   0.517   0.000     0.122      0.381
-mmlu              vote -                 False      none   ok   1299   281       44   0.506   0.051     0.099      0.132
-mmlu              vote -                 False  balanced   ok   1299   281       44   0.503   0.050     0.315      0.267
-mmlu              vote -                  True      none   ok   1299   281       44   0.504   0.050     0.097      0.195
-mmlu              vote -                  True  balanced   ok   1299   281       44   0.500   0.048     0.315      0.228
-mmlu              vote self cons 0           -         -   ok      0   281       44   0.704   0.000     0.059      0.601
-mmlu              vote self cons last        -         -   ok      0   279       44   0.532   0.000     0.175      0.287
-mmlu              vote seq logprob           -         -   ok      0   281       44   0.688   0.000     0.103      0.992
-mmlu              vote seq logprob/tok       -         -   ok      0   281       44   0.699   0.000     0.124      1.461
-mmlu              vote entropy total         -         -   ok      0   281       44   0.682   0.000     0.116      1.031
-mmlu              vote mean token ent        -         -   ok      0   281       44   0.593   0.000     0.088      1.109
-mmlu              vote mean token prob       -         -   ok      0   281       44   0.570   0.000     0.118      0.359
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run -                           False      none   ok   1301   281       50   0.449   0.033     0.128      0.266
+mmlu                   run -                           False  balanced   ok   1301   281       50   0.453   0.039     0.325      0.443
+mmlu                   run -                            True      none   ok   1301   281       50   0.441   0.033     0.124      0.286
+mmlu                   run -                            True  balanced   ok   1301   281       50   0.456   0.039     0.325      0.439
+mmlu                   run baseline self cons 0            -         -   ok      0   281       50   0.637   0.000     0.125      0.138
+mmlu                   run baseline self cons last         -         -   ok      0   279       50   0.578   0.000     0.156      0.184
+mmlu                   run baseline cot loss               -         -   ok      0   281       50   0.635   0.000       nan      0.099
+mmlu                   run baseline cot loss/tok           -         -   ok      0   281       50   0.641   0.000       nan      0.345
+mmlu                   run baseline entropy total          -         -   ok      0   281       50   0.602   0.000       nan      0.109
+mmlu                   run baseline mean token ent         -         -   ok      0   281       50   0.580   0.000       nan      0.163
+mmlu                   run baseline arith mean prob        -         -   ok      0   281       50   0.527   0.000     0.068      0.133
+mmlu                  vote -                           False      none   ok   1299   281       44   0.506   0.051     0.099      0.109
+mmlu                  vote -                           False  balanced   ok   1299   281       44   0.503   0.050     0.315      0.295
+mmlu                  vote -                            True      none   ok   1299   281       44   0.504   0.050     0.097      0.118
+mmlu                  vote -                            True  balanced   ok   1299   281       44   0.500   0.048     0.315      0.291
+mmlu                  vote baseline self cons 0            -         -   ok      0   281       44   0.704   0.000     0.059      0.108
+mmlu                  vote baseline self cons last         -         -   ok      0   279       44   0.532   0.000     0.175      0.204
+mmlu                  vote baseline cot loss               -         -   ok      0   281       44   0.688   0.000       nan      0.078
+mmlu                  vote baseline cot loss/tok           -         -   ok      0   281       44   0.699   0.000       nan      0.367
+mmlu                  vote baseline entropy total          -         -   ok      0   281       44   0.671   0.000       nan      0.086
+mmlu                  vote baseline mean token ent         -         -   ok      0   281       44   0.642   0.000       nan      0.166
+mmlu                  vote baseline arith mean prob        -         -   ok      0   281       44   0.584   0.000     0.068      0.153
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: truthfulqa
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-truthfulqa         run -                 False      none   ok   1283   299       85   0.530   0.023     0.107      0.414
-truthfulqa         run -                 False  balanced   ok   1283   299       85   0.537   0.026     0.218      0.182
-truthfulqa         run -                  True      none   ok   1283   299       85   0.526   0.023     0.108      0.567
-truthfulqa         run -                  True  balanced   ok   1283   299       85   0.529   0.027     0.217      0.186
-truthfulqa         run self cons 0           -         -   ok      0   299       85   0.715   0.000     0.147      0.484
-truthfulqa         run self cons last        -         -   ok      0   252       79   0.552   0.000     0.235      0.301
-truthfulqa         run seq logprob           -         -   ok      0   299       85   0.648   0.000     0.119      0.826
-truthfulqa         run seq logprob/tok       -         -   ok      0   299       85   0.661   0.000     0.062      1.335
-truthfulqa         run entropy total         -         -   ok      0   299       85   0.637   0.000     0.115      0.862
-truthfulqa         run mean token ent        -         -   ok      0   299       85   0.467   0.000     0.139      1.002
-truthfulqa         run mean token prob       -         -   ok      0   299       85   0.462   0.000     0.108      0.349
-truthfulqa        vote -                 False      none   ok   1281   299       68   0.544   0.043     0.088      1.958
-truthfulqa        vote -                 False  balanced   ok   1281   299       68   0.548   0.043     0.214      0.086
-truthfulqa        vote -                  True      none   ok   1281   299       68   0.546   0.042     0.083      2.263
-truthfulqa        vote -                  True  balanced   ok   1281   299       68   0.547   0.044     0.216      0.116
-truthfulqa        vote self cons 0           -         -   ok      0   299       68   0.820   0.000     0.140      0.447
-truthfulqa        vote self cons last        -         -   ok      0   252       62   0.559   0.000     0.210      0.273
-truthfulqa        vote seq logprob           -         -   ok      0   299       68   0.682   0.000     0.101      0.883
-truthfulqa        vote seq logprob/tok       -         -   ok      0   299       68   0.714   0.000     0.100      1.392
-truthfulqa        vote entropy total         -         -   ok      0   299       68   0.667   0.000     0.102      0.917
-truthfulqa        vote mean token ent        -         -   ok      0   299       68   0.527   0.000     0.147      1.058
-truthfulqa        vote mean token prob       -         -   ok      0   299       68   0.521   0.000     0.176      0.303
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run -                           False      none   ok   1283   299       85   0.530   0.023     0.107      0.133
+truthfulqa             run -                           False  balanced   ok   1283   299       85   0.537   0.026     0.218      0.199
+truthfulqa             run -                            True      none   ok   1283   299       85   0.526   0.023     0.108      0.132
+truthfulqa             run -                            True  balanced   ok   1283   299       85   0.529   0.027     0.217      0.202
+truthfulqa             run baseline self cons 0            -         -   ok      0   299       85   0.715   0.000     0.147      0.116
+truthfulqa             run baseline self cons last         -         -   ok      0   252       79   0.552   0.000     0.235      0.235
+truthfulqa             run baseline cot loss               -         -   ok      0   299       85   0.648   0.000       nan      0.174
+truthfulqa             run baseline cot loss/tok           -         -   ok      0   299       85   0.661   0.000       nan      0.292
+truthfulqa             run baseline entropy total          -         -   ok      0   299       85   0.650   0.000       nan      0.161
+truthfulqa             run baseline mean token ent         -         -   ok      0   299       85   0.508   0.000       nan      0.128
+truthfulqa             run baseline arith mean prob        -         -   ok      0   299       85   0.483   0.000     0.130      0.153
+truthfulqa            vote -                           False      none   ok   1281   299       68   0.544   0.043     0.088      0.334
+truthfulqa            vote -                           False  balanced   ok   1281   299       68   0.548   0.043     0.214      0.334
+truthfulqa            vote -                            True      none   ok   1281   299       68   0.546   0.042     0.083      0.387
+truthfulqa            vote -                            True  balanced   ok   1281   299       68   0.547   0.044     0.216      0.379
+truthfulqa            vote baseline self cons 0            -         -   ok      0   299       68   0.820   0.000     0.140      0.104
+truthfulqa            vote baseline self cons last         -         -   ok      0   252       62   0.559   0.000     0.210      0.218
+truthfulqa            vote baseline cot loss               -         -   ok      0   299       68   0.682   0.000       nan      0.128
+truthfulqa            vote baseline cot loss/tok           -         -   ok      0   299       68   0.714   0.000       nan      0.350
+truthfulqa            vote baseline entropy total          -         -   ok      0   299       68   0.681   0.000       nan      0.110
+truthfulqa            vote baseline mean token ent         -         -   ok      0   299       68   0.585   0.000       nan      0.147
+truthfulqa            vote baseline arith mean prob        -         -   ok      0   299       68   0.555   0.000     0.137      0.192
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: mmlu_pro
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-mmlu_pro           run -                 False      none   ok   1308   274      105   0.513   0.040     0.217      0.218
-mmlu_pro           run -                 False  balanced   ok   1308   274      105   0.522   0.027     0.188      0.188
-mmlu_pro           run -                  True      none   ok   1308   274      105   0.527   0.038     0.195      0.200
-mmlu_pro           run -                  True  balanced   ok   1308   274      105   0.521   0.029     0.176      0.169
-mmlu_pro           run self cons 0           -         -   ok      0   274      105   0.658   0.000     0.143      0.207
-mmlu_pro           run self cons last        -         -   ok      0   272      104   0.593   0.000     0.211      0.297
-mmlu_pro           run seq logprob           -         -   ok      0   274      105   0.628   0.000     0.215      0.748
-mmlu_pro           run seq logprob/tok       -         -   ok      0   274      105   0.636   0.000     0.132      1.206
-mmlu_pro           run entropy total         -         -   ok      0   274      105   0.629   0.000     0.209      0.771
-mmlu_pro           run mean token ent        -         -   ok      0   274      105   0.597   0.000     0.189      0.786
-mmlu_pro           run mean token prob       -         -   ok      0   274      105   0.583   0.000     0.146      0.571
-mmlu_pro          vote -                 False      none   ok   1306   274       88   0.618   0.038     0.133      0.270
-mmlu_pro          vote -                 False  balanced   ok   1306   274       88   0.600   0.037     0.204      0.190
-mmlu_pro          vote -                  True      none   ok   1306   274       88   0.625   0.038     0.136      0.309
-mmlu_pro          vote -                  True  balanced   ok   1306   274       88   0.604   0.041     0.192      0.163
-mmlu_pro          vote self cons 0           -         -   ok      0   274       88   0.714   0.000     0.096      0.146
-mmlu_pro          vote self cons last        -         -   ok      0   272       87   0.539   0.000     0.194      0.256
-mmlu_pro          vote seq logprob           -         -   ok      0   274       88   0.596   0.000     0.145      0.811
-mmlu_pro          vote seq logprob/tok       -         -   ok      0   274       88   0.654   0.000     0.095      1.268
-mmlu_pro          vote entropy total         -         -   ok      0   274       88   0.607   0.000     0.128      0.834
-mmlu_pro          vote mean token ent        -         -   ok      0   274       88   0.636   0.000     0.132      0.848
-mmlu_pro          vote mean token prob       -         -   ok      0   274       88   0.624   0.000     0.121      0.508
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run -                           False      none   ok   1308   274      105   0.513   0.040     0.217      0.218
+mmlu_pro               run -                           False  balanced   ok   1308   274      105   0.522   0.027     0.188      0.188
+mmlu_pro               run -                            True      none   ok   1308   274      105   0.527   0.038     0.195      0.198
+mmlu_pro               run -                            True  balanced   ok   1308   274      105   0.521   0.029     0.176      0.170
+mmlu_pro               run baseline self cons 0            -         -   ok      0   274      105   0.658   0.000     0.143      0.153
+mmlu_pro               run baseline self cons last         -         -   ok      0   272      104   0.593   0.000     0.211      0.186
+mmlu_pro               run baseline cot loss               -         -   ok      0   274      105   0.628   0.000       nan      0.303
+mmlu_pro               run baseline cot loss/tok           -         -   ok      0   274      105   0.636   0.000       nan      0.164
+mmlu_pro               run baseline entropy total          -         -   ok      0   274      105   0.626   0.000       nan      0.290
+mmlu_pro               run baseline mean token ent         -         -   ok      0   274      105   0.610   0.000       nan      0.097
+mmlu_pro               run baseline arith mean prob        -         -   ok      0   274      105   0.574   0.000     0.179      0.134
+mmlu_pro              vote -                           False      none   ok   1306   274       88   0.618   0.038     0.133      0.115
+mmlu_pro              vote -                           False  balanced   ok   1306   274       88   0.600   0.037     0.204      0.208
+mmlu_pro              vote -                            True      none   ok   1306   274       88   0.625   0.038     0.136      0.138
+mmlu_pro              vote -                            True  balanced   ok   1306   274       88   0.604   0.041     0.192      0.167
+mmlu_pro              vote baseline self cons 0            -         -   ok      0   274       88   0.714   0.000     0.096      0.103
+mmlu_pro              vote baseline self cons last         -         -   ok      0   272       87   0.539   0.000     0.194      0.200
+mmlu_pro              vote baseline cot loss               -         -   ok      0   274       88   0.596   0.000       nan      0.240
+mmlu_pro              vote baseline cot loss/tok           -         -   ok      0   274       88   0.654   0.000       nan      0.206
+mmlu_pro              vote baseline entropy total          -         -   ok      0   274       88   0.609   0.000       nan      0.228
+mmlu_pro              vote baseline mean token ent         -         -   ok      0   274       88   0.638   0.000       nan      0.094
+mmlu_pro              vote baseline arith mean prob        -         -   ok      0   274       88   0.612   0.000     0.118      0.112
+--------------------------------------------------------------------------------------------------------------------------------------
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: aime
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-aime               run -                 False      none   ok   1483    99       17   0.555   0.063     0.200      0.210
-aime               run -                 False  balanced   ok   1483    99       17   0.551   0.065     0.270      0.270
-aime               run -                  True      none   ok   1483    99       17   0.523   0.065     0.178      0.194
-aime               run -                  True  balanced   ok   1483    99       17   0.524   0.064     0.272      0.271
-aime               run self cons 0           -         -   ok      0    99       17   0.613   0.000     0.227      0.225
-aime               run self cons last        -         -   ok      0    99       17   0.766   0.000     0.242      0.834
-aime               run seq logprob           -         -   ok      0    99       17   0.298   0.000     0.162      1.152
-aime               run seq logprob/tok       -         -   ok      0    99       17   0.709   0.000     0.128      1.449
-aime               run entropy total         -         -   ok      0    99       17   0.283   0.000     0.190      1.164
-aime               run mean token ent        -         -   ok      0    99       17   0.666   0.000     0.134      1.539
-aime               run mean token prob       -         -   ok      0    99       17   0.615   0.000     0.127      5.713
-aime              vote -                 False      none   ok   1481    99       38   0.636   0.039     0.204      0.204
-aime              vote -                 False  balanced   ok   1481    99       38   0.638   0.042     0.330      0.329
-aime              vote -                  True      none   ok   1481    99       38   0.650   0.034     0.187      0.188
-aime              vote -                  True  balanced   ok   1481    99       38   0.676   0.037     0.312      0.307
-aime              vote self cons 0           -         -   ok      0    99       38   0.813   0.000     0.091      0.124
-aime              vote self cons last        -         -   ok      0    99       38   0.564   0.000     0.343      0.935
-aime              vote seq logprob           -         -   ok      0    99       38   0.616   0.000     0.160      0.941
-aime              vote seq logprob/tok       -         -   ok      0    99       38   0.659   0.000     0.266      1.232
-aime              vote entropy total         -         -   ok      0    99       38   0.601   0.000     0.141      0.953
-aime              vote mean token ent        -         -   ok      0    99       38   0.603   0.000     0.215      1.325
-aime              vote mean token prob       -         -   ok      0    99       38   0.555   0.000     0.267      5.925
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+aime                   run -                           False      none   ok   1483    99       17   0.555   0.063     0.200      0.203
+aime                   run -                           False  balanced   ok   1483    99       17   0.551   0.065     0.270      0.271
+aime                   run -                            True      none   ok   1483    99       17   0.523   0.065     0.178      0.186
+aime                   run -                            True  balanced   ok   1483    99       17   0.524   0.064     0.272      0.277
+aime                   run baseline self cons 0            -         -   ok      0    99       17   0.613   0.000     0.227      0.308
+aime                   run baseline self cons last         -         -   ok      0    99       17   0.766   0.000     0.242      0.167
+aime                   run baseline cot loss               -         -   ok      0    99       17   0.298   0.000       nan      0.303
+aime                   run baseline cot loss/tok           -         -   ok      0    99       17   0.709   0.000       nan      0.202
+aime                   run baseline entropy total          -         -   ok      0    99       17   0.304   0.000       nan      0.300
+aime                   run baseline mean token ent         -         -   ok      0    99       17   0.732   0.000       nan      0.149
+aime                   run baseline arith mean prob        -         -   ok      0    99       17   0.699   0.000     0.111      0.170
+aime                  vote -                           False      none   ok   1481    99       38   0.636   0.039     0.204      0.207
+aime                  vote -                           False  balanced   ok   1481    99       38   0.638   0.042     0.330      0.332
+aime                  vote -                            True      none   ok   1481    99       38   0.650   0.034     0.187      0.188
+aime                  vote -                            True  balanced   ok   1481    99       38   0.676   0.037     0.312      0.315
+aime                  vote baseline self cons 0            -         -   ok      0    99       38   0.813   0.000     0.091      0.172
+aime                  vote baseline self cons last         -         -   ok      0    99       38   0.564   0.000     0.343      0.268
+aime                  vote baseline cot loss               -         -   ok      0    99       38   0.616   0.000       nan      0.159
+aime                  vote baseline cot loss/tok           -         -   ok      0    99       38   0.659   0.000       nan      0.147
+aime                  vote baseline entropy total          -         -   ok      0    99       38   0.620   0.000       nan      0.159
+aime                  vote baseline mean token ent         -         -   ok      0    99       38   0.649   0.000       nan      0.165
+aime                  vote baseline arith mean prob        -         -   ok      0    99       38   0.602   0.000     0.280      0.133
+--------------------------------------------------------------------------------------------------------------------------------------
 
 
 averaged over every held out dataset:
 
-target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
-   run               -       False     balanced    0.646 0.319       0.282
-   run               -       False         none    0.639 0.217       0.386
-   run               -        True     balanced    0.634 0.319       0.269
-   run               -        True         none    0.620 0.211       0.486
-   run   entropy total           -            -    0.613 0.200       0.988
-   run  mean token ent           -            -    0.392 0.186       1.269
-   run mean token prob           -            -    0.367 0.153       2.290
-   run     self cons 0           -            -    0.644 0.182       0.383
-   run  self cons last           -            -    0.629 0.159       1.916
-   run     seq logprob           -            -    0.621 0.195       0.961
-   run seq logprob/tok           -            -    0.501 0.147       1.417
-  vote               -       False     balanced    0.671 0.328       0.282
-  vote               -       False         none    0.671 0.191       0.470
-  vote               -        True     balanced    0.684 0.325       0.260
-  vote               -        True         none    0.685 0.187       0.540
-  vote   entropy total           -            -    0.694 0.175       0.981
-  vote  mean token ent           -            -    0.544 0.172       1.262
-  vote mean token prob           -            -    0.506 0.163       2.299
-  vote     self cons 0           -            -    0.779 0.119       0.330
-  vote  self cons last           -            -    0.593 0.172       1.932
-  vote     seq logprob           -            -    0.696 0.178       0.954
-  vote seq logprob/tok           -            -    0.634 0.152       1.409
+target                   method standardize class_weight  roc_auc   ece  ece_minmax
+   run                        -       False     balanced    0.646 0.319       0.333
+   run                        -       False         none    0.639 0.217       0.229
+   run                        -        True     balanced    0.634 0.319       0.344
+   run                        -        True         none    0.620 0.211       0.236
+   run baseline arith mean prob           -            -    0.390 0.142       0.237
+   run        baseline cot loss           -            -    0.621   NaN       0.208
+   run    baseline cot loss/tok           -            -    0.501   NaN       0.273
+   run   baseline entropy total           -            -    0.615   NaN       0.203
+   run  baseline mean token ent           -            -    0.422   NaN       0.230
+   run     baseline self cons 0           -            -    0.644 0.182       0.194
+   run  baseline self cons last           -            -    0.629 0.159       0.152
+  vote                        -       False     balanced    0.671 0.328       0.322
+  vote                        -       False         none    0.671 0.191       0.210
+  vote                        -        True     balanced    0.684 0.325       0.312
+  vote                        -        True         none    0.685 0.187       0.216
+  vote baseline arith mean prob           -            -    0.533 0.140       0.226
+  vote        baseline cot loss           -            -    0.696   NaN       0.168
+  vote    baseline cot loss/tok           -            -    0.634   NaN       0.277
+  vote   baseline entropy total           -            -    0.695   NaN       0.163
+  vote  baseline mean token ent           -            -    0.576   NaN       0.217
+  vote     baseline self cons 0           -            -    0.779 0.119       0.147
+  vote  baseline self cons last           -            -    0.593 0.172       0.161
 
 
 averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, mmlu, truthfulqa, mmlu_pro):
 
-target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
-   run               -       False     balanced    0.506 0.224       0.180
-   run               -       False         none    0.499 0.193       0.538
-   run               -        True     balanced    0.504 0.219       0.172
-   run               -        True         none    0.500 0.186       0.711
-   run   entropy total           -            -    0.612 0.183       0.809
-   run  mean token ent           -            -    0.543 0.182       0.912
-   run mean token prob           -            -    0.530 0.164       0.448
-   run     self cons 0           -            -    0.663 0.172       0.476
-   run  self cons last           -            -    0.579 0.232       0.319
-   run     seq logprob           -            -    0.620 0.180       0.781
-   run seq logprob/tok           -            -    0.634 0.149       1.246
-  vote               -       False     balanced    0.537 0.231       0.184
-  vote               -       False         none    0.543 0.151       0.748
-  vote               -        True     balanced    0.538 0.223       0.170
-  vote               -        True         none    0.545 0.149       0.866
-  vote   entropy total           -            -    0.615 0.160       0.853
-  vote  mean token ent           -            -    0.590 0.157       0.957
-  vote mean token prob           -            -    0.577 0.163       0.406
-  vote     self cons 0           -            -    0.709 0.128       0.432
-  vote  self cons last           -            -    0.539 0.229       0.304
-  vote     seq logprob           -            -    0.616 0.160       0.826
-  vote seq logprob/tok           -            -    0.663 0.145       1.291
+target                   method standardize class_weight  roc_auc   ece  ece_minmax
+   run                        -       False     balanced    0.506 0.224       0.250
+   run                        -       False         none    0.499 0.193       0.203
+   run                        -        True     balanced    0.504 0.219       0.243
+   run                        -        True         none    0.500 0.186       0.198
+   run baseline arith mean prob           -            -    0.537 0.162       0.156
+   run        baseline cot loss           -            -    0.620   NaN       0.250
+   run    baseline cot loss/tok           -            -    0.634   NaN       0.244
+   run   baseline entropy total           -            -    0.609   NaN       0.239
+   run  baseline mean token ent           -            -    0.570   NaN       0.156
+   run     baseline self cons 0           -            -    0.663 0.172       0.155
+   run  baseline self cons last           -            -    0.579 0.232       0.226
+  vote                        -       False     balanced    0.537 0.231       0.257
+  vote                        -       False         none    0.543 0.151       0.199
+  vote                        -        True     balanced    0.538 0.223       0.252
+  vote                        -        True         none    0.545 0.149       0.216
+  vote baseline arith mean prob           -            -    0.587 0.137       0.156
+  vote        baseline cot loss           -            -    0.616   NaN       0.207
+  vote    baseline cot loss/tok           -            -    0.663   NaN       0.276
+  vote   baseline entropy total           -            -    0.610   NaN       0.196
+  vote  baseline mean token ent           -            -    0.616   NaN       0.146
+  vote     baseline self cons 0           -            -    0.709 0.128       0.136
+  vote  baseline self cons last           -            -    0.539 0.229       0.241
 
 
 held out as a domain: multiple choice knowledge
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: mmlu,mmlu_pro
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-mmlu,mmlu_pro      run -                 False      none   ok   1027   555      155   0.531   0.019     0.097      0.110
-mmlu,mmlu_pro      run -                 False  balanced   ok   1027   555      155   0.554   0.020     0.250      0.247
-mmlu,mmlu_pro      run -                  True      none   ok   1027   555      155   0.542   0.018     0.101      0.173
-mmlu,mmlu_pro      run -                  True  balanced   ok   1027   555      155   0.552   0.020     0.243      0.231
-mmlu,mmlu_pro      run self cons 0           -         -   ok      0   555      155   0.695   0.000     0.113      0.165
-mmlu,mmlu_pro      run self cons last        -         -   ok      0   551      154   0.602   0.000     0.163      0.233
-mmlu,mmlu_pro      run seq logprob           -         -   ok      0   555      155   0.656   0.000     0.136      0.823
-mmlu,mmlu_pro      run seq logprob/tok       -         -   ok      0   555      155   0.633   0.000     0.063      1.310
-mmlu,mmlu_pro      run entropy total         -         -   ok      0   555      155   0.647   0.000     0.127      0.847
-mmlu,mmlu_pro      run mean token ent        -         -   ok      0   555      155   0.557   0.000     0.088      0.899
-mmlu,mmlu_pro      run mean token prob       -         -   ok      0   555      155   0.540   0.000     0.072      0.446
-mmlu,mmlu_pro     vote -                 False      none   ok   1025   555      132   0.612   0.025     0.060      0.069
-mmlu,mmlu_pro     vote -                 False  balanced   ok   1025   555      132   0.602   0.023     0.282      0.281
-mmlu,mmlu_pro     vote -                  True      none   ok   1025   555      132   0.615   0.026     0.074      0.139
-mmlu,mmlu_pro     vote -                  True  balanced   ok   1025   555      132   0.604   0.024     0.271      0.266
-mmlu,mmlu_pro     vote self cons 0           -         -   ok      0   555      132   0.746   0.000     0.067      0.130
-mmlu,mmlu_pro     vote self cons last        -         -   ok      0   551      131   0.552   0.000     0.154      0.214
-mmlu,mmlu_pro     vote seq logprob           -         -   ok      0   555      132   0.654   0.000     0.088      0.865
-mmlu,mmlu_pro     vote seq logprob/tok       -         -   ok      0   555      132   0.666   0.000     0.042      1.352
-mmlu,mmlu_pro     vote entropy total         -         -   ok      0   555      132   0.652   0.000     0.078      0.889
-mmlu,mmlu_pro     vote mean token ent        -         -   ok      0   555      132   0.602   0.000     0.056      0.941
-mmlu,mmlu_pro     vote mean token prob       -         -   ok      0   555      132   0.586   0.000     0.059      0.404
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run -                           False      none   ok   1027   555      155   0.531   0.019     0.097      0.098
+mmlu,mmlu_pro          run -                           False  balanced   ok   1027   555      155   0.554   0.020     0.250      0.250
+mmlu,mmlu_pro          run -                            True      none   ok   1027   555      155   0.542   0.018     0.101      0.111
+mmlu,mmlu_pro          run -                            True  balanced   ok   1027   555      155   0.552   0.020     0.243      0.237
+mmlu,mmlu_pro          run baseline self cons 0            -         -   ok      0   555      155   0.695   0.000     0.113      0.127
+mmlu,mmlu_pro          run baseline self cons last         -         -   ok      0   551      154   0.602   0.000     0.163      0.168
+mmlu,mmlu_pro          run baseline cot loss               -         -   ok      0   555      155   0.656   0.000       nan      0.207
+mmlu,mmlu_pro          run baseline cot loss/tok           -         -   ok      0   555      155   0.633   0.000       nan      0.243
+mmlu,mmlu_pro          run baseline entropy total          -         -   ok      0   555      155   0.652   0.000       nan      0.187
+mmlu,mmlu_pro          run baseline mean token ent         -         -   ok      0   555      155   0.589   0.000       nan      0.090
+mmlu,mmlu_pro          run baseline arith mean prob        -         -   ok      0   555      155   0.550   0.000     0.083      0.081
+mmlu,mmlu_pro         vote -                           False      none   ok   1025   555      132   0.612   0.025     0.060      0.061
+mmlu,mmlu_pro         vote -                           False  balanced   ok   1025   555      132   0.602   0.023     0.282      0.283
+mmlu,mmlu_pro         vote -                            True      none   ok   1025   555      132   0.615   0.026     0.074      0.075
+mmlu,mmlu_pro         vote -                            True  balanced   ok   1025   555      132   0.604   0.024     0.271      0.271
+mmlu,mmlu_pro         vote baseline self cons 0            -         -   ok      0   555      132   0.746   0.000     0.067      0.065
+mmlu,mmlu_pro         vote baseline self cons last         -         -   ok      0   551      131   0.552   0.000     0.154      0.159
+mmlu,mmlu_pro         vote baseline cot loss               -         -   ok      0   555      132   0.654   0.000       nan      0.158
+mmlu,mmlu_pro         vote baseline cot loss/tok           -         -   ok      0   555      132   0.666   0.000       nan      0.284
+mmlu,mmlu_pro         vote baseline entropy total          -         -   ok      0   555      132   0.664   0.000       nan      0.142
+mmlu,mmlu_pro         vote baseline mean token ent         -         -   ok      0   555      132   0.631   0.000       nan      0.120
+mmlu,mmlu_pro         vote baseline arith mean prob        -         -   ok      0   555      132   0.595   0.000     0.066      0.110
+--------------------------------------------------------------------------------------------------------------------------------------
 
 
 held out as a domain: mathematics
 
-==========================================================================================================================
+======================================================================================================================================
 == ablation, features: rollout_length_std, held out: gsm8k,math500,aime
-==========================================================================================================================
-held out        target loss             scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
---------------------------------------------------------------------------------------------------------------------------
-gsm8k,math500,aime   run -                 False      none   ok   1148   434       31   0.680   0.052     0.275      0.275
-gsm8k,math500,aime   run -                 False  balanced   ok   1148   434       31   0.680   0.044     0.424      0.424
-gsm8k,math500,aime   run -                  True      none   ok   1148   434       31   0.623   0.041     0.296      0.296
-gsm8k,math500,aime   run -                  True  balanced   ok   1148   434       31   0.634   0.037     0.457      0.457
-gsm8k,math500,aime   run self cons 0           -         -   ok      0   433       31   0.685   0.000     0.215      0.240
-gsm8k,math500,aime   run self cons last        -         -   ok      0   434       31   0.648   0.000     0.061      0.721
-gsm8k,math500,aime   run seq logprob           -         -   ok      0   434       31   0.575   0.000     0.249      1.088
-gsm8k,math500,aime   run seq logprob/tok       -         -   ok      0   434       31   0.551   0.000     0.125      1.354
-gsm8k,math500,aime   run entropy total         -         -   ok      0   434       31   0.569   0.000     0.252      1.104
-gsm8k,math500,aime   run mean token ent        -         -   ok      0   434       31   0.444   0.000     0.221      1.486
-gsm8k,math500,aime   run mean token prob       -         -   ok      0   434       31   0.362   0.000     0.102      2.713
-gsm8k,math500,aime  vote -                 False      none   ok   1147   433       49   0.807   0.040     0.238      0.237
-gsm8k,math500,aime  vote -                 False  balanced   ok   1147   433       49   0.809   0.039     0.424      0.420
-gsm8k,math500,aime  vote -                  True      none   ok   1147   433       49   0.834   0.023     0.239      0.223
-gsm8k,math500,aime  vote -                  True  balanced   ok   1147   433       49   0.834   0.024     0.450      0.424
-gsm8k,math500,aime  vote self cons 0           -         -   ok      0   433       49   0.907   0.000     0.080      0.139
-gsm8k,math500,aime  vote self cons last        -         -   ok      0   433       49   0.599   0.000     0.103      0.763
-gsm8k,math500,aime  vote seq logprob           -         -   ok      0   433       49   0.835   0.000     0.175      1.047
-gsm8k,math500,aime  vote seq logprob/tok       -         -   ok      0   433       49   0.718   0.000     0.062      1.313
-gsm8k,math500,aime  vote entropy total         -         -   ok      0   433       49   0.823   0.000     0.181      1.063
-gsm8k,math500,aime  vote mean token ent        -         -   ok      0   433       49   0.500   0.000     0.127      1.443
-gsm8k,math500,aime  vote mean token prob       -         -   ok      0   433       49   0.415   0.000     0.077      2.755
---------------------------------------------------------------------------------------------------------------------------
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run -                           False      none   ok   1148   434       31   0.680   0.052     0.275      0.275
+gsm8k,math500,aime     run -                           False  balanced   ok   1148   434       31   0.680   0.044     0.424      0.424
+gsm8k,math500,aime     run -                            True      none   ok   1148   434       31   0.623   0.041     0.296      0.296
+gsm8k,math500,aime     run -                            True  balanced   ok   1148   434       31   0.634   0.037     0.457      0.457
+gsm8k,math500,aime     run baseline self cons 0            -         -   ok      0   433       31   0.685   0.000     0.215      0.292
+gsm8k,math500,aime     run baseline self cons last         -         -   ok      0   434       31   0.648   0.000     0.061      0.055
+gsm8k,math500,aime     run baseline cot loss               -         -   ok      0   434       31   0.575   0.000       nan      0.112
+gsm8k,math500,aime     run baseline cot loss/tok           -         -   ok      0   434       31   0.551   0.000       nan      0.337
+gsm8k,math500,aime     run baseline entropy total          -         -   ok      0   434       31   0.579   0.000       nan      0.106
+gsm8k,math500,aime     run baseline mean token ent         -         -   ok      0   434       31   0.499   0.000       nan      0.375
+gsm8k,math500,aime     run baseline arith mean prob        -         -   ok      0   434       31   0.441   0.000     0.078      0.416
+gsm8k,math500,aime    vote -                           False      none   ok   1147   433       49   0.807   0.040     0.238      0.237
+gsm8k,math500,aime    vote -                           False  balanced   ok   1147   433       49   0.809   0.039     0.424      0.420
+gsm8k,math500,aime    vote -                            True      none   ok   1147   433       49   0.834   0.023     0.239      0.223
+gsm8k,math500,aime    vote -                            True  balanced   ok   1147   433       49   0.834   0.024     0.450      0.424
+gsm8k,math500,aime    vote baseline self cons 0            -         -   ok      0   433       49   0.907   0.000     0.080      0.154
+gsm8k,math500,aime    vote baseline self cons last         -         -   ok      0   433       49   0.599   0.000     0.103      0.096
+gsm8k,math500,aime    vote baseline cot loss               -         -   ok      0   433       49   0.835   0.000       nan      0.047
+gsm8k,math500,aime    vote baseline cot loss/tok           -         -   ok      0   433       49   0.718   0.000       nan      0.290
+gsm8k,math500,aime    vote baseline entropy total          -         -   ok      0   433       49   0.835   0.000       nan      0.047
+gsm8k,math500,aime    vote baseline mean token ent         -         -   ok      0   433       49   0.571   0.000       nan      0.322
+gsm8k,math500,aime    vote baseline arith mean prob        -         -   ok      0   433       49   0.482   0.000     0.038      0.362
+--------------------------------------------------------------------------------------------------------------------------------------
 
 
-averaged over every benchmark held out exactly once (multiple choice knowledge, mathematics, gpqa, countdown, truthfulqa):
+MAIN AVERAGE, over these four held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the two domains held out together,
+and only groups carrying at least 30 of the rarer class
 
-target       loss_mode standardize class_weight  roc_auc   ece  ece_minmax
-   run               -       False     balanced    0.645 0.317       0.307
-   run               -       False         none    0.636 0.226       0.422
-   run               -        True     balanced    0.636 0.322       0.313
-   run               -        True         none    0.629 0.232       0.548
-   run   entropy total           -            -    0.684 0.205       0.905
-   run  mean token ent           -            -    0.407 0.194       1.142
-   run mean token prob           -            -    0.384 0.149       1.173
-   run     self cons 0           -            -    0.742 0.205       0.348
-   run  self cons last           -            -    0.674 0.163       0.368
-   run     seq logprob           -            -    0.689 0.206       0.883
-   run seq logprob/tok           -            -    0.557 0.142       1.352
-  vote               -       False     balanced    0.688 0.329       0.292
-  vote               -       False         none    0.689 0.199       0.639
-  vote               -        True     balanced    0.693 0.328       0.290
-  vote               -        True         none    0.696 0.200       0.722
-  vote   entropy total           -            -    0.673 0.167       0.918
-  vote  mean token ent           -            -    0.481 0.152       1.156
-  vote mean token prob           -            -    0.460 0.144       1.162
-  vote     self cons 0           -            -    0.811 0.143       0.288
-  vote  self cons last           -            -    0.626 0.172       0.383
-  vote     seq logprob           -            -    0.677 0.167       0.896
-  vote seq logprob/tok           -            -    0.606 0.122       1.365
+target                   method standardize class_weight  roc_auc   ece  ece_minmax
+   run                        -       False     balanced    0.571 0.264       0.260
+   run                        -       False         none    0.562 0.199       0.176
+   run                        -        True     balanced    0.556 0.269       0.265
+   run                        -        True         none    0.549 0.205       0.179
+   run baseline arith mean prob           -            -    0.510 0.141       0.214
+   run        baseline cot loss           -            -    0.612   NaN       0.229
+   run    baseline cot loss/tok           -            -    0.611   NaN       0.262
+   run   baseline entropy total           -            -    0.610   NaN       0.213
+   run  baseline mean token ent           -            -    0.544   NaN       0.207
+   run     baseline self cons 0           -            -    0.684 0.187       0.188
+   run  baseline self cons last           -            -    0.599 0.196       0.189
+  vote                        -       False     balanced    0.614 0.278       0.307
+  vote                        -       False         none    0.617 0.167       0.218
+  vote                        -        True     balanced    0.621 0.277       0.311
+  vote                        -        True         none    0.625 0.169       0.226
+  vote baseline arith mean prob           -            -    0.557 0.117       0.208
+  vote        baseline cot loss           -            -    0.667   NaN       0.179
+  vote    baseline cot loss/tok           -            -    0.671   NaN       0.276
+  vote   baseline entropy total           -            -    0.664   NaN       0.164
+  vote  baseline mean token ent           -            -    0.597   NaN       0.192
+  vote     baseline self cons 0           -            -    0.767 0.126       0.138
+  vote  baseline self cons last           -            -    0.559 0.201       0.204

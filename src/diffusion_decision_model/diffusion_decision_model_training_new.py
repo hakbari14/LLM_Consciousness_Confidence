@@ -4,6 +4,7 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 import os
 import math
 import contextlib
+import sys
 import warnings
 import numpy as np
 import pandas as pd
@@ -37,10 +38,10 @@ def mean_or_nan(values) -> float:
 
 class diffusion_decision_model_training:
 
-    # total: the summed loss the run logged.  per_token: the same divided by the
-    # tokens it was summed over, so it stops growing with the length of the text.
-    LOSS_TOTAL = 'total'
-    LOSS_PER_TOKEN = 'per_token'
+    # The two ways of reading the evidence loss.  Total is what the run logged;
+    # per token divides it by the tokens behind it so it stops growing with length.
+    LOSS_TOTAL = 'evidence_total_loss'
+    LOSS_PER_TOKEN = 'evidence_per_token_loss'
 
     # Which answer is graded.  run: the one the model wrote.  vote: the one the ten
     # rollouts agreed on.  They differ on one sample in eight.
@@ -65,9 +66,10 @@ class diffusion_decision_model_training:
     WHOLE_COMPLETION_SETS = [BASELINE_SCALAR, BASELINE_HIDDEN]
 
     # The untrained confidences carried beside every sample, in column order.
-    BASELINE_NAMES = ['self cons 0', 'self cons last', 'seq logprob',
-                      'seq logprob/tok', 'entropy total', 'mean token ent',
-                      'mean token prob']
+    BASELINE_NAMES = ['baseline self cons 0', 'baseline self cons last',
+                      'baseline cot loss', 'baseline cot loss/tok',
+                      'baseline entropy total', 'baseline mean token ent',
+                      'baseline arith mean prob']
 
     METRICS = ['roc_auc', 'ece', 'ece_minmax']
 
@@ -109,7 +111,7 @@ class diffusion_decision_model_training:
         if key not in self.log_cache:
             logger = diffusion_decision_model_logger(log_file_name = self.log_file_name(dataset, run_number))
             self.log_cache[key] = logger.load_logs_list()
-            print(f'loaded {dataset} run {run_number}: {len(self.log_cache[key])} samples')
+            print(f'loaded {dataset} run {run_number}: {len(self.log_cache[key])} samples', file = sys.stderr)
 
         return self.log_cache[key]
 
@@ -308,82 +310,55 @@ class diffusion_decision_model_training:
 
         return model, bool(np.all(np.asarray(model.n_iter_) < self.MAX_ITER))
 
-    def platt_scale(self, test_confidence, train_confidence, y_train):
-        """Turn a raw score into a probability with one logistic curve.
-
-        The curve is fitted on the training rows, so it has seen how often answers
-        there are correct.  Its slope can come out negative, which reverses the
-        order, so the result feeds ECE only and never ROC.
-        """
-        train_confidence = np.asarray(train_confidence, dtype=float)
-        usable = ~np.isnan(train_confidence)
-        if usable.sum() < 2 or len(np.unique(np.asarray(y_train)[usable])) < 2:
-            return test_confidence
-
-        scaler = StandardScaler().fit(train_confidence[usable].reshape(-1, 1))
-        curve, _ = self.fit_logistic(scaler.transform(train_confidence[usable].reshape(-1, 1)),
-                                     np.asarray(y_train)[usable], None)
-        return curve.predict_proba(scaler.transform(test_confidence.reshape(-1, 1)))[:, 1]
-
     # ------------------------------------------------------------------ metrics
 
-    def expected_calibration_error(self, y_test, probability) -> float:
-        try:
-            error, _ = self.calculate_ECE_MCE(y_test, probability)
-            return float(error)
-        except Exception:
-            return float('nan')
+    def measure(self, y_test, confidence) -> dict:
+        """ROC from the raw score, and the calibration error on the two scales.
 
-    def minmax_scale(self, confidence):
-        """The rescaling used elsewhere in this repo: x / (max - min), no labels.
-
-        It knows only the spread of the scores, so it cannot know how often the
-        held out benchmark is answered correctly, and the level it lands on is
-        whatever the spread happens to give.
-        """
-        confidence = np.asarray(confidence, dtype=float)
-        spread = confidence.max() - confidence.min()
-        return confidence / spread if spread > 0 else confidence
-
-    def measure(self, y_test, confidence, probability = None) -> dict:
-        """ROC from the ordering, and the calibration error under both rescalings.
-
-        probability is the same confidence already on the zero to one scale, which a
-        trained row is and a raw score is not.  Without it the confidence stands as is.
+        Nothing here is fitted, so every column is a property of the score itself.
         """
         y_test = np.asarray(y_test)
         confidence = np.asarray(confidence, dtype=float)
+        row = {metric: float('nan') for metric in self.METRICS}
         if not len(y_test):
-            return {metric: float('nan') for metric in self.METRICS}
+            return row
 
-        return {
-            'roc_auc': float(roc_auc_score(y_test, confidence)) if len(np.unique(y_test)) > 1 else float('nan'),
-            'ece': self.expected_calibration_error(y_test, confidence if probability is None else probability),
-            'ece_minmax': self.expected_calibration_error(y_test, self.minmax_scale(confidence)),
-            }
+        if len(np.unique(y_test)) > 1:
+            row['roc_auc'] = float(roc_auc_score(y_test, confidence))
 
-    def result_row(self, held_out, target, method, y_test, metrics) -> dict:
-        """One table row: what was run, how big the held out set was, and the metrics."""
-        y_test = np.asarray(y_test)
-        row = {'held_out': held_out, 'target': target, 'loss_mode': method,
-               'test_count': len(y_test),
-               'minority_count': int(min(np.sum(y_test == 1), np.sum(y_test == 0))) if len(y_test) else 0}
-        row.update(metrics)
+        # The rescaling used elsewhere in this repo, (x - min) / (max - min), with no
+        # labels.  It only rises, so it leaves the order ROC read untouched.
+        low, high = confidence.min(), confidence.max()
+        minmax = (confidence - low) / (high - low) if high > low else confidence
+
+        # ECE compares a confidence against how often answers at that confidence are
+        # right, so it needs a probability.  A log likelihood or an entropy is not
+        # one and gets no ECE, only the rescaled column.
+        scales = [('ece_minmax', minmax)]
+        if low >= 0.0 and high <= 1.0:
+            scales.append(('ece', confidence))
+
+        # calculate_ECE_MCE throws when qcut cannot bin the scores, which is a
+        # missing number, not a failed run.
+        for metric, scaled in scales:
+            try:
+                row[metric] = float(self.calculate_ECE_MCE(y_test, scaled)[0])
+            except Exception:
+                pass
+
         return row
 
-    def score_untrained(self, held_out, target, method, test_confidence, y_test,
-                        train_confidence, y_train) -> dict:
-        """A published confidence used as it stands.  ROC from the raw score, ECE after scaling."""
-        test_confidence = np.asarray(test_confidence, dtype=float)
+    def result_row(self, held_out, target, method, y_test) -> dict:
+        """The label and size columns of one table row.  The caller adds the metrics."""
+        y_test = np.asarray(y_test)
+        return {'held_out': held_out, 'target': target, 'method': method,
+                'test_count': len(y_test),
+                'minority_count': int(min(np.sum(y_test == 1), np.sum(y_test == 0))) if len(y_test) else 0}
 
-        # A log likelihood or an entropy is not a probability, so ECE needs one made
-        # for it.  Platt can flip the order, so the flipped copy feeds ECE only.
-        probability = None
-        if len(test_confidence) and (test_confidence.min() < 0.0 or test_confidence.max() > 1.0):
-            probability = self.platt_scale(test_confidence, train_confidence, y_train)
-
-        row = self.result_row(held_out, target, method, y_test,
-                              self.measure(y_test, test_confidence, probability))
+    def score_untrained(self, held_out, target, method, test_confidence, y_test) -> dict:
+        """A published confidence used exactly as it is, with nothing fitted to it."""
+        row = self.result_row(held_out, target, method, y_test)
+        row.update(self.measure(y_test, np.asarray(test_confidence, dtype=float)))
         row.update({'baseline_rows': [], 'feature_set': '-', 'standardize': '-',
                     'class_weight': '-', 'train_count': 0, 'converged': True})
         for metric in self.METRICS:
@@ -407,23 +382,36 @@ class diffusion_decision_model_training:
             if not train_datasets:
                 raise Exception('every dataset was held out, nothing is left to train on')
 
-            X_train, y_train, baselines_train = self.build_matrix(train_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
+            X_train, y_train, _ = self.build_matrix(train_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             X_test, y_test, baselines_test = self.build_matrix(test_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             held_out = ','.join(test_datasets)
-            measurements, converged = self.measure_over_draws(X_train, y_train, X_test, y_test, standardize, class_weight, seeds)
+
+            # Which dataset is held out fixes the split and the solver is
+            # deterministic, so a seed cannot change the fit.  Fit once, then redraw
+            # the held out samples to see how much the number rests on which
+            # problems the benchmark happens to contain.
+            X_train, X_test = self.fill_and_scale(X_train, X_test, standardize)
+            model, converged = self.fit_logistic(X_train, y_train, class_weight)
+            probability = model.predict_proba(X_test)[:, 1]
+
+            measurements = []
+            for seed in seeds:
+                draw = (np.arange(len(y_test)) if seed == seeds[0]
+                        else np.random.default_rng(seed).integers(0, len(y_test), len(y_test)))
+                measurements.append(self.measure(y_test[draw], probability[draw]))
         else:
             X, y, baselines = self.build_matrix(self.datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             held_out = 'random split'
             measurements, converged = [], True
             for seed in seeds:
-                X_train, X_test, y_train, y_test, baselines_train, baselines_test = train_test_split(
+                X_train, X_test, y_train, y_test, _, baselines_test = train_test_split(
                     X, y, baselines, test_size=0.2, random_state=seed, stratify=y)
                 X_train, X_test = self.fill_and_scale(X_train, X_test, standardize)
                 model, ok = self.fit_logistic(X_train, y_train, class_weight)
                 converged = converged and ok
                 measurements.append(self.measure(y_test, model.predict_proba(X_test)[:, 1]))
 
-        row = self.result_row(held_out, target, loss_mode if feature_set == self.FULL else '-', y_test, {})
+        row = self.result_row(held_out, target, loss_mode if feature_set == self.FULL else '-', y_test)
         row.update({'feature_set': feature_set, 'standardize': standardize,
                     'class_weight': class_weight if class_weight else 'none',
                     'train_count': len(y_train), 'converged': converged})
@@ -440,27 +428,9 @@ class diffusion_decision_model_training:
             scored = ~np.isnan(baselines_test[:, column])
             row['baseline_rows'].append(
                 self.score_untrained(held_out, target, name, baselines_test[scored, column],
-                                     y_test[scored], baselines_train[:, column], y_train))
+                                     y_test[scored]))
 
         return row
-
-    def measure_over_draws(self, X_train, y_train, X_test, y_test, standardize, class_weight, seeds):
-        """Fit once, then redraw the held out samples per seed to get a spread.
-
-        The split is fixed by which dataset was held out and the solver is
-        deterministic, so a seed cannot change the fit; it can only ask how much the
-        number rests on which problems the benchmark happens to contain.
-        """
-        X_train, X_test = self.fill_and_scale(X_train, X_test, standardize)
-        model, converged = self.fit_logistic(X_train, y_train, class_weight)
-        probability = model.predict_proba(X_test)[:, 1]
-
-        measurements = []
-        for seed in seeds:
-            draw = np.arange(len(y_test)) if seed == seeds[0] else np.random.default_rng(seed).integers(0, len(y_test), len(y_test))
-            measurements.append(self.measure(y_test[draw], probability[draw]))
-
-        return measurements, converged
 
     # ------------------------------------------------------------------- sweeps
 
@@ -497,94 +467,21 @@ class diffusion_decision_model_training:
     # ---------------------------------------------------------------- reporting
 
     def print_results(self, results: list, caption: str) -> None:
-        width = 122
+        width = 134
         print('\n' + '=' * width)
         print(f'== {caption}')
         print('=' * width)
-        print(f"{'held out':<16}{'target':>6} {'loss':<16}{'scaled':>7}{'weight':>10}{'fit':>5}"
+        print(f"{'held out':<20}{'target':>6} {'method':<26}{'scaled':>7}{'weight':>10}{'fit':>5}"
               f"{'train':>7}{'test':>6}{'minority':>9}{'ROC':>8}{'ROCsd':>8}{'ECE':>10}{'ECEminmax':>11}")
         print('-' * width)
         for row in results:
-            print(f"{row['held_out']:<16}{row['target']:>6} {row['loss_mode']:<16}"
+            print(f"{row['held_out']:<20}{row['target']:>6} {row['method']:<26}"
                   f"{str(row['standardize']):>7}{str(row['class_weight']):>10}"
                   f"{('ok' if row['converged'] else 'STOP'):>5}"
                   f"{row['train_count']:>7}{row['test_count']:>6}{row['minority_count']:>9}"
                   f"{row['roc_auc']:>8.3f}{row['roc_auc_sd']:>8.3f}"
                   f"{row['ece']:>10.3f}{row['ece_minmax']:>11.3f}")
         print('-' * width)
-
-    def print_reading_notes(self) -> None:
-        print("""\
-================================================================================
-how to read this
-================================================================================
-One table per held out setting, then the averages.  Each table has two blocks,
-one per graded answer, each ending with the rows that fit nothing at all.
-
-COLUMNS
-  target     which answer was graded.  run = the one the model wrote,
-             vote = the one the ten rollouts agreed on.  They disagree on one
-             sample in eight, so the two blocks are not comparable with each other.
-  loss       total = the summed loss the run logged, per_token = the same divided
-             by the tokens behind it.  A dash means the feature set carries no loss.
-  scaled     were the features standardised.  Fitted on the training half only.
-  weight     balanced weighs the rarer class as heavily as the common one.
-  fit        ok = the solver finished, STOP = it hit max_iter and stopped early.
-  minority   how many of the rarer class the held out set holds.  READ THIS FIRST.
-             Everything right of it rests on those samples alone.  math500 has 1
-             and countdown has 3, so their numbers are noise.
-  ROC        over every pair of one right and one wrong answer, how often the right
-             one scored higher.  Taken from the raw score, so nothing is fitted for
-             it.  ROCsd is its spread over ten seeds.
-  ECE        calibration under Platt scaling: one logistic curve from the score to
-             correctness, fitted on the training half.  Uses the labels.
-  ECEminmax  calibration under the rescaling used elsewhere in this repo,
-             x / (max - min), which uses no labels at all.
-
-FEATURE SETS (one file each)
-  full 80             the two accumulations and their two steps
-  rollout_length 20   how long the ten rollouts ran, averaged.  No loss, no
-                      agreement, only length.  The control the loss must beat.
-  rollout_length_std 40   that average with its spread
-  agreeing_length 20  the same over only rollouts that matched the run's answer
-  self_consistency 20 the agreement alone
-  baseline_scalar 5   published: the completion's loss, how likely the model held
-                      its own answer, and its entropy, each total and per token
-  baseline_hidden 4096  published: the mean pooled last hidden state
-
-THE UNTRAINED ROWS
-  self cons 0 / last  the vote share at the first and last evidence step
-  seq logprob         the sequence log likelihood (Malinin and Gales)
-  seq logprob/tok     the same per token, their length normalised score
-  entropy total       summed predictive entropy
-  mean token ent      averaged predictive entropy (LM-Polygraph's measure)
-  mean token prob     the average probability the model gave its own tokens
-  All are turned so larger means more likely correct, and all are used as the
-  score itself, which is how their papers use them.  These are the bar: a trained
-  row that does not clear them is not worth its compute.
-
-THE TWO ECE COLUMNS
-  A log likelihood or an entropy is not a probability, so a calibration error
-  cannot be read off it directly.  Something has to put it on the probability
-  scale first, and the two columns are the two ways of doing that.
-
-  ECE uses Platt scaling: a logistic curve fitted on the training half, so it has
-  seen how often answers there are correct.  Its slope can come out negative,
-  which reverses the ranking, so it is used for this column only and never for ROC.
-
-  ECEminmax uses x / (max - min), which sees only the spread of the scores and no
-  labels at all.  It therefore cannot know how often the held out benchmark is
-  answered correctly, and the level it lands on is whatever the spread gives.
-
-  Neither is the truth.  On the same scores in the same order a min max map, a
-  quantile map and a fitted logistic map gave 0.42, 0.17 and 0.09, so the number
-  depends heavily on which map was chosen.  And most of what is left after fitting
-  is not about the measure: the curve learns its level where the model answers
-  about eighty per cent correctly and is applied where it may answer half, which
-  on gpqa was roughly two thirds of an ECE of 0.30.  Read ROC as the statement
-  about the confidence and the two ECE columns as a statement about the rescaling.
-================================================================================
-""")
 
     # ------------------------------- kept from the earlier version of this file
     def build_confidence_arrays(self, log_list: list[diffusion_decision_model_log_entity], confidence_attribute: str, accuracy_attribute: str, answer_attribute: str):
@@ -611,7 +508,7 @@ THE TWO ECE COLUMNS
             label_list.append(1 if str(accuracy).strip().lower() == 'true' else 0)
 
         if skipped_count:
-            print(f'[WARN] {skipped_count} samples skipped, they have no self consistency vote to score')
+            print(f'[WARN] {skipped_count} samples skipped, they have no self consistency vote to score', file = sys.stderr)
 
         return np.array(confidence_list, dtype=float), np.array(label_list, dtype=int)
 
@@ -622,8 +519,7 @@ THE TWO ECE COLUMNS
         y = np.empty(0)
         for dataset in self.datasets:
             for run_number in range(from_run_number,to_run_number):
-                logger = diffusion_decision_model_logger(log_file_name = self.log_file_name(dataset, run_number))
-                log_list = logger.load_logs_list()
+                log_list = self.load_logs(dataset, run_number)
                 
                 X_b, y_b = self.build_confidence_arrays(log_list, 'self_consistency_completion_confidence', 'self_consistency_completion_accuracy', 'self_consistency_completion_final_answer')
                 
@@ -645,8 +541,7 @@ THE TWO ECE COLUMNS
         y = np.empty(0)
         for dataset in self.datasets:
             for run_number in range(from_run_number,to_run_number):
-                logger = diffusion_decision_model_logger(log_file_name = self.log_file_name(dataset, run_number))
-                log_list = logger.load_logs_list()
+                log_list = self.load_logs(dataset, run_number)
                 
                 X_b, y_b = self.build_confidence_arrays(log_list, 'self_consistency_confidence', 'self_consistency_accuracy', 'self_consistency_final_answer')
                 
@@ -663,7 +558,7 @@ THE TWO ECE COLUMNS
         
 
     def calculate_grouped_averages(self, data: list[list[dict]]) -> None:
-        parameter_keys = ["target", "loss_mode", "standardize", "class_weight"]
+        parameter_keys = ["target", "method", "standardize", "class_weight"]
         calculation_keys = ["roc_auc", "ece", "ece_minmax"]
 
         records = [
@@ -733,7 +628,14 @@ if __name__ == '__main__':
     for feature_set in diffusion_decision_model_training.FEATURE_SETS:
         output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
         with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
-            training.print_reading_notes()
+            # The free bar: the vote share used as the confidence, over every dataset
+            # pooled with nothing held out.  The same numbers in all seven files.
+            print('\nself consistency confidence, every dataset pooled, nothing held out')
+            print('-' * 134)
+            training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
+            training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
+            print('-' * 134)
+
             training.ablation(feature_set = feature_set)
 
             per_dataset = [training.ablation(test_datasets = [dataset], feature_set = feature_set)
@@ -756,17 +658,26 @@ if __name__ == '__main__':
                 print(f'\n\nheld out as a domain: {group_name}')
                 by_domain.append(training.ablation(test_datasets = group, feature_set = feature_set))
 
-            # Every benchmark held out exactly once: the domains together, the rest alone.
+            # Every benchmark held out exactly once: the domains together, the rest
+            # alone, and only where the rarer class can carry a ROC.  countdown has 3
+            # and scores 1.000 or 0.000 on nearly every measure, so a fifth of each
+            # average was a coin flip.  math500 has 1 but sits inside the mathematics
+            # group, which has 31 between its three benchmarks and stays.
             partition = list(by_domain)
             partition_names = list(training.DATASET_GROUPS)
             for dataset, result in zip(training.datasets, per_dataset):
                 if any(dataset in group for group in training.DATASET_GROUPS.values()):
                     continue
 
+                if result[0]['minority_count'] < training.MINORITY_FLOOR:
+                    continue
+
                 partition.append(result)
                 partition_names.append(dataset)
 
-            print(f"\n\naveraged over every benchmark held out exactly once ({', '.join(partition_names)}):")
+            print(f"\n\nMAIN AVERAGE, over these four held out groups: {', '.join(partition_names)}")
+            print('every benchmark counted exactly once, the two domains held out together,')
+            print(f'and only groups carrying at least {training.MINORITY_FLOOR} of the rarer class')
             training.calculate_grouped_averages(partition)
 
         print(f'wrote {output_file_name}')
