@@ -84,6 +84,12 @@ class diffusion_decision_model(ABC):
             df.to_csv(logger.get_log_file_name(), index=False)            
             print(f"{'*' * 210}")
 
+    def calculate_accracy(self, run_number: int) -> None:
+        logger = self.create_logger(run_number)
+        df = pd.read_csv(logger.get_log_file_name())
+        percentage_true = df["Accuracy"].mean() * 100
+        print(f"Accuracy = {percentage_true}")        
+
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
         print(f"{'*' * 100}  Generate Response {'*' * 100}")
@@ -265,13 +271,14 @@ class diffusion_decision_model(ABC):
         df = self.create_columns_baseline_features(df)
 
         for index, row in tqdm(df.iterrows(), total=len(df)):
+            prompt = df.loc[index, "Prompt"]
             completion = df.loc[index, "Completion"]
             
             with torch.inference_mode():
                 try:
                     device = next(self.model.parameters()).device
                     
-                    inputs = self.tokenizer(completion, return_tensors='pt')
+                    inputs = self.tokenizer(prompt + completion, return_tensors='pt')
                     inputs = {k: v.to(device) for k, v in inputs.items()}
                     input_ids = inputs["input_ids"]
 
@@ -318,23 +325,23 @@ class diffusion_decision_model(ABC):
         return df 
     
     def create_columns_baseline_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        if 'Entropy' not in df.columns:
-            df['Entropy'] = np.nan
-            df['Entropy'] = df['Entropy'].astype('float64')
-        if 'Mean_Entropy' not in df.columns:
-            df['Mean_Entropy'] = np.nan
-            df['Mean_Entropy'] = df['Mean_Entropy'].astype('float64')
+        # if 'Entropy' not in df.columns:
+        df['Entropy'] = np.nan
+        df['Entropy'] = df['Entropy'].astype('float64')
+        # if 'Mean_Entropy' not in df.columns:
+        df['Mean_Entropy'] = np.nan
+        df['Mean_Entropy'] = df['Mean_Entropy'].astype('float64')
         
-        if 'Sequence_Probability' not in df.columns:
-            df['Sequence_Probability'] = np.nan
-            df['Sequence_Probability'] = df['Sequence_Probability'].astype('float64')
-        if 'Length_Normalized_Sequence_Probability' not in df.columns:
-            df['Length_Normalized_Sequence_Probability'] = np.nan
-            df['Length_Normalized_Sequence_Probability'] = df['Length_Normalized_Sequence_Probability'].astype('float64')
+        # if 'Sequence_Probability' not in df.columns:
+        df['Sequence_Probability'] = np.nan
+        df['Sequence_Probability'] = df['Sequence_Probability'].astype('float64')
+        # if 'Length_Normalized_Sequence_Probability' not in df.columns:
+        df['Length_Normalized_Sequence_Probability'] = np.nan
+        df['Length_Normalized_Sequence_Probability'] = df['Length_Normalized_Sequence_Probability'].astype('float64')
 
-        if 'Last_Layer_Representations' not in df.columns:
-            df['Last_Layer_Representations'] = np.nan
-            df['Last_Layer_Representations'] = df['Last_Layer_Representations'].astype('str')
+        # if 'Last_Layer_Representations' not in df.columns:
+        df['Last_Layer_Representations'] = np.nan
+        df['Last_Layer_Representations'] = df['Last_Layer_Representations'].astype('str')
         
         return df 
         
