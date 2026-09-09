@@ -282,10 +282,12 @@ class diffusion_decision_model(ABC):
                     inputs = {k: v.to(device) for k, v in inputs.items()}
                     input_ids = inputs["input_ids"]
 
+                    prompt_length = self.tokenizer(prompt, return_tensors='pt')["input_ids"].shape[1]
+
                     outputs_last_hidden_state = self.model.model(**inputs, labels=inputs["input_ids"], output_hidden_states=False)
                     last_hidden_state = outputs_last_hidden_state.last_hidden_state.float().squeeze(0).detach().cpu().numpy()
 
-                    representation = np.mean(last_hidden_state, axis=0)
+                    representation = np.mean(last_hidden_state[prompt_length:], axis=0)
                     df.at[index, "Last_Layer_Representations"] = json.dumps(representation.tolist())
 
                     outputs = self.model(**inputs, labels=inputs["input_ids"])
@@ -300,7 +302,9 @@ class diffusion_decision_model(ABC):
                     token_probs = []
                     token_entropy = []
 
-                    for t in range(shift_labels.shape[1]):
+                    # shift_labels[t] is input_ids[t + 1], so the answer's first
+                    # label sits at t = prompt_length - 1.
+                    for t in range(prompt_length - 1, shift_labels.shape[1]):
                         true_token_id = shift_labels[0, t].item()
                         prob = probs[0, t, true_token_id].item()
                         token_probs.append(prob)

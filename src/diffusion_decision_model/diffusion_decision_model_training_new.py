@@ -609,9 +609,8 @@ class diffusion_decision_model_training:
 
 
 if __name__ == '__main__':
-    training = diffusion_decision_model_training(number_of_evidence=20)
-
-    # -- how to run ---------------------------------------------------------
+    # -- how to run one thing by hand ---------------------------------------
+    # training = diffusion_decision_model_training(number_of_evidence = 20)
     # training.train_logistic_regression(from_run_number = 1, to_run_number = 2)
     # training.evaluate(test_datasets = ['gpqa'])
     # training.evaluate(test_datasets = ['gpqa'], loss_mode = training.LOSS_PER_TOKEN)
@@ -620,64 +619,78 @@ if __name__ == '__main__':
     # training.ablation(test_datasets = ['gpqa'])
     # -----------------------------------------------------------------------
 
-    # One file per feature set: the random split, then every dataset held out, then
-    # the two domains held out whole, then the averages.
-    output_directory = 'src/diffusion_decision_model/ablations'
-    os.makedirs(output_directory, exist_ok=True)
+    # Every output the generation produced: one model and evidence count per row.
+    # Each gets its own folder so the seven feature set files never mix runs.
+    RUNS = [('qwen-qwen3-8b', 5),
+            ('qwen-qwen3-8b', 10),
+            ('qwen-qwen3-8b', 15),
+            ('qwen-qwen3-8b', 20),
+            ('qwen-qwen3-8b', 25),
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 20)]
 
-    for feature_set in diffusion_decision_model_training.FEATURE_SETS:
-        output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
-        with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
-            # The free bar: the vote share used as the confidence, over every dataset
-            # pooled with nothing held out.  The same numbers in all seven files.
-            print('\nself consistency confidence, every dataset pooled, nothing held out')
-            print('-' * 134)
-            training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
-            training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
-            print('-' * 134)
+    for modelname_dir, number_of_evidence in RUNS:
+        print(f'\n===== {modelname_dir}, {number_of_evidence} evidence steps =====')
+        training = diffusion_decision_model_training(number_of_evidence = number_of_evidence,
+                                                     modelname_dir = modelname_dir)
 
-            training.ablation(feature_set = feature_set)
+        # One file per feature set: the random split, then every dataset held out,
+        # then the two domains held out whole, then the averages.
+        output_directory = f'src/diffusion_decision_model/ablations/{modelname_dir}/nv_{number_of_evidence}'
+        os.makedirs(output_directory, exist_ok=True)
 
-            per_dataset = [training.ablation(test_datasets = [dataset], feature_set = feature_set)
-                           for dataset in training.datasets]
+        for feature_set in diffusion_decision_model_training.FEATURE_SETS:
+            output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
+            with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
+                # The free bar: the vote share used as the confidence, over every dataset
+                # pooled with nothing held out.  The same numbers in all seven files.
+                print('\nself consistency confidence, every dataset pooled, nothing held out')
+                print('-' * 134)
+                training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
+                training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
+                print('-' * 134)
 
-            print('\n\naveraged over every held out dataset:')
-            training.calculate_grouped_averages(per_dataset)
+                training.ablation(feature_set = feature_set)
 
-            # math500 and countdown hold 1 and 3 of the rarer class, so their
-            # numbers are noise being folded in with the rest.
-            big_enough = [result for result in per_dataset if result[0]['minority_count'] >= training.MINORITY_FLOOR]
-            big_enough_names = [dataset for dataset, result in zip(training.datasets, per_dataset)
-                                if result[0]['minority_count'] >= training.MINORITY_FLOOR]
-            print(f"\n\naveraged over the held out datasets carrying at least {training.MINORITY_FLOOR} of the rarer class ({', '.join(big_enough_names)}):")
-            training.calculate_grouped_averages(big_enough)
+                per_dataset = [training.ablation(test_datasets = [dataset], feature_set = feature_set)
+                               for dataset in training.datasets]
 
-            # Whole domains held out, so no benchmark can lean on a sibling.
-            by_domain = []
-            for group_name, group in training.DATASET_GROUPS.items():
-                print(f'\n\nheld out as a domain: {group_name}')
-                by_domain.append(training.ablation(test_datasets = group, feature_set = feature_set))
+                print('\n\naveraged over every held out dataset:')
+                training.calculate_grouped_averages(per_dataset)
 
-            # Every benchmark held out exactly once: the domains together, the rest
-            # alone, and only where the rarer class can carry a ROC.  countdown has 3
-            # and scores 1.000 or 0.000 on nearly every measure, so a fifth of each
-            # average was a coin flip.  math500 has 1 but sits inside the mathematics
-            # group, which has 31 between its three benchmarks and stays.
-            partition = list(by_domain)
-            partition_names = list(training.DATASET_GROUPS)
-            for dataset, result in zip(training.datasets, per_dataset):
-                if any(dataset in group for group in training.DATASET_GROUPS.values()):
-                    continue
+                # math500 and countdown hold 1 and 3 of the rarer class, so their
+                # numbers are noise being folded in with the rest.
+                big_enough = [result for result in per_dataset if result[0]['minority_count'] >= training.MINORITY_FLOOR]
+                big_enough_names = [dataset for dataset, result in zip(training.datasets, per_dataset)
+                                    if result[0]['minority_count'] >= training.MINORITY_FLOOR]
+                print(f"\n\naveraged over the held out datasets carrying at least {training.MINORITY_FLOOR} of the rarer class ({', '.join(big_enough_names)}):")
+                training.calculate_grouped_averages(big_enough)
 
-                if result[0]['minority_count'] < training.MINORITY_FLOOR:
-                    continue
+                # Whole domains held out, so no benchmark can lean on a sibling.
+                by_domain = []
+                for group_name, group in training.DATASET_GROUPS.items():
+                    print(f'\n\nheld out as a domain: {group_name}')
+                    by_domain.append(training.ablation(test_datasets = group, feature_set = feature_set))
 
-                partition.append(result)
-                partition_names.append(dataset)
+                # Every benchmark held out exactly once: the domains together, the rest
+                # alone, and only where the rarer class can carry a ROC.  countdown has 3
+                # and scores 1.000 or 0.000 on nearly every measure, so a fifth of each
+                # average was a coin flip.  math500 has 1 but sits inside the mathematics
+                # group, which has 31 between its three benchmarks and stays.
+                partition = list(by_domain)
+                partition_names = list(training.DATASET_GROUPS)
+                for dataset, result in zip(training.datasets, per_dataset):
+                    if any(dataset in group for group in training.DATASET_GROUPS.values()):
+                        continue
 
-            print(f"\n\nMAIN AVERAGE, over these four held out groups: {', '.join(partition_names)}")
-            print('every benchmark counted exactly once, the two domains held out together,')
-            print(f'and only groups carrying at least {training.MINORITY_FLOOR} of the rarer class')
-            training.calculate_grouped_averages(partition)
+                    if result[0]['minority_count'] < training.MINORITY_FLOOR:
+                        continue
 
-        print(f'wrote {output_file_name}')
+                    partition.append(result)
+                    partition_names.append(dataset)
+
+                print(f"\n\nMAIN AVERAGE, over these four held out groups: {', '.join(partition_names)}")
+                print('every benchmark counted exactly once, the two domains held out together,')
+                print(f'and only groups carrying at least {training.MINORITY_FLOOR} of the rarer class')
+                training.calculate_grouped_averages(partition)
+
+            print(f'wrote {output_file_name}')
