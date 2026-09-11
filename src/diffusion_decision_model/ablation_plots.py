@@ -235,7 +235,7 @@ def plot_ece_against_evidence_count(out_directory, held_out = None, label = None
 
 def plot_feature_sets(out_directory, held_out = None, label = None):
     """Which numbers actually carry the signal, and which are just length."""
-    labels = ['full\n(loss + agreement)', 'agreement\nonly', 'agreeing rollout\nlength',
+    labels = ['full\n(loss +\nself_consistency)', 'self_consistency', 'agreeing rollout\nlength',
               'rollout\nlength', 'rollout length\n+ spread', 'published\nscalars', 'hidden state\n(4096 dim)']
     setting, note = describe(held_out, label)
 
