@@ -117,7 +117,7 @@ class decision_tree_classifier:
 
         plt.title("Decision Tree")
         plt.tight_layout()
-        plt.savefig("./src/diffusion_decision_model/decision_tree/decision_tree.png", dpi=300, bbox_inches="tight")
+        plt.savefig(f"./src/diffusion_decision_model/decision_tree/{self.modelname_dir}/decision_tree{self.get_number_of_evidence_dir()}.png", dpi=300, bbox_inches="tight")
         plt.close()
          
         self.extract_tree_rules(clf)
@@ -136,6 +136,13 @@ class decision_tree_classifier:
             print(f'loaded {dataset} run {run_number}: {len(self.log_cache[key])} samples', file = sys.stderr)
 
         return self.log_cache[key]
+
+    def get_modelname_dir(self) -> str:
+        return self.modelname.replace('/', '-').lower()
+
+    def get_number_of_evidence_dir(self) -> str:
+        return f'_nv_{self.number_of_evidence}'
+
 
 trainer = decision_tree_classifier(number_of_evidence=5)
 trainer.train_decision_tree(from_run_number=1, to_run_number=2)
