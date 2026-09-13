@@ -50,17 +50,26 @@ class diffusion_decision_model_training:
 
     # Which numbers describe a sample.  Widths with twenty evidence steps:
     #   full 80, rollout_length 20, rollout_length_std 40, agreeing_length 20,
-    #   self_consistency 20, baseline_scalar 5, baseline_hidden 4096
+    #   evidence_loss 20, self_consistency 20, baseline_scalar 5, baseline_hidden 4096
+    #
+    # evidence_loss and self_consistency are the two halves of full, each one
+    # channel of twenty steps, so putting them side by side says which channel the
+    # full set is living on.
     FULL = 'full'
     ROLLOUT_LENGTH = 'rollout_length'
     ROLLOUT_LENGTH_STD = 'rollout_length_std'
     AGREEING_LENGTH = 'agreeing_length'
+    EVIDENCE_LOSS = 'evidence_loss'
     SELF_CONSISTENCY = 'self_consistency'
     BASELINE_SCALAR = 'baseline_scalar'
     BASELINE_HIDDEN = 'baseline_hidden'
 
     FEATURE_SETS = [FULL, ROLLOUT_LENGTH, ROLLOUT_LENGTH_STD, AGREEING_LENGTH,
-                    SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
+                    EVIDENCE_LOSS, SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
+
+    # The sets whose features are read from the evidence loss, so the loss column
+    # means something and both ways of reading it are worth sweeping.
+    LOSS_BEARING_SETS = [FULL, EVIDENCE_LOSS]
 
     # The two baselines read the whole completion, not the evidence steps.
     WHOLE_COMPLETION_SETS = [BASELINE_SCALAR, BASELINE_HIDDEN]
@@ -206,6 +215,7 @@ class diffusion_decision_model_training:
             self.ROLLOUT_LENGTH: ['length'],
             self.ROLLOUT_LENGTH_STD: ['length', 'length_spread'],
             self.AGREEING_LENGTH: ['agreeing_length'],
+            self.EVIDENCE_LOSS: ['loss'],
             self.SELF_CONSISTENCY: ['self_consistency'],
             }
         if feature_set not in wanted:
@@ -411,7 +421,8 @@ class diffusion_decision_model_training:
                 converged = converged and ok
                 measurements.append(self.measure(y_test, model.predict_proba(X_test)[:, 1]))
 
-        row = self.result_row(held_out, target, loss_mode if feature_set == self.FULL else '-', y_test)
+        method = loss_mode if feature_set in self.LOSS_BEARING_SETS else '-'
+        row = self.result_row(held_out, target, method, y_test)
         row.update({'feature_set': feature_set, 'standardize': standardize,
                     'class_weight': class_weight if class_weight else 'none',
                     'train_count': len(y_train), 'converged': converged})
@@ -437,8 +448,10 @@ class diffusion_decision_model_training:
     def ablation(self, test_datasets: list = None, from_run_number: int = 1, to_run_number: int = 2,
                  feature_set: str = FULL, seeds = SEEDS) -> list:
         """Every switch combination on one held out set, for both graded answers."""
-        # Only the full set carries a loss, so only it sweeps the loss column.
-        loss_modes = [self.LOSS_TOTAL, self.LOSS_PER_TOKEN] if feature_set == self.FULL else [self.LOSS_TOTAL]
+        # Only a set built from the loss sweeps the loss column; for the rest the
+        # mode changes nothing, so one pass is the whole sweep.
+        loss_modes = ([self.LOSS_TOTAL, self.LOSS_PER_TOKEN] if feature_set in self.LOSS_BEARING_SETS
+                      else [self.LOSS_TOTAL])
 
         results = []
         for target in [self.TARGET_RUN, self.TARGET_VOTE]:
@@ -620,7 +633,14 @@ if __name__ == '__main__':
     # -----------------------------------------------------------------------
 
     # Every output the generation produced: one model and evidence count per row.
-    # Each gets its own folder so the seven feature set files never mix runs.
+    # Each gets its own folder so the feature set files never mix runs.
+    # Every feature set, or only the ones named on the command line, which is how a
+    # newly added set is filled in without rewriting the files the others own.
+    FEATURE_SETS_TO_RUN = sys.argv[1:] or diffusion_decision_model_training.FEATURE_SETS
+    for name in FEATURE_SETS_TO_RUN:
+        if name not in diffusion_decision_model_training.FEATURE_SETS:
+            raise Exception(f'unknown feature set {name}')
+
     RUNS = [('qwen-qwen3-8b', 5),
             ('qwen-qwen3-8b', 10),
             ('qwen-qwen3-8b', 15),
@@ -638,7 +658,7 @@ if __name__ == '__main__':
         output_directory = f'src/diffusion_decision_model/ablations/{modelname_dir}/nv_{number_of_evidence}'
         os.makedirs(output_directory, exist_ok=True)
 
-        for feature_set in diffusion_decision_model_training.FEATURE_SETS:
+        for feature_set in FEATURE_SETS_TO_RUN:
             output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
             with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
                 # The free bar: the vote share used as the confidence, over every dataset

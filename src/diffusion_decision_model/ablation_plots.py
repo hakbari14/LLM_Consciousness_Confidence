@@ -17,8 +17,11 @@ import matplotlib.pyplot as plt
 ABLATIONS = 'src/diffusion_decision_model/ablations'
 MODEL = 'qwen-qwen3-8b'
 EVIDENCE_COUNTS = [5, 10, 15, 20, 25]
-FEATURE_SETS = ['full', 'self_consistency', 'agreeing_length', 'rollout_length',
-                'rollout_length_std', 'baseline_scalar', 'baseline_hidden']
+FEATURE_SETS = ['full', 'self_consistency', 'evidence_loss', 'agreeing_length',
+                'rollout_length', 'rollout_length_std', 'baseline_scalar', 'baseline_hidden']
+
+# The sets whose rows are named by the loss mode instead of a dash.
+LOSS_BEARING_SETS = ['full', 'evidence_loss']
 
 # The four groups the main average covers, in the order they read best.
 GROUPS = ['mmlu,mmlu_pro', 'gsm8k,math500,aime', 'gpqa', 'truthfulqa']
@@ -235,13 +238,14 @@ def plot_ece_against_evidence_count(out_directory, held_out = None, label = None
 
 def plot_feature_sets(out_directory, held_out = None, label = None):
     """Which numbers actually carry the signal, and which are just length."""
-    labels = ['full\n(loss +\nself_consistency)', 'self_consistency', 'agreeing rollout\nlength',
-              'rollout\nlength', 'rollout length\n+ spread', 'published\nscalars', 'hidden state\n(4096 dim)']
+    labels = ['full\n(loss +\nself_consistency)', 'self_consistency\nonly', 'evidence loss\nonly',
+              'agreeing rollout\nlength', 'rollout\nlength', 'rollout length\n+ spread',
+              'published\nscalars', 'hidden state\n(4096 dim)']
     setting, note = describe(held_out, label)
 
     means, spreads = [], []
     for feature_set in FEATURE_SETS:
-        key = method_key(OURS) if feature_set == 'full' else ('-', 'False', 'none')
+        key = method_key(OURS) if feature_set in LOSS_BEARING_SETS else ('-', 'False', 'none')
         values = []
         for nv in EVIDENCE_COUNTS:
             rows = read_results(table_path(nv, feature_set), held_out)
@@ -253,7 +257,7 @@ def plot_feature_sets(out_directory, held_out = None, label = None):
     means, spreads = np.array(means), np.array(spreads)
     low, high = roc_range(np.concatenate([means - spreads, means + spreads]), 0.92)
 
-    colours = [DARKBLUE, BLUE] + [GREY] * 3 + [ORANGE, ORANGE]
+    colours = [DARKBLUE, BLUE, BLUE] + [GREY] * 3 + [ORANGE, ORANGE]
     figure, axis = plt.subplots(figsize=(9, 4.6))
     bars = axis.bar(range(len(labels)), means, yerr=spreads, capsize=3, zorder=2,
                     color=colours, width=0.66, error_kw={'elinewidth': 1, 'ecolor': '#666666'})
