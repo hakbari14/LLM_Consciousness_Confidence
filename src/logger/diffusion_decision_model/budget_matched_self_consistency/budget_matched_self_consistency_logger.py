@@ -162,21 +162,19 @@ class budget_matched_self_consistency_logger(logger):
     def convert_samples_buffer(self):
         list = []
         for log in self.buffer:
-            for evidence_log in log.evidence_list:
-                for sample_log in evidence_log.consistency_list:
-                    b = {
-                        'Index': sample_log.index,
-                        'Sample_ID': log.sample_ID,
-                        'Parent_ID': log.ID,
-                        'Prompt': sample_log.prompt,
-                        'Completion': sample_log.completion,
-                        'Token_Count': sample_log.token_count,
-                        'Target': log.target,
-                        'Final_Answer': sample_log.final_answer,
-                        'Compared_Final_Answer': sample_log.compared_final_answer,
-                        'Accuracy': sample_log.accuracy,
-                        }
-                    list.append(b)
+            for sample_log in log.consistency_list:
+                b = {
+                    'Index': sample_log.index,
+                    'Sample_ID': log.sample_ID,
+                    'Parent_ID': log.ID,
+                    'Completion': sample_log.completion,
+                    'Token_Count': sample_log.token_count,
+                    'Target': log.target,
+                    'Final_Answer': sample_log.final_answer,
+                    'Compared_Final_Answer': sample_log.compared_final_answer,
+                    'Accuracy': sample_log.accuracy,
+                    }
+                list.append(b)
         return list
 
     def get_samples_fieldnames(self):
@@ -184,7 +182,6 @@ class budget_matched_self_consistency_logger(logger):
                 'Index',
                 'Sample_ID',
                 'Parent_ID',
-                'Prompt',
                 'Completion',
                 'Token_Count',
                 'Target',

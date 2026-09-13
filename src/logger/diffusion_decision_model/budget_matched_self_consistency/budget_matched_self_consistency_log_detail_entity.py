@@ -5,7 +5,6 @@ from typing import Optional
 class budget_matched_self_consistency_log_detail_entity:
 
     index : Optional[str] = None
-    prompt : Optional[str] = None
     completion : Optional[str] = None
     token_count : Optional[int] = None
     final_answer : Optional[str] = None

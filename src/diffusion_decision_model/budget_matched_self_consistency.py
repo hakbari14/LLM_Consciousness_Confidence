@@ -59,15 +59,16 @@ class budget_matched_self_consistency(ABC):
                 log.target = x['target']
                 
                 try:
-                    outputs = self.model.generate([].append(log.prompt), sampling_params)
-                    for j, output in enumerate(outputs):
+                    prompt_list = []
+                    prompt_list.append(log.prompt)
+                    outputs = self.model.generate(prompt_list, sampling_params, use_tqdm=False)
+                    for j, output in enumerate(outputs[0].outputs):
                         idx = i + j
 
-                        if output.outputs is None: continue
-                        response = output.outputs[0]
                         log_detail = budget_matched_self_consistency_log_detail_entity()
-                        log_detail = idx
-                        log_detail.completion = response.text
+                        log_detail.index = idx
+                        log_detail.completion = output.text
+                        log_detail.token_count = len(output.token_ids)
                         
                         try:
                             final_answer, accuracy, compared_final_answer = self.get_dataset().extract_and_verify_final_answer(log.prompt, str(log_detail.completion), log.target)
@@ -100,7 +101,7 @@ class budget_matched_self_consistency(ABC):
             
             print(f"{'*' * 210}")
 
-    def calculate_mjority_vote(consistency_list: list[budget_matched_self_consistency_log_detail_entity]) -> tuple[str, bool, float]: 
+    def calculate_mjority_vote(self, consistency_list: list[budget_matched_self_consistency_log_detail_entity]) -> tuple[str, bool, float]: 
         vote_count = {}
         for log_detail in consistency_list:
             if log_detail.compared_final_answer == None: continue
@@ -113,7 +114,7 @@ class budget_matched_self_consistency(ABC):
             log_detail_list = list(filter(lambda x: x.compared_final_answer == compared_final_answer, consistency_list))
             if len(log_detail_list) >= 1: 
                 log_detail = log_detail_list[0]
-                return log_detail.compared_final_answer, log_detail.accuracy, log_detail_list / len(consistency_list)
+                return log_detail.compared_final_answer, log_detail.accuracy, len(log_detail_list) / len(consistency_list)
         else : 
                 if len(consistency_list) > 0:
                     log_detail = consistency_list[0]
