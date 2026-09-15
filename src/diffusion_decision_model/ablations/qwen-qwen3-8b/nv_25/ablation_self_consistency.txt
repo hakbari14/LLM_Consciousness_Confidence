@@ -25,6 +25,7 @@ random split           run baseline cot loss/tok           -         -   ok     
 random split           run baseline entropy total          -         -   ok      0   318       74   0.554   0.000       nan      0.180
 random split           run baseline mean token ent         -         -   ok      0   318       74   0.709   0.000       nan      0.186
 random split           run baseline arith mean prob        -         -   ok      0   318       74   0.669   0.000     0.110      0.245
+random split           run baseline budget self cons       -         -   ok      0   318       74   0.792   0.000     0.093      0.078
 random split          vote -                           False      none   ok   1269   318       70   0.770   0.028     0.083      0.091
 random split          vote -                           False  balanced   ok   1269   318       70   0.786   0.024     0.196      0.164
 random split          vote -                            True      none   ok   1269   318       70   0.760   0.028     0.088      0.092
@@ -36,6 +37,7 @@ random split          vote baseline cot loss/tok           -         -   ok     
 random split          vote baseline entropy total          -         -   ok      0   318       70   0.621   0.000       nan      0.141
 random split          vote baseline mean token ent         -         -   ok      0   318       70   0.623   0.000       nan      0.194
 random split          vote baseline arith mean prob        -         -   ok      0   318       70   0.622   0.000     0.099      0.280
+random split          vote baseline budget self cons       -         -   ok      0   316       68   0.807   0.000     0.066      0.060
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -54,6 +56,7 @@ gpqa                   run baseline cot loss/tok           -         -   ok     
 gpqa                   run baseline entropy total          -         -   ok      0   190       93   0.569   0.000       nan      0.442
 gpqa                   run baseline mean token ent         -         -   ok      0   190       93   0.669   0.000       nan      0.115
 gpqa                   run baseline arith mean prob        -         -   ok      0   190       93   0.653   0.000     0.381      0.093
+gpqa                   run baseline budget self cons       -         -   ok      0   190       93   0.669   0.000     0.263      0.199
 gpqa                  vote -                           False      none   ok   1397   190       93   0.598   0.039     0.293      0.287
 gpqa                  vote -                           False  balanced   ok   1397   190       93   0.607   0.039     0.177      0.196
 gpqa                  vote -                            True      none   ok   1397   190       93   0.598   0.038     0.297      0.299
@@ -65,6 +68,7 @@ gpqa                  vote baseline cot loss/tok           -         -   ok     
 gpqa                  vote baseline entropy total          -         -   ok      0   190       93   0.514   0.000       nan      0.421
 gpqa                  vote baseline mean token ent         -         -   ok      0   190       93   0.582   0.000       nan      0.137
 gpqa                  vote baseline arith mean prob        -         -   ok      0   190       93   0.577   0.000     0.360      0.162
+gpqa                  vote baseline budget self cons       -         -   ok      0   190       93   0.635   0.000     0.249      0.210
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -83,6 +87,7 @@ countdown              run baseline cot loss/tok           -         -   ok     
 countdown              run baseline entropy total          -         -   ok      0   108        3   1.000   0.000       nan      0.090
 countdown              run baseline mean token ent         -         -   ok      0   108        3   0.346   0.000       nan      0.387
 countdown              run baseline arith mean prob        -         -   ok      0   108        3   0.251   0.000     0.093      0.404
+countdown              run baseline budget self cons       -         -   ok      0   108        3   0.952   0.000     0.024      0.064
 countdown             vote -                           False      none   ok   1479   108        8   1.000   0.000     0.143      0.101
 countdown             vote -                           False  balanced   ok   1479   108        8   1.000   0.000     0.299      0.168
 countdown             vote -                            True      none   ok   1479   108        8   1.000   0.000     0.136      0.106
@@ -94,6 +99,7 @@ countdown             vote baseline cot loss/tok           -         -   ok     
 countdown             vote baseline entropy total          -         -   ok      0   108        8   0.855   0.000       nan      0.069
 countdown             vote baseline mean token ent         -         -   ok      0   108        8   0.479   0.000       nan      0.340
 countdown             vote baseline arith mean prob        -         -   ok      0   108        8   0.421   0.000     0.074      0.358
+countdown             vote baseline budget self cons       -         -   ok      0   108        8   0.986   0.000     0.064      0.070
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -112,6 +118,7 @@ math500                run baseline cot loss/tok           -         -   ok     
 math500                run baseline entropy total          -         -   ok      0   139        1   0.435   0.000       nan      0.184
 math500                run baseline mean token ent         -         -   ok      0   139        1   0.043   0.000       nan      0.314
 math500                run baseline arith mean prob        -         -   ok      0   139        1   0.036   0.000     0.089      0.317
+math500                run baseline budget self cons       -         -   ok      0   136        1   0.919   0.000     0.153      0.231
 math500               vote -                           False      none   ok   1449   138        8   0.999   0.002     0.131      0.112
 math500               vote -                           False  balanced   ok   1449   138        8   0.999   0.002     0.265      0.171
 math500               vote -                            True      none   ok   1449   138        8   0.999   0.001     0.125      0.127
@@ -123,6 +130,7 @@ math500               vote baseline cot loss/tok           -         -   ok     
 math500               vote baseline entropy total          -         -   ok      0   138        8   0.886   0.000       nan      0.134
 math500               vote baseline mean token ent         -         -   ok      0   138        8   0.588   0.000       nan      0.265
 math500               vote baseline arith mean prob        -         -   ok      0   138        8   0.568   0.000     0.047      0.268
+math500               vote baseline budget self cons       -         -   ok      0   135        7   0.886   0.000     0.024      0.095
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -141,6 +149,7 @@ gsm8k                  run baseline cot loss/tok           -         -   ok     
 gsm8k                  run baseline entropy total          -         -   ok      0   196       10   0.684   0.000       nan      0.095
 gsm8k                  run baseline mean token ent         -         -   ok      0   196       10   0.364   0.000       nan      0.370
 gsm8k                  run baseline arith mean prob        -         -   ok      0   196       10   0.345   0.000     0.091      0.443
+gsm8k                  run baseline budget self cons       -         -   ok      0   196       10   0.681   0.000     0.034      0.050
 gsm8k                 vote -                           False      none   ok   1391   196        6   0.893   0.059     0.131      0.121
 gsm8k                 vote -                           False  balanced   ok   1391   196        6   0.891   0.061     0.310      0.224
 gsm8k                 vote -                            True      none   ok   1391   196        6   0.889   0.060     0.135      0.145
@@ -152,6 +161,7 @@ gsm8k                 vote baseline cot loss/tok           -         -   ok     
 gsm8k                 vote baseline entropy total          -         -   ok      0   196        6   0.869   0.000       nan      0.102
 gsm8k                 vote baseline mean token ent         -         -   ok      0   196        6   0.732   0.000       nan      0.369
 gsm8k                 vote baseline arith mean prob        -         -   ok      0   196        6   0.677   0.000     0.056      0.425
+gsm8k                 vote baseline budget self cons       -         -   ok      0   196        6   0.844   0.000     0.034      0.050
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -170,6 +180,7 @@ mmlu                   run baseline cot loss/tok           -         -   ok     
 mmlu                   run baseline entropy total          -         -   ok      0   281       51   0.634   0.000       nan      0.100
 mmlu                   run baseline mean token ent         -         -   ok      0   281       51   0.631   0.000       nan      0.291
 mmlu                   run baseline arith mean prob        -         -   ok      0   281       51   0.621   0.000     0.046      0.398
+mmlu                   run baseline budget self cons       -         -   ok      0   281       51   0.771   0.000     0.072      0.065
 mmlu                  vote -                           False      none   ok   1306   281       38   0.698   0.046     0.095      0.106
 mmlu                  vote -                           False  balanced   ok   1306   281       38   0.706   0.047     0.231      0.156
 mmlu                  vote -                            True      none   ok   1306   281       38   0.673   0.047     0.103      0.115
@@ -181,6 +192,7 @@ mmlu                  vote baseline cot loss/tok           -         -   ok     
 mmlu                  vote baseline entropy total          -         -   ok      0   281       38   0.672   0.000       nan      0.086
 mmlu                  vote baseline mean token ent         -         -   ok      0   281       38   0.683   0.000       nan      0.338
 mmlu                  vote baseline arith mean prob        -         -   ok      0   281       38   0.687   0.000     0.043      0.444
+mmlu                  vote baseline budget self cons       -         -   ok      0   281       38   0.750   0.000     0.037      0.089
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -199,6 +211,7 @@ truthfulqa             run baseline cot loss/tok           -         -   ok     
 truthfulqa             run baseline entropy total          -         -   ok      0   300       84   0.668   0.000       nan      0.184
 truthfulqa             run baseline mean token ent         -         -   ok      0   300       84   0.680   0.000       nan      0.206
 truthfulqa             run baseline arith mean prob        -         -   ok      0   300       84   0.657   0.000     0.123      0.277
+truthfulqa             run baseline budget self cons       -         -   ok      0   300       84   0.822   0.000     0.116      0.036
 truthfulqa            vote -                           False      none   ok   1287   300       64   0.725   0.031     0.119      0.126
 truthfulqa            vote -                           False  balanced   ok   1287   300       64   0.703   0.036     0.269      0.180
 truthfulqa            vote -                            True      none   ok   1287   300       64   0.711   0.033     0.109      0.116
@@ -210,6 +223,7 @@ truthfulqa            vote baseline cot loss/tok           -         -   ok     
 truthfulqa            vote baseline entropy total          -         -   ok      0   300       64   0.665   0.000       nan      0.128
 truthfulqa            vote baseline mean token ent         -         -   ok      0   300       64   0.701   0.000       nan      0.273
 truthfulqa            vote baseline arith mean prob        -         -   ok      0   300       64   0.704   0.000     0.081      0.343
+truthfulqa            vote baseline budget self cons       -         -   ok      0   300       64   0.796   0.000     0.056      0.054
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -228,6 +242,7 @@ mmlu_pro               run baseline cot loss/tok           -         -   ok     
 mmlu_pro               run baseline entropy total          -         -   ok      0   272      102   0.625   0.000       nan      0.291
 mmlu_pro               run baseline mean token ent         -         -   ok      0   272      102   0.639   0.000       nan      0.144
 mmlu_pro               run baseline arith mean prob        -         -   ok      0   272      102   0.637   0.000     0.229      0.203
+mmlu_pro               run baseline budget self cons       -         -   ok      0   272      102   0.776   0.000     0.118      0.091
 mmlu_pro              vote -                           False      none   ok   1315   272       90   0.686   0.023     0.121      0.135
 mmlu_pro              vote -                           False  balanced   ok   1315   272       90   0.696   0.015     0.225      0.213
 mmlu_pro              vote -                            True      none   ok   1315   272       90   0.676   0.025     0.128      0.145
@@ -239,6 +254,7 @@ mmlu_pro              vote baseline cot loss/tok           -         -   ok     
 mmlu_pro              vote baseline entropy total          -         -   ok      0   272       90   0.680   0.000       nan      0.240
 mmlu_pro              vote baseline mean token ent         -         -   ok      0   272       90   0.626   0.000       nan      0.174
 mmlu_pro              vote baseline arith mean prob        -         -   ok      0   272       90   0.641   0.000     0.184      0.245
+mmlu_pro              vote baseline budget self cons       -         -   ok      0   272       90   0.782   0.000     0.074      0.071
 --------------------------------------------------------------------------------------------------------------------------------------
 
 ======================================================================================================================================
@@ -257,6 +273,7 @@ aime                   run baseline cot loss/tok           -         -   ok     
 aime                   run baseline entropy total          -         -   ok      0   102       20   0.492   0.000       nan      0.294
 aime                   run baseline mean token ent         -         -   ok      0   102       20   0.773   0.000       nan      0.215
 aime                   run baseline arith mean prob        -         -   ok      0   102       20   0.712   0.000     0.131      0.244
+aime                   run baseline budget self cons       -         -   ok      0    96       19   0.775   0.000     0.149      0.160
 aime                  vote -                           False      none   ok   1485   102       40   0.902   0.029     0.188      0.140
 aime                  vote -                           False  balanced   ok   1485   102       40   0.893   0.031     0.227      0.135
 aime                  vote -                            True      none   ok   1485   102       40   0.902   0.028     0.177      0.129
@@ -268,61 +285,66 @@ aime                  vote baseline cot loss/tok           -         -   ok     
 aime                  vote baseline entropy total          -         -   ok      0   102       40   0.641   0.000       nan      0.145
 aime                  vote baseline mean token ent         -         -   ok      0   102       40   0.592   0.000       nan      0.175
 aime                  vote baseline arith mean prob        -         -   ok      0   102       40   0.560   0.000     0.298      0.162
+aime                  vote baseline budget self cons       -         -   ok      0    96       35   0.748   0.000     0.115      0.121
 --------------------------------------------------------------------------------------------------------------------------------------
 
 
 averaged over every held out dataset:
 
-target                   method standardize class_weight  roc_auc   ece  ece_minmax
-   run                        -       False     balanced    0.843 0.240       0.192
-   run                        -       False         none    0.841 0.137       0.135
-   run                        -        True     balanced    0.840 0.237       0.204
-   run                        -        True         none    0.838 0.139       0.140
-   run baseline arith mean prob           -            -    0.489 0.148       0.298
-   run        baseline cot loss           -            -    0.639   NaN       0.214
-   run    baseline cot loss/tok           -            -    0.517   NaN       0.259
-   run   baseline entropy total           -            -    0.638   NaN       0.210
-   run  baseline mean token ent           -            -    0.518   NaN       0.255
-   run     baseline self cons 0           -            -    0.650 0.183       0.201
-   run  baseline self cons last           -            -    0.653 0.144       0.146
-  vote                        -       False     balanced    0.812 0.250       0.180
-  vote                        -       False         none    0.813 0.153       0.141
-  vote                        -        True     balanced    0.808 0.247       0.196
-  vote                        -        True         none    0.806 0.151       0.148
-  vote baseline arith mean prob           -            -    0.605 0.143       0.301
-  vote        baseline cot loss           -            -    0.723   NaN       0.168
-  vote    baseline cot loss/tok           -            -    0.629   NaN       0.258
-  vote   baseline entropy total           -            -    0.723   NaN       0.166
-  vote  baseline mean token ent           -            -    0.623   NaN       0.259
-  vote     baseline self cons 0           -            -    0.800 0.110       0.136
-  vote  baseline self cons last           -            -    0.578 0.153       0.156
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run                         -       False     balanced    0.843 0.240       0.192
+   run                         -       False         none    0.841 0.137       0.135
+   run                         -        True     balanced    0.840 0.237       0.204
+   run                         -        True         none    0.838 0.139       0.140
+   run  baseline arith mean prob           -            -    0.489 0.148       0.298
+   run baseline budget self cons           -            -    0.796 0.116       0.112
+   run         baseline cot loss           -            -    0.639   NaN       0.214
+   run     baseline cot loss/tok           -            -    0.517   NaN       0.259
+   run    baseline entropy total           -            -    0.638   NaN       0.210
+   run   baseline mean token ent           -            -    0.518   NaN       0.255
+   run      baseline self cons 0           -            -    0.650 0.183       0.201
+   run   baseline self cons last           -            -    0.653 0.144       0.146
+  vote                         -       False     balanced    0.812 0.250       0.180
+  vote                         -       False         none    0.813 0.153       0.141
+  vote                         -        True     balanced    0.808 0.247       0.196
+  vote                         -        True         none    0.806 0.151       0.148
+  vote  baseline arith mean prob           -            -    0.605 0.143       0.301
+  vote baseline budget self cons           -            -    0.803 0.082       0.095
+  vote         baseline cot loss           -            -    0.723   NaN       0.168
+  vote     baseline cot loss/tok           -            -    0.629   NaN       0.258
+  vote    baseline entropy total           -            -    0.723   NaN       0.166
+  vote   baseline mean token ent           -            -    0.623   NaN       0.259
+  vote      baseline self cons 0           -            -    0.800 0.110       0.136
+  vote   baseline self cons last           -            -    0.578 0.153       0.156
 
 
 averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, mmlu, truthfulqa, mmlu_pro):
 
-target                   method standardize class_weight  roc_auc   ece  ece_minmax
-   run                        -       False     balanced    0.754 0.185       0.160
-   run                        -       False         none    0.752 0.130       0.144
-   run                        -        True     balanced    0.750 0.180       0.167
-   run                        -        True         none    0.749 0.135       0.146
-   run baseline arith mean prob           -            -    0.642 0.195       0.243
-   run        baseline cot loss           -            -    0.622   NaN       0.256
-   run    baseline cot loss/tok           -            -    0.651   NaN       0.197
-   run   baseline entropy total           -            -    0.624   NaN       0.254
-   run  baseline mean token ent           -            -    0.655   NaN       0.189
-   run     baseline self cons 0           -            -    0.679 0.164       0.145
-   run  baseline self cons last           -            -    0.547 0.223       0.234
-  vote                        -       False     balanced    0.678 0.225       0.186
-  vote                        -       False         none    0.677 0.157       0.164
-  vote                        -        True     balanced    0.673 0.225       0.199
-  vote                        -        True         none    0.664 0.159       0.169
-  vote baseline arith mean prob           -            -    0.652 0.167       0.299
-  vote        baseline cot loss           -            -    0.631   NaN       0.218
-  vote    baseline cot loss/tok           -            -    0.649   NaN       0.241
-  vote   baseline entropy total           -            -    0.633   NaN       0.219
-  vote  baseline mean token ent           -            -    0.648   NaN       0.230
-  vote     baseline self cons 0           -            -    0.700 0.132       0.132
-  vote  baseline self cons last           -            -    0.541 0.197       0.216
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run                         -       False     balanced    0.754 0.185       0.160
+   run                         -       False         none    0.752 0.130       0.144
+   run                         -        True     balanced    0.750 0.180       0.167
+   run                         -        True         none    0.749 0.135       0.146
+   run  baseline arith mean prob           -            -    0.642 0.195       0.243
+   run baseline budget self cons           -            -    0.760 0.142       0.098
+   run         baseline cot loss           -            -    0.622   NaN       0.256
+   run     baseline cot loss/tok           -            -    0.651   NaN       0.197
+   run    baseline entropy total           -            -    0.624   NaN       0.254
+   run   baseline mean token ent           -            -    0.655   NaN       0.189
+   run      baseline self cons 0           -            -    0.679 0.164       0.145
+   run   baseline self cons last           -            -    0.547 0.223       0.234
+  vote                         -       False     balanced    0.678 0.225       0.186
+  vote                         -       False         none    0.677 0.157       0.164
+  vote                         -        True     balanced    0.673 0.225       0.199
+  vote                         -        True         none    0.664 0.159       0.169
+  vote  baseline arith mean prob           -            -    0.652 0.167       0.299
+  vote baseline budget self cons           -            -    0.741 0.104       0.106
+  vote         baseline cot loss           -            -    0.631   NaN       0.218
+  vote     baseline cot loss/tok           -            -    0.649   NaN       0.241
+  vote    baseline entropy total           -            -    0.633   NaN       0.219
+  vote   baseline mean token ent           -            -    0.648   NaN       0.230
+  vote      baseline self cons 0           -            -    0.700 0.132       0.132
+  vote   baseline self cons last           -            -    0.541 0.197       0.216
 
 
 held out as a domain: multiple choice knowledge
@@ -343,6 +365,7 @@ mmlu,mmlu_pro          run baseline cot loss/tok           -         -   ok     
 mmlu,mmlu_pro          run baseline entropy total          -         -   ok      0   553      153   0.665   0.000       nan      0.202
 mmlu,mmlu_pro          run baseline mean token ent         -         -   ok      0   553      153   0.632   0.000       nan      0.204
 mmlu,mmlu_pro          run baseline arith mean prob        -         -   ok      0   553      153   0.619   0.000     0.132      0.287
+mmlu,mmlu_pro          run baseline budget self cons       -         -   ok      0   553      153   0.799   0.000     0.091      0.068
 mmlu,mmlu_pro         vote -                           False      none   ok   1034   553      128   0.708   0.031     0.090      0.111
 mmlu,mmlu_pro         vote -                           False  balanced   ok   1034   553      128   0.723   0.029     0.223      0.210
 mmlu,mmlu_pro         vote -                            True      none   ok   1034   553      128   0.678   0.032     0.120      0.129
@@ -354,6 +377,7 @@ mmlu,mmlu_pro         vote baseline cot loss/tok           -         -   ok     
 mmlu,mmlu_pro         vote baseline entropy total          -         -   ok      0   553      128   0.706   0.000       nan      0.157
 mmlu,mmlu_pro         vote baseline mean token ent         -         -   ok      0   553      128   0.638   0.000       nan      0.250
 mmlu,mmlu_pro         vote baseline arith mean prob        -         -   ok      0   553      128   0.640   0.000     0.087      0.332
+mmlu,mmlu_pro         vote baseline budget self cons       -         -   ok      0   553      128   0.800   0.000     0.045      0.035
 --------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -375,6 +399,7 @@ gsm8k,math500,aime     run baseline cot loss/tok           -         -   ok     
 gsm8k,math500,aime     run baseline entropy total          -         -   ok      0   437       31   0.617   0.000       nan      0.132
 gsm8k,math500,aime     run baseline mean token ent         -         -   ok      0   437       31   0.607   0.000       nan      0.372
 gsm8k,math500,aime     run baseline arith mean prob        -         -   ok      0   437       31   0.561   0.000     0.050      0.414
+gsm8k,math500,aime     run baseline budget self cons       -         -   ok      0   428       30   0.830   0.000     0.079      0.083
 gsm8k,math500,aime    vote -                           False      none   ok   1151   436       54   0.954   0.016     0.140      0.097
 gsm8k,math500,aime    vote -                           False  balanced   ok   1151   436       54   0.950   0.016     0.254      0.179
 gsm8k,math500,aime    vote -                            True      none   ok   1151   436       54   0.953   0.017     0.130      0.108
@@ -386,6 +411,7 @@ gsm8k,math500,aime    vote baseline cot loss/tok           -         -   ok     
 gsm8k,math500,aime    vote baseline entropy total          -         -   ok      0   436       54   0.822   0.000       nan      0.058
 gsm8k,math500,aime    vote baseline mean token ent         -         -   ok      0   436       54   0.652   0.000       nan      0.319
 gsm8k,math500,aime    vote baseline arith mean prob        -         -   ok      0   436       54   0.600   0.000     0.036      0.360
+gsm8k,math500,aime    vote baseline budget self cons       -         -   ok      0   427       48   0.882   0.000     0.054      0.056
 --------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -393,26 +419,28 @@ MAIN AVERAGE, over these four held out groups: multiple choice knowledge, mathem
 every benchmark counted exactly once, the two domains held out together,
 and only groups carrying at least 30 of the rarer class
 
-target                   method standardize class_weight  roc_auc   ece  ece_minmax
-   run                        -       False     balanced    0.789 0.220       0.202
-   run                        -       False         none    0.787 0.149       0.164
-   run                        -        True     balanced    0.786 0.217       0.212
-   run                        -        True         none    0.784 0.153       0.166
-   run baseline arith mean prob           -            -    0.622 0.171       0.268
-   run        baseline cot loss           -            -    0.628   NaN       0.242
-   run    baseline cot loss/tok           -            -    0.648   NaN       0.237
-   run   baseline entropy total           -            -    0.630   NaN       0.240
-   run  baseline mean token ent           -            -    0.647   NaN       0.225
-   run     baseline self cons 0           -            -    0.700 0.186       0.167
-   run  baseline self cons last           -            -    0.582 0.205       0.208
-  vote                        -       False     balanced    0.746 0.231       0.191
-  vote                        -       False         none    0.746 0.160       0.155
-  vote                        -        True     balanced    0.741 0.231       0.207
-  vote                        -        True         none    0.735 0.164       0.163
-  vote baseline arith mean prob           -            -    0.630 0.141       0.299
-  vote        baseline cot loss           -            -    0.677   NaN       0.191
-  vote    baseline cot loss/tok           -            -    0.651   NaN       0.256
-  vote   baseline entropy total           -            -    0.677   NaN       0.191
-  vote  baseline mean token ent           -            -    0.643   NaN       0.245
-  vote     baseline self cons 0           -            -    0.775 0.115       0.098
-  vote  baseline self cons last           -            -    0.558 0.184       0.194
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run                         -       False     balanced    0.789 0.220       0.202
+   run                         -       False         none    0.787 0.149       0.164
+   run                         -        True     balanced    0.786 0.217       0.212
+   run                         -        True         none    0.784 0.153       0.166
+   run  baseline arith mean prob           -            -    0.622 0.171       0.268
+   run baseline budget self cons           -            -    0.780 0.137       0.097
+   run         baseline cot loss           -            -    0.628   NaN       0.242
+   run     baseline cot loss/tok           -            -    0.648   NaN       0.237
+   run    baseline entropy total           -            -    0.630   NaN       0.240
+   run   baseline mean token ent           -            -    0.647   NaN       0.225
+   run      baseline self cons 0           -            -    0.700 0.186       0.167
+   run   baseline self cons last           -            -    0.582 0.205       0.208
+  vote                         -       False     balanced    0.746 0.231       0.191
+  vote                         -       False         none    0.746 0.160       0.155
+  vote                         -        True     balanced    0.741 0.231       0.207
+  vote                         -        True         none    0.735 0.164       0.163
+  vote  baseline arith mean prob           -            -    0.630 0.141       0.299
+  vote baseline budget self cons           -            -    0.778 0.101       0.089
+  vote         baseline cot loss           -            -    0.677   NaN       0.191
+  vote     baseline cot loss/tok           -            -    0.651   NaN       0.256
+  vote    baseline entropy total           -            -    0.677   NaN       0.191
+  vote   baseline mean token ent           -            -    0.643   NaN       0.245
+  vote      baseline self cons 0           -            -    0.775 0.115       0.098
+  vote   baseline self cons last           -            -    0.558 0.184       0.194

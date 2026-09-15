@@ -78,7 +78,7 @@ class diffusion_decision_model_training:
     BASELINE_NAMES = ['baseline self cons 0', 'baseline self cons last',
                       'baseline cot loss', 'baseline cot loss/tok',
                       'baseline entropy total', 'baseline mean token ent',
-                      'baseline arith mean prob']
+                      'baseline arith mean prob', 'baseline budget self cons']
 
     METRICS = ['roc_auc', 'ece', 'ece_minmax']
 
@@ -107,6 +107,7 @@ class diffusion_decision_model_training:
         self.datasets = ['gpqa', 'countdown', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime']
         self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence/logs/diffusion_decision_model'
         self.log_cache = {}
+        self.budget_cache = {}
 
     # ------------------------------------------------------------------ loading
 
@@ -123,6 +124,27 @@ class diffusion_decision_model_training:
             print(f'loaded {dataset} run {run_number}: {len(self.log_cache[key])} samples', file = sys.stderr)
 
         return self.log_cache[key]
+
+    def load_budget_confidence(self, dataset: str, run_number: int) -> dict:
+        """{question: the budget run's vote share for this evidence count}.  Empty when not run yet.
+
+        The budget run samples answers from the bare question, five per evidence step,
+        and logs the share of them that gave the most common answer.  Matched on the
+        question text, because on mmlu and mmlu_pro the two runs gave the same question
+        different Sample_IDs.
+        """
+        key = (dataset, run_number)
+        if key not in self.budget_cache:
+            path = (f'{self.log_directory}/{dataset}/{self.modelname_dir}/run_{run_number}'
+                    f'/budget_matched_self_consistency_{dataset}.csv')
+            column = f'Self_Consistency_nv{self.number_of_evidence}'
+            self.budget_cache[key] = {}
+            if os.path.exists(path):
+                budget = pd.read_csv(path, dtype=str, usecols=['Question', column])
+                self.budget_cache[key] = {question.strip(): to_float(confidence)
+                                          for question, confidence in zip(budget['Question'], budget[column])}
+
+        return self.budget_cache[key]
 
     # ----------------------------------------------------------------- features
 
@@ -233,8 +255,8 @@ class diffusion_decision_model_training:
         return [1.0 if is_true(log.accuracy) else 0.0,
                 float('nan') if vote in MISSING else (1.0 if vote == 'true' else 0.0)]
 
-    def sample_baselines(self, log) -> list:
-        """The seven confidences that need no training, in BASELINE_NAMES order.
+    def sample_baselines(self, log, budget_confidence: dict) -> list:
+        """The confidences that need no training, in BASELINE_NAMES order.
 
         The published measures are turned so larger means more likely correct, which
         for a loss or an entropy means negating it.  Completion_Loss is already the
@@ -253,6 +275,7 @@ class diffusion_decision_model_training:
             -to_float(log.entropy),
             -to_float(log.mean_entropy),
             to_float(log.length_normalized_sequence_probability),
+            budget_confidence.get(str(log.question).strip(), float('nan')),
             ]
 
     def build_matrix(self, datasets: list, from_run_number: int, to_run_number: int,
@@ -264,6 +287,7 @@ class diffusion_decision_model_training:
         rows, labels, baselines = [], [], []
         for dataset in datasets:
             for run_number in range(from_run_number, to_run_number):
+                budget_confidence = self.load_budget_confidence(dataset, run_number)
                 for log in self.load_logs(dataset, run_number):
                     if len(log.evidence_list) != self.number_of_evidence:
                         continue
@@ -274,7 +298,7 @@ class diffusion_decision_model_training:
 
                     rows.append(row)
                     labels.append(self.sample_labels(log))
-                    baselines.append(self.sample_baselines(log))
+                    baselines.append(self.sample_baselines(log, budget_confidence))
 
         X = np.array(rows, dtype=float)
         labels = np.array(labels, dtype=float)

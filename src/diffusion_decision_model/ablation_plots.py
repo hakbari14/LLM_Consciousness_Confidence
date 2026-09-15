@@ -43,20 +43,21 @@ OURS = 'evidence_per_token_loss'
 OURS_TOTAL = 'evidence_total_loss'
 BASELINES = ['baseline self cons 0', 'baseline self cons last', 'baseline cot loss',
              'baseline cot loss/tok', 'baseline entropy total', 'baseline mean token ent',
-             'baseline arith mean prob']
+             'baseline arith mean prob', 'baseline budget self cons']
 
 BLUE, DARKBLUE, GREY, ORANGE, GREEN = '#1f6fb4', '#0d3c61', '#8a8a8a', '#d1701c', '#2e7d5b'
 
 # Every plot names and colours a method the same way, using the table's own name.
 # Baselines are grouped by family: votes orange, losses grey, entropy and
-# probability green to purple.
+# probability green to purple.  Budget self consistency, the vote given as many
+# samples as ours, is red: it is the one ours has to beat.
 NAMES = {OURS: 'ours, per token loss', OURS_TOTAL: 'ours, total loss'}
 NAMES.update({name: name.replace('baseline ', '') for name in BASELINES})
 COLOURS = {OURS: DARKBLUE, OURS_TOTAL: BLUE,
            'baseline self cons 0': '#d1701c', 'baseline self cons last': '#e8a86a',
            'baseline cot loss': '#a3a3a3', 'baseline cot loss/tok': '#5c5c5c',
            'baseline entropy total': '#2e7d5b', 'baseline mean token ent': '#5fae8f',
-           'baseline arith mean prob': '#8e5fa8'}
+           'baseline arith mean prob': '#8e5fa8', 'baseline budget self cons': '#c0271d'}
 
 
 def table_path(evidence_count, feature_set):
@@ -333,7 +334,8 @@ def plot_discrimination_against_calibration(out_directory, held_out = None, labe
     # scores that already are probabilities can be placed: the four raw scores
     # have no ECE by design.
     points = [(OURS, (9, 3)), (OURS_TOTAL, (9, -12)), ('baseline self cons 0', (9, 3)),
-              ('baseline self cons last', (9, 6)), ('baseline arith mean prob', (-9, -16))]
+              ('baseline self cons last', (9, 6)), ('baseline arith mean prob', (-9, -16)),
+              ('baseline budget self cons', (9, -12))]
 
     figure, axis = plt.subplots(figsize=(6.6, 4.8))
     placed_ece, placed_roc = [], []
