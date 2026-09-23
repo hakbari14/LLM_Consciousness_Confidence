@@ -1,0 +1,558 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+--------------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.7219
+ROC : 0.7888
+ECE : 0.0666
+Accuracy Completion : 0.6885
+ROC Completion : 0.6717
+ECE Completion : 0.1948
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: random split
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+random split           run evidence_total_loss         False      none   ok   1225   307      103   0.873   0.020     0.051      0.054
+random split           run evidence_total_loss         False  balanced   ok   1225   307      103   0.873   0.019     0.096      0.064
+random split           run evidence_total_loss          True      none   ok   1225   307      103   0.873   0.020     0.053      0.057
+random split           run evidence_total_loss          True  balanced   ok   1225   307      103   0.873   0.019     0.096      0.067
+random split           run evidence_per_token_loss     False      none   ok   1225   307      103   0.893   0.013     0.044      0.042
+random split           run evidence_per_token_loss     False  balanced   ok   1225   307      103   0.894   0.012     0.087      0.081
+random split           run evidence_per_token_loss      True      none   ok   1225   307      103   0.893   0.012     0.043      0.043
+random split           run evidence_per_token_loss      True  balanced   ok   1225   307      103   0.894   0.012     0.085      0.084
+random split           run baseline self cons 0            -         -   ok      0   307      103   0.718   0.000     0.139      0.126
+random split           run baseline self cons last         -         -   ok      0   307      103   0.714   0.000     0.254      0.202
+random split           run baseline cot loss               -         -   ok      0   307      103   0.583   0.000       nan      0.215
+random split           run baseline cot loss/tok           -         -   ok      0   307      103   0.725   0.000       nan      0.058
+random split           run baseline entropy total          -         -   ok      0   307      103   0.587   0.000       nan      0.207
+random split           run baseline mean token ent         -         -   ok      0   307      103   0.724   0.000       nan      0.058
+random split           run baseline arith mean prob        -         -   ok      0   307      103   0.725   0.000     0.159      0.056
+random split           run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+random split          vote evidence_total_loss         False      none   ok   1225   307       85   0.782   0.029     0.088      0.092
+random split          vote evidence_total_loss         False  balanced   ok   1225   307       85   0.783   0.029     0.172      0.119
+random split          vote evidence_total_loss          True      none   ok   1225   307       85   0.782   0.029     0.089      0.092
+random split          vote evidence_total_loss          True  balanced   ok   1225   307       85   0.783   0.029     0.170      0.120
+random split          vote evidence_per_token_loss     False      none   ok   1225   307       85   0.836   0.026     0.066      0.068
+random split          vote evidence_per_token_loss     False  balanced   ok   1225   307       85   0.836   0.027     0.144      0.148
+random split          vote evidence_per_token_loss      True      none   ok   1225   307       85   0.839   0.025     0.062      0.065
+random split          vote evidence_per_token_loss      True  balanced   ok   1225   307       85   0.838   0.026     0.140      0.145
+random split          vote baseline self cons 0            -         -   ok      0   307       85   0.809   0.000     0.062      0.065
+random split          vote baseline self cons last         -         -   ok      0   306       85   0.661   0.000     0.162      0.139
+random split          vote baseline cot loss               -         -   ok      0   307       85   0.584   0.000       nan      0.190
+random split          vote baseline cot loss/tok           -         -   ok      0   307       85   0.658   0.000       nan      0.121
+random split          vote baseline entropy total          -         -   ok      0   307       85   0.593   0.000       nan      0.189
+random split          vote baseline mean token ent         -         -   ok      0   307       85   0.666   0.000       nan      0.096
+random split          vote baseline arith mean prob        -         -   ok      0   307       85   0.657   0.000     0.118      0.144
+random split          vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: gpqa
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run evidence_total_loss         False      none   ok   1375   157       77   0.779   0.026     0.180      0.181
+gpqa                   run evidence_total_loss         False  balanced   ok   1375   157       77   0.782   0.026     0.161      0.163
+gpqa                   run evidence_total_loss          True      none   ok   1375   157       77   0.779   0.026     0.176      0.177
+gpqa                   run evidence_total_loss          True  balanced   ok   1375   157       77   0.780   0.025     0.160      0.162
+gpqa                   run evidence_per_token_loss     False      none   ok   1375   157       77   0.768   0.035     0.159      0.166
+gpqa                   run evidence_per_token_loss     False  balanced   ok   1375   157       77   0.765   0.035     0.152      0.154
+gpqa                   run evidence_per_token_loss      True      none   ok   1375   157       77   0.766   0.034     0.150      0.158
+gpqa                   run evidence_per_token_loss      True  balanced   ok   1375   157       77   0.764   0.033     0.147      0.151
+gpqa                   run baseline self cons 0            -         -   ok      0   157       77   0.730   0.000     0.200      0.166
+gpqa                   run baseline self cons last         -         -   ok      0   156       77   0.569   0.000     0.303      0.296
+gpqa                   run baseline cot loss               -         -   ok      0   157       77   0.601   0.000       nan      0.219
+gpqa                   run baseline cot loss/tok           -         -   ok      0   157       77   0.548   0.000       nan      0.173
+gpqa                   run baseline entropy total          -         -   ok      0   157       77   0.600   0.000       nan      0.232
+gpqa                   run baseline mean token ent         -         -   ok      0   157       77   0.562   0.000       nan      0.173
+gpqa                   run baseline arith mean prob        -         -   ok      0   157       77   0.563   0.000     0.340      0.164
+gpqa                   run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+gpqa                  vote evidence_total_loss         False      none   ok   1375   157       72   0.732   0.042     0.171      0.174
+gpqa                  vote evidence_total_loss         False  balanced   ok   1375   157       72   0.737   0.042     0.164      0.166
+gpqa                  vote evidence_total_loss          True      none   ok   1375   157       72   0.732   0.042     0.166      0.171
+gpqa                  vote evidence_total_loss          True  balanced   ok   1375   157       72   0.737   0.041     0.169      0.170
+gpqa                  vote evidence_per_token_loss     False      none   ok   1375   157       72   0.722   0.032     0.147      0.153
+gpqa                  vote evidence_per_token_loss     False  balanced   ok   1375   157       72   0.722   0.032     0.161      0.177
+gpqa                  vote evidence_per_token_loss      True      none   ok   1375   157       72   0.732   0.033     0.156      0.171
+gpqa                  vote evidence_per_token_loss      True  balanced   ok   1375   157       72   0.731   0.032     0.165      0.178
+gpqa                  vote baseline self cons 0            -         -   ok      0   157       72   0.755   0.000     0.142      0.108
+gpqa                  vote baseline self cons last         -         -   ok      0   156       72   0.578   0.000     0.235      0.226
+gpqa                  vote baseline cot loss               -         -   ok      0   157       72   0.672   0.000       nan      0.166
+gpqa                  vote baseline cot loss/tok           -         -   ok      0   157       72   0.513   0.000       nan      0.160
+gpqa                  vote baseline entropy total          -         -   ok      0   157       72   0.675   0.000       nan      0.164
+gpqa                  vote baseline mean token ent         -         -   ok      0   157       72   0.542   0.000       nan      0.126
+gpqa                  vote baseline arith mean prob        -         -   ok      0   157       72   0.527   0.000     0.288      0.153
+gpqa                  vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: countdown
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+countdown              run evidence_total_loss         False      none   ok   1425   107        4   1.000   0.000     0.469      0.429
+countdown              run evidence_total_loss         False  balanced   ok   1425   107        4   1.000   0.000     0.590      0.522
+countdown              run evidence_total_loss          True      none   ok   1425   107        4   1.000   0.000     0.476      0.439
+countdown              run evidence_total_loss          True  balanced   ok   1425   107        4   1.000   0.000     0.598      0.534
+countdown              run evidence_per_token_loss     False      none   ok   1425   107        4   0.998   0.003     0.385      0.380
+countdown              run evidence_per_token_loss     False  balanced   ok   1425   107        4   0.998   0.003     0.495      0.463
+countdown              run evidence_per_token_loss      True      none   ok   1425   107        4   0.998   0.003     0.373      0.376
+countdown              run evidence_per_token_loss      True  balanced   ok   1425   107        4   0.998   0.003     0.481      0.459
+countdown              run baseline self cons 0            -         -   ok      0   107        4   0.801   0.000     0.517      0.529
+countdown              run baseline self cons last         -         -   ok      0   107        4   0.863   0.000     0.104      0.124
+countdown              run baseline cot loss               -         -   ok      0   107        4   0.842   0.000       nan      0.262
+countdown              run baseline cot loss/tok           -         -   ok      0   107        4   0.345   0.000       nan      0.374
+countdown              run baseline entropy total          -         -   ok      0   107        4   0.840   0.000       nan      0.267
+countdown              run baseline mean token ent         -         -   ok      0   107        4   0.323   0.000       nan      0.375
+countdown              run baseline arith mean prob        -         -   ok      0   107        4   0.313   0.000     0.099      0.393
+countdown              run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+countdown             vote evidence_total_loss         False      none   ok   1425   107       10   0.969   0.012     0.320      0.430
+countdown             vote evidence_total_loss         False  balanced   ok   1425   107       10   0.970   0.011     0.517      0.496
+countdown             vote evidence_total_loss          True      none   ok   1425   107       10   0.973   0.011     0.325      0.438
+countdown             vote evidence_total_loss          True  balanced   ok   1425   107       10   0.971   0.010     0.523      0.506
+countdown             vote evidence_per_token_loss     False      none   ok   1425   107       10   0.897   0.026     0.198      0.468
+countdown             vote evidence_per_token_loss     False  balanced   ok   1425   107       10   0.909   0.029     0.363      0.503
+countdown             vote evidence_per_token_loss      True      none   ok   1425   107       10   0.843   0.028     0.171      0.450
+countdown             vote evidence_per_token_loss      True  balanced   ok   1425   107       10   0.872   0.029     0.338      0.502
+countdown             vote baseline self cons 0            -         -   ok      0   107       10   0.908   0.000     0.476      0.488
+countdown             vote baseline self cons last         -         -   ok      0   107       10   0.673   0.000     0.085      0.099
+countdown             vote baseline cot loss               -         -   ok      0   107       10   0.523   0.000       nan      0.248
+countdown             vote baseline cot loss/tok           -         -   ok      0   107       10   0.392   0.000       nan      0.332
+countdown             vote baseline entropy total          -         -   ok      0   107       10   0.527   0.000       nan      0.241
+countdown             vote baseline mean token ent         -         -   ok      0   107       10   0.387   0.000       nan      0.333
+countdown             vote baseline arith mean prob        -         -   ok      0   107       10   0.394   0.000     0.079      0.348
+countdown             vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: math500
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+math500                run evidence_total_loss         False      none   ok   1401   131        3   0.954   0.023     0.077      0.069
+math500                run evidence_total_loss         False  balanced   ok   1401   131        3   0.954   0.023     0.128      0.089
+math500                run evidence_total_loss          True      none   ok   1401   131        3   0.954   0.023     0.072      0.065
+math500                run evidence_total_loss          True  balanced   ok   1401   131        3   0.954   0.023     0.122      0.085
+math500                run evidence_per_token_loss     False      none   ok   1401   131        3   0.878   0.056     0.044      0.063
+math500                run evidence_per_token_loss     False  balanced   ok   1401   131        3   0.862   0.066     0.068      0.074
+math500                run evidence_per_token_loss      True      none   ok   1401   131        3   0.877   0.058     0.038      0.062
+math500                run evidence_per_token_loss      True  balanced   ok   1401   131        3   0.869   0.060     0.059      0.073
+math500                run baseline self cons 0            -         -   ok      0   131        3   0.974   0.000     0.039      0.110
+math500                run baseline self cons last         -         -   ok      0   131        3   0.768   0.000     0.022      0.156
+math500                run baseline cot loss               -         -   ok      0   131        3   0.727   0.000       nan      0.129
+math500                run baseline cot loss/tok           -         -   ok      0   131        3   0.659   0.000       nan      0.317
+math500                run baseline entropy total          -         -   ok      0   131        3   0.737   0.000       nan      0.125
+math500                run baseline mean token ent         -         -   ok      0   131        3   0.651   0.000       nan      0.304
+math500                run baseline arith mean prob        -         -   ok      0   131        3   0.656   0.000     0.078      0.314
+math500                run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+math500               vote evidence_total_loss         False      none   ok   1401   131        3   0.935   0.027     0.123      0.130
+math500               vote evidence_total_loss         False  balanced   ok   1401   131        3   0.937   0.027     0.232      0.172
+math500               vote evidence_total_loss          True      none   ok   1401   131        3   0.935   0.027     0.120      0.126
+math500               vote evidence_total_loss          True  balanced   ok   1401   131        3   0.937   0.027     0.227      0.168
+math500               vote evidence_per_token_loss     False      none   ok   1401   131        3   0.789   0.100     0.057      0.113
+math500               vote evidence_per_token_loss     False  balanced   ok   1401   131        3   0.793   0.098     0.108      0.132
+math500               vote evidence_per_token_loss      True      none   ok   1401   131        3   0.810   0.085     0.048      0.088
+math500               vote evidence_per_token_loss      True  balanced   ok   1401   131        3   0.813   0.087     0.093      0.112
+math500               vote baseline self cons 0            -         -   ok      0   131        3   0.974   0.000     0.039      0.110
+math500               vote baseline self cons last         -         -   ok      0   131        3   0.768   0.000     0.022      0.156
+math500               vote baseline cot loss               -         -   ok      0   131        3   0.727   0.000       nan      0.129
+math500               vote baseline cot loss/tok           -         -   ok      0   131        3   0.659   0.000       nan      0.317
+math500               vote baseline entropy total          -         -   ok      0   131        3   0.737   0.000       nan      0.125
+math500               vote baseline mean token ent         -         -   ok      0   131        3   0.651   0.000       nan      0.304
+math500               vote baseline arith mean prob        -         -   ok      0   131        3   0.656   0.000     0.078      0.314
+math500               vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: gsm8k
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run evidence_total_loss         False      none   ok   1333   199       19   0.941   0.031     0.080      0.040
+gsm8k                  run evidence_total_loss         False  balanced   ok   1333   199       19   0.941   0.031     0.130      0.055
+gsm8k                  run evidence_total_loss          True      none   ok   1333   199       19   0.942   0.031     0.077      0.040
+gsm8k                  run evidence_total_loss          True  balanced   ok   1333   199       19   0.942   0.030     0.125      0.054
+gsm8k                  run evidence_per_token_loss     False      none   ok   1333   199       19   0.932   0.039     0.038      0.026
+gsm8k                  run evidence_per_token_loss     False  balanced   ok   1333   199       19   0.931   0.039     0.039      0.028
+gsm8k                  run evidence_per_token_loss      True      none   ok   1333   199       19   0.936   0.037     0.039      0.028
+gsm8k                  run evidence_per_token_loss      True  balanced   ok   1333   199       19   0.936   0.037     0.036      0.027
+gsm8k                  run baseline self cons 0            -         -   ok      0   199       19   0.701   0.000     0.090      0.120
+gsm8k                  run baseline self cons last         -         -   ok      0   199       19   0.676   0.000     0.053      0.053
+gsm8k                  run baseline cot loss               -         -   ok      0   199       19   0.558   0.000       nan      0.069
+gsm8k                  run baseline cot loss/tok           -         -   ok      0   199       19   0.679   0.000       nan      0.209
+gsm8k                  run baseline entropy total          -         -   ok      0   199       19   0.568   0.000       nan      0.070
+gsm8k                  run baseline mean token ent         -         -   ok      0   199       19   0.701   0.000       nan      0.217
+gsm8k                  run baseline arith mean prob        -         -   ok      0   199       19   0.685   0.000     0.037      0.243
+gsm8k                  run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+gsm8k                 vote evidence_total_loss         False      none   ok   1333   199        9   0.815   0.093     0.114      0.078
+gsm8k                 vote evidence_total_loss         False  balanced   ok   1333   199        9   0.813   0.093     0.217      0.102
+gsm8k                 vote evidence_total_loss          True      none   ok   1333   199        9   0.815   0.093     0.111      0.078
+gsm8k                 vote evidence_total_loss          True  balanced   ok   1333   199        9   0.813   0.093     0.213      0.103
+gsm8k                 vote evidence_per_token_loss     False      none   ok   1333   199        9   0.831   0.080     0.040      0.063
+gsm8k                 vote evidence_per_token_loss     False  balanced   ok   1333   199        9   0.831   0.080     0.059      0.068
+gsm8k                 vote evidence_per_token_loss      True      none   ok   1333   199        9   0.834   0.079     0.034      0.060
+gsm8k                 vote evidence_per_token_loss      True  balanced   ok   1333   199        9   0.835   0.078     0.048      0.064
+gsm8k                 vote baseline self cons 0            -         -   ok      0   199        9   0.863   0.000     0.089      0.138
+gsm8k                 vote baseline self cons last         -         -   ok      0   199        9   0.592   0.000     0.081      0.126
+gsm8k                 vote baseline cot loss               -         -   ok      0   199        9   0.618   0.000       nan      0.049
+gsm8k                 vote baseline cot loss/tok           -         -   ok      0   199        9   0.603   0.000       nan      0.259
+gsm8k                 vote baseline entropy total          -         -   ok      0   199        9   0.621   0.000       nan      0.047
+gsm8k                 vote baseline mean token ent         -         -   ok      0   199        9   0.614   0.000       nan      0.267
+gsm8k                 vote baseline arith mean prob        -         -   ok      0   199        9   0.591   0.000     0.062      0.294
+gsm8k                 vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: mmlu
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run evidence_total_loss         False      none   ok   1255   277      100   0.859   0.029     0.075      0.082
+mmlu                   run evidence_total_loss         False  balanced   ok   1255   277      100   0.859   0.029     0.098      0.087
+mmlu                   run evidence_total_loss          True      none   ok   1255   277      100   0.859   0.029     0.068      0.079
+mmlu                   run evidence_total_loss          True  balanced   ok   1255   277      100   0.858   0.029     0.100      0.090
+mmlu                   run evidence_per_token_loss     False      none   ok   1255   277      100   0.869   0.028     0.081      0.079
+mmlu                   run evidence_per_token_loss     False  balanced   ok   1255   277      100   0.867   0.027     0.123      0.107
+mmlu                   run evidence_per_token_loss      True      none   ok   1255   277      100   0.866   0.029     0.086      0.085
+mmlu                   run evidence_per_token_loss      True  balanced   ok   1255   277      100   0.865   0.029     0.117      0.106
+mmlu                   run baseline self cons 0            -         -   ok      0   277      100   0.682   0.000     0.164      0.156
+mmlu                   run baseline self cons last         -         -   ok      0   275       98   0.644   0.000     0.277      0.166
+mmlu                   run baseline cot loss               -         -   ok      0   277      100   0.639   0.000       nan      0.193
+mmlu                   run baseline cot loss/tok           -         -   ok      0   277      100   0.574   0.000       nan      0.212
+mmlu                   run baseline entropy total          -         -   ok      0   277      100   0.640   0.000       nan      0.196
+mmlu                   run baseline mean token ent         -         -   ok      0   277      100   0.573   0.000       nan      0.217
+mmlu                   run baseline arith mean prob        -         -   ok      0   277      100   0.579   0.000     0.145      0.250
+mmlu                   run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+mmlu                  vote evidence_total_loss         False      none   ok   1255   277       73   0.689   0.029     0.145      0.165
+mmlu                  vote evidence_total_loss         False  balanced   ok   1255   277       73   0.688   0.029     0.185      0.167
+mmlu                  vote evidence_total_loss          True      none   ok   1255   277       73   0.688   0.029     0.148      0.168
+mmlu                  vote evidence_total_loss          True  balanced   ok   1255   277       73   0.688   0.029     0.188      0.171
+mmlu                  vote evidence_per_token_loss     False      none   ok   1255   277       73   0.743   0.025     0.111      0.140
+mmlu                  vote evidence_per_token_loss     False  balanced   ok   1255   277       73   0.741   0.026     0.243      0.235
+mmlu                  vote evidence_per_token_loss      True      none   ok   1255   277       73   0.750   0.026     0.111      0.142
+mmlu                  vote evidence_per_token_loss      True  balanced   ok   1255   277       73   0.748   0.025     0.237      0.239
+mmlu                  vote baseline self cons 0            -         -   ok      0   277       73   0.774   0.000     0.053      0.047
+mmlu                  vote baseline self cons last         -         -   ok      0   275       73   0.552   0.000     0.141      0.224
+mmlu                  vote baseline cot loss               -         -   ok      0   277       73   0.589   0.000       nan      0.160
+mmlu                  vote baseline cot loss/tok           -         -   ok      0   277       73   0.607   0.000       nan      0.267
+mmlu                  vote baseline entropy total          -         -   ok      0   277       73   0.591   0.000       nan      0.156
+mmlu                  vote baseline mean token ent         -         -   ok      0   277       73   0.616   0.000       nan      0.272
+mmlu                  vote baseline arith mean prob        -         -   ok      0   277       73   0.613   0.000     0.083      0.304
+mmlu                  vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: truthfulqa
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run evidence_total_loss         False      none   ok   1233   299      142   0.752   0.025     0.188      0.203
+truthfulqa             run evidence_total_loss         False  balanced   ok   1233   299      142   0.752   0.025     0.105      0.137
+truthfulqa             run evidence_total_loss          True      none   ok   1233   299      142   0.752   0.025     0.191      0.204
+truthfulqa             run evidence_total_loss          True  balanced   ok   1233   299      142   0.752   0.025     0.110      0.137
+truthfulqa             run evidence_per_token_loss     False      none   ok   1233   299      142   0.742   0.023     0.125      0.141
+truthfulqa             run evidence_per_token_loss     False  balanced   ok   1233   299      142   0.739   0.023     0.120      0.120
+truthfulqa             run evidence_per_token_loss      True      none   ok   1233   299      142   0.731   0.024     0.130      0.142
+truthfulqa             run evidence_per_token_loss      True  balanced   ok   1233   299      142   0.728   0.024     0.136      0.136
+truthfulqa             run baseline self cons 0            -         -   ok      0   299      142   0.589   0.000     0.238      0.219
+truthfulqa             run baseline self cons last         -         -   ok      0   299      142   0.612   0.000     0.377      0.265
+truthfulqa             run baseline cot loss               -         -   ok      0   299      142   0.550   0.000       nan      0.406
+truthfulqa             run baseline cot loss/tok           -         -   ok      0   299      142   0.528   0.000       nan      0.120
+truthfulqa             run baseline entropy total          -         -   ok      0   299      142   0.548   0.000       nan      0.407
+truthfulqa             run baseline mean token ent         -         -   ok      0   299      142   0.526   0.000       nan      0.122
+truthfulqa             run baseline arith mean prob        -         -   ok      0   299      142   0.527   0.000     0.283      0.137
+truthfulqa             run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+truthfulqa            vote evidence_total_loss         False      none   ok   1233   299      134   0.607   0.020     0.211      0.239
+truthfulqa            vote evidence_total_loss         False  balanced   ok   1233   299      134   0.605   0.021     0.163      0.212
+truthfulqa            vote evidence_total_loss          True      none   ok   1233   299      134   0.607   0.020     0.214      0.244
+truthfulqa            vote evidence_total_loss          True  balanced   ok   1233   299      134   0.605   0.020     0.167      0.212
+truthfulqa            vote evidence_per_token_loss     False      none   ok   1233   299      134   0.618   0.013     0.143      0.162
+truthfulqa            vote evidence_per_token_loss     False  balanced   ok   1233   299      134   0.613   0.016     0.232      0.203
+truthfulqa            vote evidence_per_token_loss      True      none   ok   1233   299      134   0.604   0.013     0.136      0.159
+truthfulqa            vote evidence_per_token_loss      True  balanced   ok   1233   299      134   0.599   0.015     0.247      0.229
+truthfulqa            vote baseline self cons 0            -         -   ok      0   299      134   0.715   0.000     0.134      0.098
+truthfulqa            vote baseline self cons last         -         -   ok      0   299      134   0.571   0.000     0.269      0.246
+truthfulqa            vote baseline cot loss               -         -   ok      0   299      134   0.533   0.000       nan      0.329
+truthfulqa            vote baseline cot loss/tok           -         -   ok      0   299      134   0.561   0.000       nan      0.116
+truthfulqa            vote baseline entropy total          -         -   ok      0   299      134   0.529   0.000       nan      0.331
+truthfulqa            vote baseline mean token ent         -         -   ok      0   299      134   0.553   0.000       nan      0.118
+truthfulqa            vote baseline arith mean prob        -         -   ok      0   299      134   0.555   0.000     0.206      0.154
+truthfulqa            vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: mmlu_pro
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run evidence_total_loss         False      none   ok   1271   261      130   0.881   0.017     0.110      0.107
+mmlu_pro               run evidence_total_loss         False  balanced   ok   1271   261      130   0.879   0.017     0.110      0.087
+mmlu_pro               run evidence_total_loss          True      none   ok   1271   261      130   0.881   0.016     0.110      0.108
+mmlu_pro               run evidence_total_loss          True  balanced   ok   1271   261      130   0.879   0.017     0.106      0.086
+mmlu_pro               run evidence_per_token_loss     False      none   ok   1271   261      130   0.865   0.017     0.127      0.127
+mmlu_pro               run evidence_per_token_loss     False  balanced   ok   1271   261      130   0.864   0.017     0.093      0.090
+mmlu_pro               run evidence_per_token_loss      True      none   ok   1271   261      130   0.871   0.018     0.133      0.130
+mmlu_pro               run evidence_per_token_loss      True  balanced   ok   1271   261      130   0.867   0.019     0.090      0.091
+mmlu_pro               run baseline self cons 0            -         -   ok      0   261      130   0.742   0.000     0.168      0.109
+mmlu_pro               run baseline self cons last         -         -   ok      0   260      129   0.585   0.000     0.268      0.238
+mmlu_pro               run baseline cot loss               -         -   ok      0   261      130   0.486   0.000       nan      0.330
+mmlu_pro               run baseline cot loss/tok           -         -   ok      0   261      130   0.535   0.000       nan      0.233
+mmlu_pro               run baseline entropy total          -         -   ok      0   261      130   0.500   0.000       nan      0.326
+mmlu_pro               run baseline mean token ent         -         -   ok      0   261      130   0.545   0.000       nan      0.218
+mmlu_pro               run baseline arith mean prob        -         -   ok      0   261      130   0.538   0.000     0.349      0.246
+mmlu_pro               run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+mmlu_pro              vote evidence_total_loss         False      none   ok   1271   261      113   0.786   0.027     0.162      0.135
+mmlu_pro              vote evidence_total_loss         False  balanced   ok   1271   261      113   0.785   0.027     0.163      0.142
+mmlu_pro              vote evidence_total_loss          True      none   ok   1271   261      113   0.787   0.027     0.159      0.129
+mmlu_pro              vote evidence_total_loss          True  balanced   ok   1271   261      113   0.786   0.027     0.159      0.140
+mmlu_pro              vote evidence_per_token_loss     False      none   ok   1271   261      113   0.814   0.018     0.154      0.120
+mmlu_pro              vote evidence_per_token_loss     False  balanced   ok   1271   261      113   0.815   0.018     0.103      0.104
+mmlu_pro              vote evidence_per_token_loss      True      none   ok   1271   261      113   0.820   0.020     0.150      0.123
+mmlu_pro              vote evidence_per_token_loss      True  balanced   ok   1271   261      113   0.820   0.020     0.100      0.102
+mmlu_pro              vote baseline self cons 0            -         -   ok      0   261      113   0.837   0.000     0.099      0.084
+mmlu_pro              vote baseline self cons last         -         -   ok      0   260      112   0.591   0.000     0.211      0.208
+mmlu_pro              vote baseline cot loss               -         -   ok      0   261      113   0.530   0.000       nan      0.288
+mmlu_pro              vote baseline cot loss/tok           -         -   ok      0   261      113   0.571   0.000       nan      0.178
+mmlu_pro              vote baseline entropy total          -         -   ok      0   261      113   0.547   0.000       nan      0.283
+mmlu_pro              vote baseline mean token ent         -         -   ok      0   261      113   0.584   0.000       nan      0.187
+mmlu_pro              vote baseline arith mean prob        -         -   ok      0   261      113   0.572   0.000     0.284      0.206
+mmlu_pro              vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+======================================================================================================================================
+== ablation, features: full, held out: aime
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+aime                   run evidence_total_loss         False      none   ok   1431   101       20   0.927   0.033     0.101      0.075
+aime                   run evidence_total_loss         False  balanced   ok   1431   101       20   0.925   0.034     0.169      0.114
+aime                   run evidence_total_loss          True      none   ok   1431   101       20   0.928   0.033     0.100      0.075
+aime                   run evidence_total_loss          True  balanced   ok   1431   101       20   0.925   0.035     0.164      0.114
+aime                   run evidence_per_token_loss     False      none   ok   1431   101       20   0.944   0.021     0.076      0.070
+aime                   run evidence_per_token_loss     False  balanced   ok   1431   101       20   0.944   0.021     0.104      0.096
+aime                   run evidence_per_token_loss      True      none   ok   1431   101       20   0.943   0.021     0.075      0.070
+aime                   run evidence_per_token_loss      True  balanced   ok   1431   101       20   0.943   0.021     0.096      0.093
+aime                   run baseline self cons 0            -         -   ok      0   101       20   0.852   0.000     0.071      0.104
+aime                   run baseline self cons last         -         -   ok      0   101       20   0.860   0.000     0.166      0.136
+aime                   run baseline cot loss               -         -   ok      0   101       20   0.848   0.000       nan      0.077
+aime                   run baseline cot loss/tok           -         -   ok      0   101       20   0.700   0.000       nan      0.192
+aime                   run baseline entropy total          -         -   ok      0   101       20   0.847   0.000       nan      0.096
+aime                   run baseline mean token ent         -         -   ok      0   101       20   0.711   0.000       nan      0.186
+aime                   run baseline arith mean prob        -         -   ok      0   101       20   0.687   0.000     0.122      0.202
+aime                   run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+aime                  vote evidence_total_loss         False      none   ok   1431   101       12   0.862   0.057     0.170      0.132
+aime                  vote evidence_total_loss         False  balanced   ok   1431   101       12   0.862   0.057     0.308      0.209
+aime                  vote evidence_total_loss          True      none   ok   1431   101       12   0.866   0.055     0.167      0.130
+aime                  vote evidence_total_loss          True  balanced   ok   1431   101       12   0.862   0.057     0.304      0.209
+aime                  vote evidence_per_token_loss     False      none   ok   1431   101       12   0.888   0.041     0.091      0.120
+aime                  vote evidence_per_token_loss     False  balanced   ok   1431   101       12   0.893   0.043     0.139      0.163
+aime                  vote evidence_per_token_loss      True      none   ok   1431   101       12   0.876   0.044     0.082      0.103
+aime                  vote evidence_per_token_loss      True  balanced   ok   1431   101       12   0.878   0.045     0.117      0.142
+aime                  vote baseline self cons 0            -         -   ok      0   101       12   0.884   0.000     0.160      0.198
+aime                  vote baseline self cons last         -         -   ok      0   101       12   0.850   0.000     0.121      0.138
+aime                  vote baseline cot loss               -         -   ok      0   101       12   0.866   0.000       nan      0.089
+aime                  vote baseline cot loss/tok           -         -   ok      0   101       12   0.814   0.000       nan      0.262
+aime                  vote baseline entropy total          -         -   ok      0   101       12   0.866   0.000       nan      0.096
+aime                  vote baseline mean token ent         -         -   ok      0   101       12   0.816   0.000       nan      0.265
+aime                  vote baseline arith mean prob        -         -   ok      0   101       12   0.805   0.000     0.101      0.279
+aime                  vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+
+averaged over every held out dataset:
+
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run  baseline arith mean prob           -            -    0.568 0.182       0.244
+   run baseline budget self cons           -            -      NaN   NaN         NaN
+   run         baseline cot loss           -            -    0.656   NaN       0.211
+   run     baseline cot loss/tok           -            -    0.571   NaN       0.229
+   run    baseline entropy total           -            -    0.660   NaN       0.215
+   run   baseline mean token ent           -            -    0.574   NaN       0.226
+   run      baseline self cons 0           -            -    0.759 0.186       0.189
+   run   baseline self cons last           -            -    0.697 0.196       0.179
+   run   evidence_per_token_loss       False     balanced    0.871 0.149       0.142
+   run   evidence_per_token_loss       False         none    0.874 0.129       0.131
+   run   evidence_per_token_loss        True     balanced    0.871 0.145       0.142
+   run   evidence_per_token_loss        True         none    0.873 0.128       0.131
+   run       evidence_total_loss       False     balanced    0.886 0.186       0.157
+   run       evidence_total_loss       False         none    0.887 0.160       0.148
+   run       evidence_total_loss        True     balanced    0.886 0.186       0.158
+   run       evidence_total_loss        True         none    0.887 0.159       0.148
+  vote  baseline arith mean prob           -            -    0.589 0.148       0.256
+  vote baseline budget self cons           -            -      NaN   NaN         NaN
+  vote         baseline cot loss           -            -    0.632   NaN       0.182
+  vote     baseline cot loss/tok           -            -    0.590   NaN       0.236
+  vote    baseline entropy total           -            -    0.637   NaN       0.180
+  vote   baseline mean token ent           -            -    0.595   NaN       0.234
+  vote      baseline self cons 0           -            -    0.839 0.149       0.159
+  vote   baseline self cons last           -            -    0.647 0.146       0.178
+  vote   evidence_per_token_loss       False     balanced    0.790 0.176       0.198
+  vote   evidence_per_token_loss       False         none    0.788 0.118       0.167
+  vote   evidence_per_token_loss        True     balanced    0.787 0.168       0.196
+  vote   evidence_per_token_loss        True         none    0.784 0.111       0.162
+  vote       evidence_total_loss       False     balanced    0.800 0.244       0.208
+  vote       evidence_total_loss       False         none    0.799 0.177       0.185
+  vote       evidence_total_loss        True     balanced    0.800 0.244       0.210
+  vote       evidence_total_loss        True         none    0.800 0.176       0.186
+
+
+averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, mmlu, truthfulqa, mmlu_pro):
+
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run  baseline arith mean prob           -            -    0.552 0.279       0.199
+   run baseline budget self cons           -            -      NaN   NaN         NaN
+   run         baseline cot loss           -            -    0.569   NaN       0.287
+   run     baseline cot loss/tok           -            -    0.546   NaN       0.185
+   run    baseline entropy total           -            -    0.572   NaN       0.290
+   run   baseline mean token ent           -            -    0.552   NaN       0.183
+   run      baseline self cons 0           -            -    0.686 0.192       0.162
+   run   baseline self cons last           -            -    0.603 0.306       0.241
+   run   evidence_per_token_loss       False     balanced    0.809 0.122       0.118
+   run   evidence_per_token_loss       False         none    0.811 0.123       0.128
+   run   evidence_per_token_loss        True     balanced    0.806 0.123       0.121
+   run   evidence_per_token_loss        True         none    0.809 0.124       0.129
+   run       evidence_total_loss       False     balanced    0.818 0.119       0.118
+   run       evidence_total_loss       False         none    0.818 0.138       0.143
+   run       evidence_total_loss        True     balanced    0.817 0.119       0.119
+   run       evidence_total_loss        True         none    0.818 0.136       0.142
+  vote  baseline arith mean prob           -            -    0.567 0.215       0.204
+  vote baseline budget self cons           -            -      NaN   NaN         NaN
+  vote         baseline cot loss           -            -    0.581   NaN       0.235
+  vote     baseline cot loss/tok           -            -    0.563   NaN       0.180
+  vote    baseline entropy total           -            -    0.586   NaN       0.234
+  vote   baseline mean token ent           -            -    0.574   NaN       0.176
+  vote      baseline self cons 0           -            -    0.770 0.107       0.084
+  vote   baseline self cons last           -            -    0.573 0.214       0.226
+  vote   evidence_per_token_loss       False     balanced    0.723 0.185       0.180
+  vote   evidence_per_token_loss       False         none    0.724 0.139       0.144
+  vote   evidence_per_token_loss        True     balanced    0.725 0.187       0.187
+  vote   evidence_per_token_loss        True         none    0.727 0.138       0.149
+  vote       evidence_total_loss       False     balanced    0.704 0.169       0.172
+  vote       evidence_total_loss       False         none    0.703 0.172       0.178
+  vote       evidence_total_loss        True     balanced    0.704 0.171       0.173
+  vote       evidence_total_loss        True         none    0.703 0.172       0.178
+
+
+held out as a domain: multiple choice knowledge
+
+======================================================================================================================================
+== ablation, features: full, held out: mmlu,mmlu_pro
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run evidence_total_loss         False      none   ok    994   538      230   0.865   0.014     0.091      0.099
+mmlu,mmlu_pro          run evidence_total_loss         False  balanced   ok    994   538      230   0.864   0.014     0.085      0.065
+mmlu,mmlu_pro          run evidence_total_loss          True      none   ok    994   538      230   0.865   0.014     0.086      0.095
+mmlu,mmlu_pro          run evidence_total_loss          True  balanced   ok    994   538      230   0.863   0.014     0.084      0.070
+mmlu,mmlu_pro          run evidence_per_token_loss     False      none   ok    994   538      230   0.853   0.018     0.070      0.073
+mmlu,mmlu_pro          run evidence_per_token_loss     False  balanced   ok    994   538      230   0.848   0.019     0.102      0.090
+mmlu,mmlu_pro          run evidence_per_token_loss      True      none   ok    994   538      230   0.856   0.015     0.070      0.074
+mmlu,mmlu_pro          run evidence_per_token_loss      True  balanced   ok    994   538      230   0.851   0.015     0.100      0.092
+mmlu,mmlu_pro          run baseline self cons 0            -         -   ok      0   538      230   0.724   0.000     0.150      0.130
+mmlu,mmlu_pro          run baseline self cons last         -         -   ok      0   535      227   0.626   0.000     0.251      0.225
+mmlu,mmlu_pro          run baseline cot loss               -         -   ok      0   538      230   0.578   0.000       nan      0.277
+mmlu,mmlu_pro          run baseline cot loss/tok           -         -   ok      0   538      230   0.537   0.000       nan      0.120
+mmlu,mmlu_pro          run baseline entropy total          -         -   ok      0   538      230   0.588   0.000       nan      0.274
+mmlu,mmlu_pro          run baseline mean token ent         -         -   ok      0   538      230   0.542   0.000       nan      0.140
+mmlu,mmlu_pro          run baseline arith mean prob        -         -   ok      0   538      230   0.539   0.000     0.237      0.120
+mmlu,mmlu_pro          run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+mmlu,mmlu_pro         vote evidence_total_loss         False      none   ok    994   538      186   0.744   0.017     0.139      0.154
+mmlu,mmlu_pro         vote evidence_total_loss         False  balanced   ok    994   538      186   0.745   0.016     0.166      0.145
+mmlu,mmlu_pro         vote evidence_total_loss          True      none   ok    994   538      186   0.743   0.016     0.139      0.149
+mmlu,mmlu_pro         vote evidence_total_loss          True  balanced   ok    994   538      186   0.744   0.016     0.160      0.141
+mmlu,mmlu_pro         vote evidence_per_token_loss     False      none   ok    994   538      186   0.760   0.029     0.073      0.082
+mmlu,mmlu_pro         vote evidence_per_token_loss     False  balanced   ok    994   538      186   0.762   0.028     0.178      0.179
+mmlu,mmlu_pro         vote evidence_per_token_loss      True      none   ok    994   538      186   0.775   0.026     0.080      0.086
+mmlu,mmlu_pro         vote evidence_per_token_loss      True  balanced   ok    994   538      186   0.776   0.025     0.169      0.170
+mmlu,mmlu_pro         vote baseline self cons 0            -         -   ok      0   538      186   0.817   0.000     0.083      0.055
+mmlu,mmlu_pro         vote baseline self cons last         -         -   ok      0   535      185   0.590   0.000     0.163      0.144
+mmlu,mmlu_pro         vote baseline cot loss               -         -   ok      0   538      186   0.580   0.000       nan      0.215
+mmlu,mmlu_pro         vote baseline cot loss/tok           -         -   ok      0   538      186   0.564   0.000       nan      0.121
+mmlu,mmlu_pro         vote baseline entropy total          -         -   ok      0   538      186   0.591   0.000       nan      0.205
+mmlu,mmlu_pro         vote baseline mean token ent         -         -   ok      0   538      186   0.575   0.000       nan      0.157
+mmlu,mmlu_pro         vote baseline arith mean prob        -         -   ok      0   538      186   0.565   0.000     0.156      0.140
+mmlu,mmlu_pro         vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+
+held out as a domain: mathematics
+
+======================================================================================================================================
+== ablation, features: full, held out: gsm8k,math500,aime
+======================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE  ECEminmax
+--------------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run evidence_total_loss         False      none   ok   1101   431       42   0.954   0.014     0.102      0.043
+gsm8k,math500,aime     run evidence_total_loss         False  balanced   ok   1101   431       42   0.953   0.014     0.136      0.057
+gsm8k,math500,aime     run evidence_total_loss          True      none   ok   1101   431       42   0.954   0.015     0.096      0.041
+gsm8k,math500,aime     run evidence_total_loss          True  balanced   ok   1101   431       42   0.953   0.015     0.130      0.057
+gsm8k,math500,aime     run evidence_per_token_loss     False      none   ok   1101   431       42   0.948   0.025     0.047      0.030
+gsm8k,math500,aime     run evidence_per_token_loss     False  balanced   ok   1101   431       42   0.947   0.025     0.054      0.035
+gsm8k,math500,aime     run evidence_per_token_loss      True      none   ok   1101   431       42   0.947   0.025     0.039      0.028
+gsm8k,math500,aime     run evidence_per_token_loss      True  balanced   ok   1101   431       42   0.946   0.025     0.041      0.031
+gsm8k,math500,aime     run baseline self cons 0            -         -   ok      0   431       42   0.812   0.000     0.056      0.084
+gsm8k,math500,aime     run baseline self cons last         -         -   ok      0   431       42   0.777   0.000     0.070      0.056
+gsm8k,math500,aime     run baseline cot loss               -         -   ok      0   431       42   0.656   0.000       nan      0.060
+gsm8k,math500,aime     run baseline cot loss/tok           -         -   ok      0   431       42   0.684   0.000       nan      0.236
+gsm8k,math500,aime     run baseline entropy total          -         -   ok      0   431       42   0.659   0.000       nan      0.060
+gsm8k,math500,aime     run baseline mean token ent         -         -   ok      0   431       42   0.695   0.000       nan      0.233
+gsm8k,math500,aime     run baseline arith mean prob        -         -   ok      0   431       42   0.683   0.000     0.037      0.251
+gsm8k,math500,aime     run baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+gsm8k,math500,aime    vote evidence_total_loss         False      none   ok   1101   431       24   0.870   0.041     0.169      0.080
+gsm8k,math500,aime    vote evidence_total_loss         False  balanced   ok   1101   431       24   0.869   0.041     0.259      0.118
+gsm8k,math500,aime    vote evidence_total_loss          True      none   ok   1101   431       24   0.869   0.041     0.165      0.079
+gsm8k,math500,aime    vote evidence_total_loss          True  balanced   ok   1101   431       24   0.869   0.041     0.254      0.118
+gsm8k,math500,aime    vote evidence_per_token_loss     False      none   ok   1101   431       24   0.864   0.045     0.037      0.081
+gsm8k,math500,aime    vote evidence_per_token_loss     False  balanced   ok   1101   431       24   0.866   0.045     0.072      0.097
+gsm8k,math500,aime    vote evidence_per_token_loss      True      none   ok   1101   431       24   0.856   0.046     0.030      0.066
+gsm8k,math500,aime    vote evidence_per_token_loss      True  balanced   ok   1101   431       24   0.857   0.045     0.047      0.079
+gsm8k,math500,aime    vote baseline self cons 0            -         -   ok      0   431       24   0.896   0.000     0.107      0.135
+gsm8k,math500,aime    vote baseline self cons last         -         -   ok      0   431       24   0.754   0.000     0.043      0.058
+gsm8k,math500,aime    vote baseline cot loss               -         -   ok      0   431       24   0.733   0.000       nan      0.052
+gsm8k,math500,aime    vote baseline cot loss/tok           -         -   ok      0   431       24   0.710   0.000       nan      0.278
+gsm8k,math500,aime    vote baseline entropy total          -         -   ok      0   431       24   0.736   0.000       nan      0.052
+gsm8k,math500,aime    vote baseline mean token ent         -         -   ok      0   431       24   0.709   0.000       nan      0.275
+gsm8k,math500,aime    vote baseline arith mean prob        -         -   ok      0   431       24   0.703   0.000     0.051      0.293
+gsm8k,math500,aime    vote baseline budget self cons       -         -   ok      0     0        0     nan   0.000       nan        nan
+--------------------------------------------------------------------------------------------------------------------------------------
+
+
+MAIN AVERAGE, over these four held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the two domains held out together,
+and only groups carrying at least 30 of the rarer class
+
+target                    method standardize class_weight  roc_auc   ece  ece_minmax
+   run  baseline arith mean prob           -            -    0.578 0.225       0.168
+   run baseline budget self cons           -            -      NaN   NaN         NaN
+   run         baseline cot loss           -            -    0.596   NaN       0.240
+   run     baseline cot loss/tok           -            -    0.574   NaN       0.162
+   run    baseline entropy total           -            -    0.599   NaN       0.243
+   run   baseline mean token ent           -            -    0.581   NaN       0.167
+   run      baseline self cons 0           -            -    0.714 0.161       0.150
+   run   baseline self cons last           -            -    0.646 0.250       0.210
+   run   evidence_per_token_loss       False     balanced    0.825 0.107       0.100
+   run   evidence_per_token_loss       False         none    0.828 0.100       0.102
+   run   evidence_per_token_loss        True     balanced    0.822 0.106       0.103
+   run   evidence_per_token_loss        True         none    0.825 0.097       0.101
+   run       evidence_total_loss       False     balanced    0.838 0.122       0.105
+   run       evidence_total_loss       False         none    0.838 0.140       0.131
+   run       evidence_total_loss        True     balanced    0.837 0.121       0.106
+   run       evidence_total_loss        True         none    0.838 0.137       0.129
+  vote  baseline arith mean prob           -            -    0.588 0.175       0.185
+  vote baseline budget self cons           -            -      NaN   NaN         NaN
+  vote         baseline cot loss           -            -    0.629   NaN       0.190
+  vote     baseline cot loss/tok           -            -    0.587   NaN       0.169
+  vote    baseline entropy total           -            -    0.633   NaN       0.188
+  vote   baseline mean token ent           -            -    0.595   NaN       0.169
+  vote      baseline self cons 0           -            -    0.796 0.117       0.099
+  vote   baseline self cons last           -            -    0.623 0.178       0.168
+  vote   evidence_per_token_loss       False     balanced    0.741 0.161       0.164
+  vote   evidence_per_token_loss       False         none    0.741 0.100       0.119
+  vote   evidence_per_token_loss        True     balanced    0.741 0.157       0.164
+  vote   evidence_per_token_loss        True         none    0.742 0.101       0.121
+  vote       evidence_total_loss       False     balanced    0.739 0.188       0.160
+  vote       evidence_total_loss       False         none    0.738 0.172       0.162
+  vote       evidence_total_loss        True     balanced    0.739 0.187       0.160
+  vote       evidence_total_loss        True         none    0.738 0.171       0.161

@@ -658,21 +658,30 @@ if __name__ == '__main__':
 
     # Every output the generation produced: one model and evidence count per row.
     # Each gets its own folder so the feature set files never mix runs.
-    # Every feature set, or only the ones named on the command line, which is how a
-    # newly added set is filled in without rewriting the files the others own.
-    FEATURE_SETS_TO_RUN = sys.argv[1:] or diffusion_decision_model_training.FEATURE_SETS
-    for name in FEATURE_SETS_TO_RUN:
-        if name not in diffusion_decision_model_training.FEATURE_SETS:
-            raise Exception(f'unknown feature set {name}')
-
     RUNS = [('qwen-qwen3-8b', 5),
             ('qwen-qwen3-8b', 10),
             ('qwen-qwen3-8b', 15),
             ('qwen-qwen3-8b', 20),
             ('qwen-qwen3-8b', 25),
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 5),
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 10),
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 15),
             ('deepseek-ai-deepseek-r1-distill-qwen-7b', 20)]
 
+    # Everything by default.  Name feature sets and / or models on the command line to
+    # run only those, which is how a new set or a new model's logs are filled in
+    # without rewriting the files the others own.
+    models = {modelname_dir for modelname_dir, _ in RUNS}
+    for name in sys.argv[1:]:
+        if name not in diffusion_decision_model_training.FEATURE_SETS and name not in models:
+            raise Exception(f'unknown feature set or model {name}')
+    FEATURE_SETS_TO_RUN = ([name for name in sys.argv[1:] if name in diffusion_decision_model_training.FEATURE_SETS]
+                           or diffusion_decision_model_training.FEATURE_SETS)
+    MODELS_TO_RUN = [name for name in sys.argv[1:] if name in models] or sorted(models)
+
     for modelname_dir, number_of_evidence in RUNS:
+        if modelname_dir not in MODELS_TO_RUN:
+            continue
         print(f'\n===== {modelname_dir}, {number_of_evidence} evidence steps =====')
         training = diffusion_decision_model_training(number_of_evidence = number_of_evidence,
                                                      modelname_dir = modelname_dir)

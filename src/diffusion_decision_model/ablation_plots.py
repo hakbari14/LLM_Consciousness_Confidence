@@ -17,6 +17,11 @@ import matplotlib.pyplot as plt
 ABLATIONS = 'src/diffusion_decision_model/ablations'
 MODEL = 'qwen-qwen3-8b'
 EVIDENCE_COUNTS = [5, 10, 15, 20, 25]
+
+# Every model that has ablation tables, with the evidence counts it was run at.  The
+# main block draws each in turn by rebinding MODEL and EVIDENCE_COUNTS above.
+PLOT_RUNS = [('qwen-qwen3-8b', [5, 10, 15, 20, 25]),
+             ('deepseek-ai-deepseek-r1-distill-qwen-7b', [5, 10, 15, 20])]
 FEATURE_SETS = ['full', 'self_consistency', 'evidence_loss', 'agreeing_length',
                 'rollout_length', 'rollout_length_std', 'baseline_scalar', 'baseline_hidden']
 
@@ -58,6 +63,11 @@ COLOURS = {OURS: DARKBLUE, OURS_TOTAL: BLUE,
            'baseline cot loss': '#a3a3a3', 'baseline cot loss/tok': '#5c5c5c',
            'baseline entropy total': '#2e7d5b', 'baseline mean token ent': '#5fae8f',
            'baseline arith mean prob': '#8e5fa8', 'baseline budget self cons': '#c0271d'}
+
+
+def counted():
+    """How many evidence counts this model was run at, in words for the axis labels."""
+    return {4: 'four', 5: 'five'}.get(len(EVIDENCE_COUNTS), str(len(EVIDENCE_COUNTS)))
 
 
 def table_path(evidence_count, feature_set):
@@ -273,14 +283,14 @@ def plot_feature_sets(out_directory, held_out = None, label = None):
     axis.set_xticks(range(len(labels)))
     axis.set_xticklabels(labels, fontsize=8)
     axis.set_ylim(low, high)
-    plain(axis, note.strip(), f'ROC averaged over the five evidence counts\n{setting}')
+    plain(axis, note.strip(), f'ROC averaged over the {counted()} evidence counts\n{setting}')
     figure.tight_layout()
     figure.savefig(f'{out_directory}/roc_by_feature_set.png', dpi=160)
     plt.close(figure)
 
 
 def plot_per_benchmark(out_directory):
-    """Every method on every held out group, averaged over the five evidence counts."""
+    """Every method on every held out group, averaged over the evidence counts."""
     methods = [OURS, OURS_TOTAL] + BASELINES
     grid = np.full((len(methods), len(GROUPS)), np.nan)
     minorities = []
@@ -292,8 +302,10 @@ def plot_per_benchmark(out_directory):
             if values:
                 grid[row, column] = np.mean(values)
 
-    # Ours on top, then the baselines from strongest to weakest.
-    order = [0, 1] + sorted(range(2, len(methods)), key=lambda row: -np.nanmean(grid[row]))
+    # Ours on top, then the baselines from strongest to weakest.  A baseline this
+    # model has no numbers for gets no row.
+    measured = [row for row in range(2, len(methods)) if not np.all(np.isnan(grid[row]))]
+    order = [0, 1] + sorted(measured, key=lambda row: -np.nanmean(grid[row]))
     grid, methods = grid[order], [methods[row] for row in order]
 
     figure, axis = plt.subplots(figsize=(8.8, 5.6))
@@ -318,7 +330,7 @@ def plot_per_benchmark(out_directory):
     for side in axis.spines.values():
         side.set_visible(False)
     colourbar = figure.colorbar(image, ax=axis, fraction=0.035, pad=0.02)
-    colourbar.set_label('ROC, averaged over the five evidence counts', fontsize=8)
+    colourbar.set_label(f'ROC, averaged over the {counted()} evidence counts', fontsize=8)
     colourbar.outline.set_visible(False)
     figure.tight_layout()
     figure.savefig(f'{out_directory}/roc_by_benchmark.png', dpi=160)
@@ -363,24 +375,25 @@ def plot_discrimination_against_calibration(out_directory, held_out = None, labe
 
 
 if __name__ == '__main__':
-    root = f'{ABLATIONS}/{MODEL}/plots'
-    main_directory = f'{root}/main_average'
-    os.makedirs(main_directory, exist_ok=True)
+    for MODEL, EVIDENCE_COUNTS in PLOT_RUNS:
+        root = f'{ABLATIONS}/{MODEL}/plots'
+        main_directory = f'{root}/main_average'
+        os.makedirs(main_directory, exist_ok=True)
 
-    plot_roc_against_evidence_count(main_directory)
-    plot_ece_against_evidence_count(main_directory)
-    plot_feature_sets(main_directory)
-    plot_per_benchmark(main_directory)
-    plot_discrimination_against_calibration(main_directory)
-    print(f'wrote {main_directory}')
+        plot_roc_against_evidence_count(main_directory)
+        plot_ece_against_evidence_count(main_directory)
+        plot_feature_sets(main_directory)
+        plot_per_benchmark(main_directory)
+        plot_discrimination_against_calibration(main_directory)
+        print(f'wrote {main_directory}')
 
-    # The same four plots for every single held out dataset and domain.  The
-    # benchmark table is left out: it already puts every group side by side.
-    for held_out, folder, label in HOLD_OUTS:
-        out_directory = f'{root}/{folder}'
-        os.makedirs(out_directory, exist_ok=True)
-        plot_roc_against_evidence_count(out_directory, held_out, label)
-        plot_ece_against_evidence_count(out_directory, held_out, label)
-        plot_feature_sets(out_directory, held_out, label)
-        plot_discrimination_against_calibration(out_directory, held_out, label)
-        print(f'wrote {out_directory}')
+        # The same four plots for every single held out dataset and domain.  The
+        # benchmark table is left out: it already puts every group side by side.
+        for held_out, folder, label in HOLD_OUTS:
+            out_directory = f'{root}/{folder}'
+            os.makedirs(out_directory, exist_ok=True)
+            plot_roc_against_evidence_count(out_directory, held_out, label)
+            plot_ece_against_evidence_count(out_directory, held_out, label)
+            plot_feature_sets(out_directory, held_out, label)
+            plot_discrimination_against_calibration(out_directory, held_out, label)
+            print(f'wrote {out_directory}')
