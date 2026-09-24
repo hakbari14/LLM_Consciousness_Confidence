@@ -48,24 +48,22 @@ class diffusion_decision_model_training:
     TARGET_RUN = 'run'
     TARGET_VOTE = 'vote'
 
-    # Which numbers describe a sample.  Widths with twenty evidence steps:
-    #   full 80, rollout_length 20, rollout_length_std 40, agreeing_length 20,
-    #   evidence_loss 20, self_consistency 20, baseline_scalar 5, baseline_hidden 4096
+    # Which numbers describe a sample, named as in the paper.  Widths with twenty
+    # evidence steps:
+    #   CoT-EIG 80 (all of ours), EIG-SC 20 (agreement only), EIG-Loss 20 (loss only),
+    #   CoT_Len 20 (rollout length), Logit_Feat 5 (the published logit scores),
+    #   LastRep 4096 (the last layer's representation)
     #
-    # evidence_loss and self_consistency are the two halves of full, each one
-    # channel of twenty steps, so putting them side by side says which channel the
-    # full set is living on.
-    FULL = 'full'
-    ROLLOUT_LENGTH = 'rollout_length'
-    ROLLOUT_LENGTH_STD = 'rollout_length_std'
-    AGREEING_LENGTH = 'agreeing_length'
-    EVIDENCE_LOSS = 'evidence_loss'
-    SELF_CONSISTENCY = 'self_consistency'
-    BASELINE_SCALAR = 'baseline_scalar'
-    BASELINE_HIDDEN = 'baseline_hidden'
+    # EIG-Loss and EIG-SC are the two halves of CoT-EIG, each one channel of twenty
+    # steps, so putting them side by side says which channel CoT-EIG is living on.
+    FULL = 'CoT-EIG'
+    ROLLOUT_LENGTH = 'CoT_Len'
+    EVIDENCE_LOSS = 'EIG-Loss'
+    SELF_CONSISTENCY = 'EIG-SC'
+    BASELINE_SCALAR = 'Logit_Feat'
+    BASELINE_HIDDEN = 'LastRep'
 
-    FEATURE_SETS = [FULL, ROLLOUT_LENGTH, ROLLOUT_LENGTH_STD, AGREEING_LENGTH,
-                    EVIDENCE_LOSS, SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
+    FEATURE_SETS = [FULL, ROLLOUT_LENGTH, EVIDENCE_LOSS, SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
 
     # The sets whose features are read from the evidence loss, so the loss column
     # means something and both ways of reading it are worth sweeping.
@@ -75,19 +73,26 @@ class diffusion_decision_model_training:
     WHOLE_COMPLETION_SETS = [BASELINE_SCALAR, BASELINE_HIDDEN]
 
     # The untrained confidences carried beside every sample, in column order.
-    BASELINE_NAMES = ['baseline self cons 0', 'baseline self cons last',
-                      'baseline cot loss', 'baseline cot loss/tok',
-                      'baseline entropy total', 'baseline mean token ent',
-                      'baseline arith mean prob', 'baseline budget self cons']
+    #   SC-10: the vote share of the ten step zero rollouts; SC-10-Last: of the last
+    #   step's; Sum-Loss / Mean-Loss: the completion's summed / per token NLL;
+    #   Sum-Ent / Mean-Ent: its summed / per token entropy; Mean-Prob: the arithmetic
+    #   mean of its token probabilities; SC-Budget: the vote share given as many
+    #   samples as ours.
+    BASELINE_NAMES = ['SC-10', 'SC-10-Last', 'Sum-Loss', 'Mean-Loss',
+                      'Sum-Ent', 'Mean-Ent', 'Mean-Prob', 'SC-Budget']
 
-    METRICS = ['roc_auc', 'ece', 'ece_minmax']
+    METRICS = ['roc_auc', 'ece']
 
     # The unscaled total loss needs about 4800 rounds; per_token needs about 50.
     MAX_ITER = 10000
 
-    # On a random split a seed redraws the split.  On a held out dataset nothing is
-    # random, so a seed redraws the held out samples instead.
+    # On a random split a seed redraws the split and the model is refitted.
     SEEDS = (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
+
+    # On a held out dataset nothing is random, so every method is measured once, and
+    # the spread of its ROC and ECE comes from redrawing the held out questions this
+    # many times.
+    BOOTSTRAP_DRAWS = 50
 
     # A held out set with fewer of the rarer class than this cannot support a ROC.
     MINORITY_FLOOR = 30
@@ -108,6 +113,7 @@ class diffusion_decision_model_training:
         self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence/logs/diffusion_decision_model'
         self.log_cache = {}
         self.budget_cache = {}
+        self.baseline_cache = {}
 
     # ------------------------------------------------------------------ loading
 
@@ -180,18 +186,14 @@ class diffusion_decision_model_training:
     def evidence_channels(self, log, loss_mode: str) -> dict:
         """One list per channel, one entry per evidence step."""
         evidence_list = sorted(log.evidence_list, key = lambda evidence: int(evidence.index))
-        channels = {name: [] for name in ['loss', 'self_consistency', 'length', 'length_spread',
-                                          'agreeing_length', 'delta_loss', 'delta_self_consistency']}
+        channels = {name: [] for name in ['loss', 'self_consistency', 'length',
+                                          'delta_loss', 'delta_self_consistency']}
 
         for evidence_log in evidence_list:
             lengths = [to_float(rollout.token_count) for rollout in evidence_log.consistency_list]
             lengths = [value for value in lengths if not math.isnan(value)]
-            agreeing = [to_float(rollout.token_count) for rollout in evidence_log.consistency_list
-                        if is_true(rollout.accuracy)]
 
             channels['length'].append(mean_or_nan(lengths))
-            channels['length_spread'].append(float(np.std(lengths)) if len(lengths) > 1 else float('nan'))
-            channels['agreeing_length'].append(mean_or_nan(agreeing))
             channels['self_consistency'].append(to_float(evidence_log.evidence_accumulation_self_consistency))
 
             if loss_mode == self.LOSS_TOTAL:
@@ -235,8 +237,6 @@ class diffusion_decision_model_training:
         wanted = {
             self.FULL: ['loss', 'self_consistency', 'delta_loss', 'delta_self_consistency'],
             self.ROLLOUT_LENGTH: ['length'],
-            self.ROLLOUT_LENGTH_STD: ['length', 'length_spread'],
-            self.AGREEING_LENGTH: ['agreeing_length'],
             self.EVIDENCE_LOSS: ['loss'],
             self.SELF_CONSISTENCY: ['self_consistency'],
             }
@@ -360,25 +360,20 @@ class diffusion_decision_model_training:
         if len(np.unique(y_test)) > 1:
             row['roc_auc'] = float(roc_auc_score(y_test, confidence))
 
-        # The rescaling used elsewhere in this repo, (x - min) / (max - min), with no
-        # labels.  It only rises, so it leaves the order ROC read untouched.
+        # ECE compares a confidence with how often answers at that confidence are
+        # right, so it needs a probability.  A score that already is one is used as
+        # it is; a log likelihood or an entropy is first rescaled with
+        # (x - min) / (max - min), which leaves the order ROC read untouched.
         low, high = confidence.min(), confidence.max()
-        minmax = (confidence - low) / (high - low) if high > low else confidence
-
-        # ECE compares a confidence against how often answers at that confidence are
-        # right, so it needs a probability.  A log likelihood or an entropy is not
-        # one and gets no ECE, only the rescaled column.
-        scales = [('ece_minmax', minmax)]
-        if low >= 0.0 and high <= 1.0:
-            scales.append(('ece', confidence))
+        if not (low >= 0.0 and high <= 1.0):
+            confidence = (confidence - low) / (high - low) if high > low else confidence
 
         # calculate_ECE_MCE throws when qcut cannot bin the scores, which is a
         # missing number, not a failed run.
-        for metric, scaled in scales:
-            try:
-                row[metric] = float(self.calculate_ECE_MCE(y_test, scaled)[0])
-            except Exception:
-                pass
+        try:
+            row['ece'] = float(self.calculate_ECE_MCE(y_test, confidence)[0])
+        except Exception:
+            pass
 
         return row
 
@@ -393,12 +388,29 @@ class diffusion_decision_model_training:
         """A published confidence used exactly as it is, with nothing fitted to it."""
         row = self.result_row(held_out, target, method, y_test)
         row.update(self.measure(y_test, np.asarray(test_confidence, dtype=float)))
+        row.update(self.bootstrap_sd(y_test, np.asarray(test_confidence, dtype=float)))
         row.update({'baseline_rows': [], 'feature_set': '-', 'standardize': '-',
                     'class_weight': '-', 'train_count': 0, 'converged': True})
-        for metric in self.METRICS:
-            row[metric + '_sd'] = 0.0
-
         return row
+
+    def bootstrap_sd(self, y_test, confidence) -> dict:
+        """The spread of every metric when the held out questions are drawn again.
+
+        The draws come from one fixed seed, so every method scored on the same
+        questions is redrawn on exactly the same questions.
+        """
+        y_test, confidence = np.asarray(y_test), np.asarray(confidence, dtype=float)
+        if not len(y_test):
+            return {metric + '_sd': float('nan') for metric in self.METRICS}
+
+        random = np.random.default_rng(self.SEEDS[0])
+        draws = [random.integers(0, len(y_test), len(y_test)) for _ in range(self.BOOTSTRAP_DRAWS)]
+        measurements = [self.measure(y_test[draw], confidence[draw]) for draw in draws]
+        spread = {}
+        for metric in self.METRICS:
+            values = [measurement[metric] for measurement in measurements]
+            spread[metric + '_sd'] = float(np.nanstd(values)) if not np.all(np.isnan(values)) else float('nan')
+        return spread
 
     # --------------------------------------------------------------- experiment
 
@@ -428,12 +440,10 @@ class diffusion_decision_model_training:
             model, converged = self.fit_logistic(X_train, y_train, class_weight)
             probability = model.predict_proba(X_test)[:, 1]
 
-            measurements = []
-            for seed in seeds:
-                draw = (np.arange(len(y_test)) if seed == seeds[0]
-                        else np.random.default_rng(seed).integers(0, len(y_test), len(y_test)))
-                measurements.append(self.measure(y_test[draw], probability[draw]))
+            measurements = [self.measure(y_test, probability)]
+            spread = self.bootstrap_sd(y_test, probability)
         else:
+            spread = None
             X, y, baselines = self.build_matrix(self.datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
             held_out = 'random split'
             measurements, converged = [], True
@@ -445,25 +455,36 @@ class diffusion_decision_model_training:
                 converged = converged and ok
                 measurements.append(self.measure(y_test, model.predict_proba(X_test)[:, 1]))
 
-        method = loss_mode if feature_set in self.LOSS_BEARING_SETS else '-'
+        # A row is named by its feature set, and a set built from the loss also by
+        # how the loss is read: CoT-EIG-Mean is per token, CoT-EIG-Sum is summed.
+        method = (f"{feature_set}-{'Mean' if loss_mode == self.LOSS_PER_TOKEN else 'Sum'}"
+                  if feature_set in self.LOSS_BEARING_SETS else feature_set)
         row = self.result_row(held_out, target, method, y_test)
         row.update({'feature_set': feature_set, 'standardize': standardize,
                     'class_weight': class_weight if class_weight else 'none',
                     'train_count': len(y_train), 'converged': converged})
 
-        # The mean and the spread of each metric over the seeds.
+        # The mean and the spread of each metric over the seeds.  A held out set has
+        # one measurement, and its spread is the bootstrap's.
         for metric in self.METRICS:
             values = [measurement[metric] for measurement in measurements]
             row[metric] = float(np.nanmean(values)) if not np.all(np.isnan(values)) else float('nan')
             row[metric + '_sd'] = float(np.nanstd(values)) if not np.all(np.isnan(values)) else float('nan')
+        if spread is not None:
+            row.update(spread)
 
         # The same held out samples scored by each published confidence, for comparison.
-        row['baseline_rows'] = []
-        for column, name in enumerate(self.BASELINE_NAMES):
-            scored = ~np.isnan(baselines_test[:, column])
-            row['baseline_rows'].append(
-                self.score_untrained(held_out, target, name, baselines_test[scored, column],
-                                     y_test[scored]))
+        # They depend on neither the switches nor the feature set, so each set of held
+        # out questions is scored, and bootstrapped, only once.
+        key = (held_out, target, y_test.tobytes(), baselines_test.tobytes())
+        if key not in self.baseline_cache:
+            self.baseline_cache[key] = []
+            for column, name in enumerate(self.BASELINE_NAMES):
+                scored = ~np.isnan(baselines_test[:, column])
+                self.baseline_cache[key].append(
+                    self.score_untrained(held_out, target, name, baselines_test[scored, column],
+                                         y_test[scored]))
+        row['baseline_rows'] = self.baseline_cache[key]
 
         return row
 
@@ -504,12 +525,12 @@ class diffusion_decision_model_training:
     # ---------------------------------------------------------------- reporting
 
     def print_results(self, results: list, caption: str) -> None:
-        width = 134
+        width = 131
         print('\n' + '=' * width)
         print(f'== {caption}')
         print('=' * width)
         print(f"{'held out':<20}{'target':>6} {'method':<26}{'scaled':>7}{'weight':>10}{'fit':>5}"
-              f"{'train':>7}{'test':>6}{'minority':>9}{'ROC':>8}{'ROCsd':>8}{'ECE':>10}{'ECEminmax':>11}")
+              f"{'train':>7}{'test':>6}{'minority':>9}{'ROC':>8}{'ROCsd':>8}{'ECE':>10}{'ECEsd':>8}")
         print('-' * width)
         for row in results:
             print(f"{row['held_out']:<20}{row['target']:>6} {row['method']:<26}"
@@ -517,7 +538,7 @@ class diffusion_decision_model_training:
                   f"{('ok' if row['converged'] else 'STOP'):>5}"
                   f"{row['train_count']:>7}{row['test_count']:>6}{row['minority_count']:>9}"
                   f"{row['roc_auc']:>8.3f}{row['roc_auc_sd']:>8.3f}"
-                  f"{row['ece']:>10.3f}{row['ece_minmax']:>11.3f}")
+                  f"{row['ece']:>10.3f}{row['ece_sd']:>8.3f}")
         print('-' * width)
 
     # ------------------------------- kept from the earlier version of this file
@@ -596,7 +617,7 @@ class diffusion_decision_model_training:
 
     def calculate_grouped_averages(self, data: list[list[dict]]) -> None:
         parameter_keys = ["target", "method", "standardize", "class_weight"]
-        calculation_keys = ["roc_auc", "ece", "ece_minmax"]
+        calculation_keys = ["roc_auc", "ece"]
 
         records = [
             item
@@ -605,44 +626,45 @@ class diffusion_decision_model_training:
         ]
 
         df = pd.DataFrame(records)
-        result = (
-            df.groupby(parameter_keys, dropna=False)[calculation_keys]
-            .mean()
-            .round(3)            
-            .reset_index()
-        )
+        groups = df.groupby(parameter_keys, dropna=False)
+        result = groups[calculation_keys].mean()
+
+        # The spread of an average of k held out settings.  Each is scored on its own
+        # questions and resampled on its own, so they are independent, and the sd of
+        # their mean is sqrt(sum of sd squared) / k, over the settings that have one.
+        for metric in calculation_keys:
+            scored = df.dropna(subset=[metric])
+            result.insert(result.columns.get_loc(metric) + 1, metric + "_sd",
+                          scored.groupby(parameter_keys, dropna=False)[metric + "_sd"].agg(
+                              lambda sd: np.sqrt(np.nansum(np.square(sd))) / len(sd)))
+
+        result = result.round(3).reset_index()
         
         df_summary = pd.DataFrame(result)
         print()
         print(df_summary.to_string(index=False))
 
     def calculate_ECE_MCE(self, y_list, confidence_list, n_bins = 10):
-        df = pd.DataFrame({
-                "confidence": confidence_list,
-                "accuracy_reward": y_list
-            })
-             
-        # A coarse confidence, such as a vote share out of ten where most samples
-        # land on one value, leaves qcut with a bin that no sample falls into. Kept
-        # as a category, that empty bin has a mean of not a number, and it poisons
-        # the sum so the whole error comes back empty. Counting only the bins that
-        # have samples in them is the same calculation everywhere else and gives an
-        # answer here too.
-        df['binned_confidence'] = pd.qcut(df['confidence'], q=n_bins, duplicates='drop')
-        agg_perplexity = df.groupby('binned_confidence', observed=True)['confidence'].agg(['mean'])
-        agg_accuracy = df.groupby('binned_confidence', observed=True)['accuracy_reward'].agg(['mean'])
+        """Expected and maximum calibration error over equal count bins.
 
-        expected_calibration_error = 0
-        maximum_calibration_error = 0
-        for idx, row in enumerate(agg_perplexity.iterrows()):
-            confidence = row[1]['mean']
-            accuracy = agg_accuracy.iloc[idx]['mean']
-            expected_calibration_error += abs(confidence - accuracy)
-            maximum_calibration_error = max(abs(confidence - accuracy), maximum_calibration_error)
+        The bins are pd.qcut's: the confidence's deciles, with repeated edges dropped
+        and every bin right closed, the first including its lower edge.  A coarse
+        confidence, such as a vote share out of ten, leaves some bins empty; only the
+        bins that hold samples are averaged.  Written in numpy because the bootstrap
+        calls it thousands of times; it matches the pandas version to 1e-14.
+        """
+        y, confidence = np.asarray(y_list, dtype=float), np.asarray(confidence_list, dtype=float)
+        edges = np.unique(np.quantile(confidence, np.linspace(0, 1, n_bins + 1)))
+        if len(edges) < 2:
+            raise ValueError('every confidence is the same, so there is nothing to bin')
 
-        expected_calibration_error = expected_calibration_error / (idx + 1)
-        return expected_calibration_error, maximum_calibration_error
-
+        bins = np.clip(np.searchsorted(edges, confidence, side='left'), 1, None) - 1
+        counts = np.bincount(bins, minlength=len(edges) - 1)
+        filled = counts > 0
+        mean_confidence = np.bincount(bins, confidence, len(edges) - 1)[filled] / counts[filled]
+        accuracy = np.bincount(bins, y, len(edges) - 1)[filled] / counts[filled]
+        gaps = np.abs(mean_confidence - accuracy)
+        return float(gaps.mean()), float(gaps.max())
 
 
 if __name__ == '__main__':
@@ -697,10 +719,10 @@ if __name__ == '__main__':
                 # The free bar: the vote share used as the confidence, over every dataset
                 # pooled with nothing held out.  The same numbers in all seven files.
                 print('\nself consistency confidence, every dataset pooled, nothing held out')
-                print('-' * 134)
+                print('-' * 131)
                 training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
                 training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
-                print('-' * 134)
+                print('-' * 131)
 
                 training.ablation(feature_set = feature_set)
 

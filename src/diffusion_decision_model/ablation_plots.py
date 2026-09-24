@@ -9,10 +9,12 @@ own folder beside it holding the same plots for that one setting.
 """
 
 import os
+import functools
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 ABLATIONS = 'src/diffusion_decision_model/ablations'
 MODEL = 'qwen-qwen3-8b'
@@ -22,60 +24,59 @@ EVIDENCE_COUNTS = [5, 10, 15, 20, 25]
 # main block draws each in turn by rebinding MODEL and EVIDENCE_COUNTS above.
 PLOT_RUNS = [('qwen-qwen3-8b', [5, 10, 15, 20, 25]),
              ('deepseek-ai-deepseek-r1-distill-qwen-7b', [5, 10, 15, 20])]
-FEATURE_SETS = ['full', 'self_consistency', 'evidence_loss', 'agreeing_length',
-                'rollout_length', 'rollout_length_std', 'baseline_scalar', 'baseline_hidden']
-
-# The sets whose rows are named by the loss mode instead of a dash.
-LOSS_BEARING_SETS = ['full', 'evidence_loss']
 
 # The four groups the main average covers, in the order they read best.
 GROUPS = ['mmlu,mmlu_pro', 'gsm8k,math500,aime', 'gpqa', 'truthfulqa']
 GROUP_LABELS = ['multiple choice\n(mmlu, mmlu_pro)', 'mathematics\n(gsm8k, math500, aime)', 'gpqa', 'truthfulqa']
 
-# Every held out setting that gets its own folder: (name in the tables, folder, label).
-HOLD_OUTS = [('gpqa', 'gpqa', 'gpqa'),
-             ('truthfulqa', 'truthfulqa', 'truthfulqa'),
-             ('mmlu', 'mmlu', 'mmlu'),
-             ('mmlu_pro', 'mmlu_pro', 'mmlu_pro'),
-             ('gsm8k', 'gsm8k', 'gsm8k'),
-             ('math500', 'math500', 'math500'),
-             ('aime', 'aime', 'aime'),
-             ('countdown', 'countdown', 'countdown'),
-             ('mmlu,mmlu_pro', 'domain_multiple_choice_knowledge', 'multiple choice domain'),
-             ('gsm8k,math500,aime', 'domain_mathematics', 'mathematics domain')]
+# Every held out setting that gets its own folder: (name in the tables, folder).
+HOLD_OUTS = [('gpqa', 'gpqa'), ('truthfulqa', 'truthfulqa'), ('mmlu', 'mmlu'), ('mmlu_pro', 'mmlu_pro'),
+             ('gsm8k', 'gsm8k'), ('math500', 'math500'), ('aime', 'aime'), ('countdown', 'countdown'),
+             ('mmlu,mmlu_pro', 'domain_multiple_choice_knowledge'),
+             ('gsm8k,math500,aime', 'domain_mathematics')]
 
-OURS = 'evidence_per_token_loss'
-OURS_TOTAL = 'evidence_total_loss'
-BASELINES = ['baseline self cons 0', 'baseline self cons last', 'baseline cot loss',
-             'baseline cot loss/tok', 'baseline entropy total', 'baseline mean token ent',
-             'baseline arith mean prob', 'baseline budget self cons']
+# Ours, read per token (the reported one) and summed.
+OURS, OURS_TOTAL = 'CoT-EIG-Mean', 'CoT-EIG-Sum'
 
-BLUE, DARKBLUE, GREY, ORANGE, GREEN = '#1f6fb4', '#0d3c61', '#8a8a8a', '#d1701c', '#2e7d5b'
+# The baselines, as the tables name them.  The last three are models trained on their
+# own feature set and are read from that set's table; the rest need no training.
+UNTRAINED = ['SC-10', 'SC-Budget', 'Sum-Loss', 'Mean-Loss', 'Sum-Ent', 'Mean-Ent', 'Mean-Prob']
+TRAINED = ['CoT_Len', 'Logit_Feat', 'LastRep']
+BASELINES = UNTRAINED + TRAINED
 
-# Every plot names and colours a method the same way, using the table's own name.
-# Baselines are grouped by family: votes orange, losses grey, entropy and
-# probability green to purple.  Budget self consistency, the vote given as many
-# samples as ours, is red: it is the one ours has to beat.
-NAMES = {OURS: 'ours, per token loss', OURS_TOTAL: 'ours, total loss'}
-NAMES.update({name: name.replace('baseline ', '') for name in BASELINES})
-COLOURS = {OURS: DARKBLUE, OURS_TOTAL: BLUE,
-           'baseline self cons 0': '#d1701c', 'baseline self cons last': '#e8a86a',
-           'baseline cot loss': '#a3a3a3', 'baseline cot loss/tok': '#5c5c5c',
-           'baseline entropy total': '#2e7d5b', 'baseline mean token ent': '#5fae8f',
-           'baseline arith mean prob': '#8e5fa8', 'baseline budget self cons': '#c0271d'}
+# The feature set bars: (feature set, the row that stands for it).
+FEATURE_SET_BARS = [('CoT-EIG', OURS), ('EIG-SC', 'EIG-SC'), ('EIG-Loss', 'EIG-Loss-Mean'),
+                    ('CoT_Len', 'CoT_Len'), ('Logit_Feat', 'Logit_Feat'), ('LastRep', 'LastRep')]
 
+# Raw scores, not probabilities: their ECE is measured after a min max rescaling.
+MINMAX_SCORED = ['Sum-Loss', 'Mean-Loss', 'Sum-Ent', 'Mean-Ent']
 
-def counted():
-    """How many evidence counts this model was run at, in words for the axis labels."""
-    return {4: 'four', 5: 'five'}.get(len(EVIDENCE_COUNTS), str(len(EVIDENCE_COUNTS)))
+# One colour and one marker per method, the same in every plot.  A hue per family
+# (blue ours, orange and red self consistency, violet loss, aqua entropy, magenta
+# probability, ochre length, green the trained whole completion baselines), each pair
+# in a family split by lightness.  Checked with the dataviz palette rules: every
+# adjacent pair clears the normal vision floor of 15; the two colour blind pairs at
+# 6 to 7 are held apart by their markers and the labels.
+COLOURS = {OURS: '#1c5cab', OURS_TOTAL: '#5598e7', 'EIG-SC': '#4a95ea', 'EIG-Loss-Mean': '#9ec5f4',
+           'SC-10': '#eb6834', 'SC-Budget': '#b02424', 'Sum-Loss': '#4a3aa7', 'Mean-Loss': '#9085e9',
+           'Sum-Ent': '#0f7a54', 'Mean-Ent': '#1baf7a', 'Mean-Prob': '#e87ba4', 'CoT_Len': '#c98500',
+           'Logit_Feat': '#008300', 'LastRep': '#6fbf3a'}
+MARKERS = {OURS: 'o', OURS_TOTAL: 's', 'SC-10': '^', 'SC-Budget': 'v', 'Sum-Loss': 'D', 'Mean-Loss': 'd',
+           'Sum-Ent': 'P', 'Mean-Ent': 'X', 'Mean-Prob': '*', 'CoT_Len': '<', 'Logit_Feat': '>', 'LastRep': 'h'}
+INK, MUTED = '#333333', '#898781'
+
+# A star draws smaller than the other shapes at the same size, so it gets more.
+def marker_size(method, size):
+    return size * 1.5 if MARKERS[method] == '*' else size
 
 
 def table_path(evidence_count, feature_set):
     return f'{ABLATIONS}/{MODEL}/nv_{evidence_count}/ablation_{feature_set}.txt'
 
 
+@functools.lru_cache(maxsize=None)
 def read_results(path, held_out = None, target = 'run'):
-    """{(method, scaled, weight): (roc, ece, ece_minmax, minority)} for one setting.
+    """{(method, scaled, weight): (roc, ece, minority)} for one setting.
 
     With no held out named this reads the MAIN AVERAGE block, which carries no
     minority count.  With one named it reads that setting's rows of the tables.
@@ -89,22 +90,22 @@ def read_results(path, held_out = None, target = 'run'):
 
         fields = line.split()
         if held_out is None:
-            # target, method, scaled, weight, roc, ece, ece_minmax
-            if not inside or len(fields) < 7 or fields[0] != target:
+            # target, method, scaled, weight, roc, roc sd, ece, ece sd
+            if not inside or len(fields) < 8 or fields[0] != target:
                 continue
-            method, scaled, weight = ' '.join(fields[1:-5]), fields[-5], fields[-4]
-            numbers, minority = fields[-3:], None
+            method, scaled, weight = ' '.join(fields[1:-6]), fields[-6], fields[-5]
+            numbers, minority = [fields[-4], fields[-2]], None
         else:
-            # held out, target, method, scaled, weight, fit, train, test, minority, roc, roc sd, ece, ece_minmax
+            # held out, target, method, scaled, weight, fit, train, test, minority, roc, roc sd, ece, ece sd
             if (len(fields) < 13 or fields[0] != held_out or fields[1] != target
                     or fields[-8] not in ('ok', 'STOP')):
                 continue
             method, scaled, weight = ' '.join(fields[2:-10]), fields[-10], fields[-9]
-            numbers, minority = [fields[-4], fields[-2], fields[-1]], fields[-5]
+            numbers, minority = [fields[-4], fields[-2]], fields[-5]
 
         try:
-            roc, ece, minmax = (float(number) for number in numbers)
-            rows[(method, scaled, weight)] = (roc, ece, minmax, None if minority is None else int(minority))
+            roc, ece = (float(number) for number in numbers)
+            rows[(method, scaled, weight)] = (roc, ece, None if minority is None else int(minority))
         except ValueError:
             continue
 
@@ -113,17 +114,23 @@ def read_results(path, held_out = None, target = 'run'):
 
 def method_key(method):
     """How a method is keyed in the tables: trained rows unscaled with no weight."""
-    return (method, 'False', 'none') if method in (OURS, OURS_TOTAL) else (method, '-', '-')
+    return (method, '-', '-') if method in UNTRAINED or method == 'SC-10-Last' else (method, 'False', 'none')
 
 
-def describe(held_out, label):
-    """What the y label says the plot covers, and the x label's count of wrong answers."""
-    if held_out is None:
-        return 'main average over four held out groups', ''
+def lookup(evidence_count, method, held_out = None):
+    """(roc, ece, minority) of one method, from the table that holds it, or None.
 
-    minority = read_results(table_path(20, 'full'), held_out).get(method_key(OURS), (0, 0, 0, None))[3]
-    note = f'\n[{label}: {minority} of the rarer class at 20 steps]' if minority is not None else ''
-    return f'{label} held out', note
+    A trained baseline or ablation lives in its own feature set's table; ours and
+    the untrained baselines in CoT-EIG's.
+    """
+    table = next((feature_set for feature_set, row in FEATURE_SET_BARS if row == method), 'CoT-EIG')
+    return read_results(table_path(evidence_count, table), held_out).get(method_key(method))
+
+
+def value(evidence_count, method, metric, held_out = None):
+    """One number of one method: metric 0 is ROC, 1 is ECE.  nan when missing."""
+    row = lookup(evidence_count, method, held_out)
+    return row[metric] if row else np.nan
 
 
 def roc_range(values, top):
@@ -145,40 +152,50 @@ def spread_labels(values, gap):
     return placed
 
 
-def label_line_ends(axis, methods, series, gap, suffixes):
-    """Each line's name at its last point, nudged apart, instead of a long legend."""
+def label_line_ends(axis, methods, series, gap, hollow):
+    """Each line's name at its last point, nudged apart, instead of a long legend.
+
+    The name is in ink; the method's own marker beside it carries the colour, hollow
+    where the line's markers are.
+    """
     anchors = []
     for values in series:
         values = np.asarray(values, dtype=float)
         last = np.where(~np.isnan(values))[0][-1]
         anchors.append((EVIDENCE_COUNTS[last], values[last]))
 
+    right = max(EVIDENCE_COUNTS)
     heights = spread_labels([value for _, value in anchors], gap)
-    for method, (x, value), height, suffix in zip(methods, anchors, heights, suffixes):
-        axis.annotate(NAMES[method] + suffix, xy=(x, value), xytext=(26.2, height),
-                      fontsize=8, color=COLOURS[method], va='center',
-                      fontweight='bold' if method in (OURS, OURS_TOTAL) else 'normal',
-                      arrowprops={'arrowstyle': '-', 'color': '#d0d0d0', 'linewidth': 0.6})
+    for method, (x, value), height, open_marker in zip(methods, anchors, heights, hollow):
+        axis.plot([x, right + 1.3], [value, height], color='#d8d8d8', linewidth=0.6, zorder=1)
+        axis.plot(right + 1.6, height, MARKERS[method], color=COLOURS[method], markersize=marker_size(method, 5),
+                  markerfacecolor='white' if open_marker else COLOURS[method], clip_on=False)
+        axis.text(right + 2.1, height, method, fontsize=8, color=INK, va='center',
+                  fontweight='bold' if method in (OURS, OURS_TOTAL) else 'normal')
 
 
 def plain(axis, xlabel, ylabel):
     """The look every plot here shares."""
-    axis.set_xlabel(xlabel, fontsize=9)
-    axis.set_ylabel(ylabel, fontsize=9)
+    axis.set_xlabel(xlabel, fontsize=9, color=INK)
+    axis.set_ylabel(ylabel, fontsize=9, color=INK)
     axis.grid(axis='y', color='#e6e6e6', linewidth=0.8)
     axis.set_axisbelow(True)
     for side in ('top', 'right'):
         axis.spines[side].set_visible(False)
 
 
-def plot_roc_against_evidence_count(out_directory, held_out = None, label = None):
-    """Does giving the model more evidence steps buy anything?"""
-    results = {nv: read_results(table_path(nv, 'full'), held_out) for nv in EVIDENCE_COUNTS}
-    setting, note = describe(held_out, label)
+def line_style(method, minmax = False):
+    """Ours solid, untrained baselines dashed, trained baselines dash dot, rescaled ECE dotted."""
+    if minmax:
+        return ':'
+    return '-' if method in (OURS, OURS_TOTAL) else ('-.' if method in TRAINED else '--')
 
+
+def plot_against_evidence_count(out_directory, metric, held_out = None):
+    """Does giving the model more evidence steps buy anything?  metric 0 ROC, 1 ECE."""
     methods, series = [], []
     for method in [OURS, OURS_TOTAL] + BASELINES:
-        values = [results[nv].get(method_key(method), (np.nan,))[0] for nv in EVIDENCE_COUNTS]
+        values = [value(nv, method, metric, held_out) for nv in EVIDENCE_COUNTS]
         if not np.all(np.isnan(values)):
             methods.append(method)
             series.append(values)
@@ -186,106 +203,63 @@ def plot_roc_against_evidence_count(out_directory, held_out = None, label = None
     figure, axis = plt.subplots(figsize=(9, 5.4))
     for method, values in zip(methods, series):
         ours = method in (OURS, OURS_TOTAL)
-        axis.plot(EVIDENCE_COUNTS, values, '-' if ours else '--', color=COLOURS[method],
-                  linewidth=2.4 if ours else 1.4, marker='o', markersize=5 if ours else 3.5)
+        minmax = metric == 1 and method in MINMAX_SCORED
+        axis.plot(EVIDENCE_COUNTS, values, line_style(method, minmax), color=COLOURS[method],
+                  linewidth=2.4 if ours else 1.4, marker=MARKERS[method], markersize=marker_size(method, 6 if ours else 5),
+                  markerfacecolor='white' if minmax else COLOURS[method])
 
-    low, high = roc_range(series, 0.9)
-    label_line_ends(axis, methods, series, (high - low) * 0.031, [''] * len(methods))
+    if metric == 0:
+        low, high = roc_range(series, 0.9)
+        axis.axhline(0.5, color='#7a7a7a', linewidth=1, linestyle=(0, (4, 3)))
+        axis.text(min(EVIDENCE_COUNTS) - 0.4, 0.5 + (high - low) * 0.012, 'chance', fontsize=8, color=MUTED)
+    else:
+        everything = np.array(series, dtype=float)
+        low, high = max(0.0, np.nanmin(everything) - 0.02), np.nanmax(everything) + 0.02
+    label_line_ends(axis, methods, series, (high - low) * 0.034,
+                    [metric == 1 and method in MINMAX_SCORED for method in methods])
 
-    axis.axhline(0.5, color='#7a7a7a', linewidth=1, linestyle=(0, (4, 3)))
-    axis.text(4.6, 0.5 + (high - low) * 0.012, 'chance', fontsize=8, color='#7a7a7a')
     axis.set_xticks(EVIDENCE_COUNTS)
-    axis.set_xlim(4, 31)
+    axis.set_xlim(min(EVIDENCE_COUNTS) - 1, max(EVIDENCE_COUNTS) + 6)
     axis.set_ylim(low, high)
-    plain(axis, 'number of evidence steps' + note, f'ROC, {setting}')
+    plain(axis, 'number of evidence steps', ['ROC', 'ECE'][metric])
     figure.tight_layout()
-    figure.savefig(f'{out_directory}/roc_by_evidence_count.png', dpi=160)
+    figure.savefig(f"{out_directory}/{['roc', 'ece'][metric]}_by_evidence_count.png", dpi=160)
     plt.close(figure)
 
 
-def plot_ece_against_evidence_count(out_directory, held_out = None, label = None):
-    """The same question as the ROC plot, asked of calibration.  Lower is better here.
+def plot_feature_sets(out_directory, held_out = None):
+    """Which numbers carry the signal: ROC and ECE of each feature set, side by side."""
+    names = [feature_set for feature_set, _ in FEATURE_SET_BARS]
+    rows = [row for _, row in FEATURE_SET_BARS]
 
-    A raw log likelihood or entropy has no ECE of its own, so those four are drawn
-    with the min max ECE instead: dotted and marked, because that number says more
-    about where the score's range happens to land than about calibration.
-    """
-    results = {nv: read_results(table_path(nv, 'full'), held_out) for nv in EVIDENCE_COUNTS}
-    setting, note = describe(held_out, label)
-
-    methods, series, uses_minmax = [], [], []
-    for method in [OURS, OURS_TOTAL] + BASELINES:
-        rows = [results[nv].get(method_key(method)) for nv in EVIDENCE_COUNTS]
-        ece = [row[1] if row else np.nan for row in rows]
-        minmax = [row[2] if row else np.nan for row in rows]
-        fallback = bool(np.all(np.isnan(ece)))
-        values = minmax if fallback else ece
-        if not np.all(np.isnan(values)):
-            methods.append(method)
-            series.append(values)
-            uses_minmax.append(fallback)
-
-    figure, axis = plt.subplots(figsize=(9, 5.4))
-    for method, values, fallback in zip(methods, series, uses_minmax):
-        ours = method in (OURS, OURS_TOTAL)
-        style = ':' if fallback else ('-' if ours else '--')
-        axis.plot(EVIDENCE_COUNTS, values, style, color=COLOURS[method],
-                  linewidth=2.4 if ours else 1.4, marker='o', markersize=5 if ours else 3.5,
-                  markerfacecolor='white' if fallback else COLOURS[method])
-
-    everything = np.array(series, dtype=float)
-    low, high = max(0.0, np.nanmin(everything) - 0.02), np.nanmax(everything) + 0.02
-    label_line_ends(axis, methods, series, (high - low) * 0.035,
-                    [' (minmax)' if fallback else '' for fallback in uses_minmax])
-
-    axis.set_xticks(EVIDENCE_COUNTS)
-    axis.set_xlim(4, 31)
-    axis.set_ylim(low, high)
-    plain(axis, 'number of evidence steps' + note, f'ECE (lower is better), {setting}')
-    figure.tight_layout()
-    figure.savefig(f'{out_directory}/ece_by_evidence_count.png', dpi=160)
-    plt.close(figure)
-
-
-def plot_feature_sets(out_directory, held_out = None, label = None):
-    """Which numbers actually carry the signal, and which are just length."""
-    labels = ['full\n(loss +\nself_consistency)', 'self_consistency\nonly', 'evidence loss\nonly',
-              'agreeing rollout\nlength', 'rollout\nlength', 'rollout length\n+ spread',
-              'published\nscalars', 'hidden state\n(4096 dim)']
-    setting, note = describe(held_out, label)
-
-    means, spreads = [], []
-    for feature_set in FEATURE_SETS:
-        key = method_key(OURS) if feature_set in LOSS_BEARING_SETS else ('-', 'False', 'none')
-        values = []
-        for nv in EVIDENCE_COUNTS:
-            rows = read_results(table_path(nv, feature_set), held_out)
-            if key in rows and not np.isnan(rows[key][0]):
-                values.append(rows[key][0])
-        means.append(np.mean(values) if values else np.nan)
-        spreads.append((np.max(values) - np.min(values)) / 2 if len(values) > 1 else 0.0)
-
-    means, spreads = np.array(means), np.array(spreads)
-    low, high = roc_range(np.concatenate([means - spreads, means + spreads]), 0.92)
-
-    colours = [DARKBLUE, BLUE, BLUE] + [GREY] * 3 + [ORANGE, ORANGE]
     figure, axis = plt.subplots(figsize=(9, 4.6))
-    bars = axis.bar(range(len(labels)), means, yerr=spreads, capsize=3, zorder=2,
-                    color=colours, width=0.66, error_kw={'elinewidth': 1, 'ecolor': '#666666'})
-    for bar, value, spread in zip(bars, means, spreads):
-        if not np.isnan(value):
-            axis.text(bar.get_x() + bar.get_width() / 2, value + spread + (high - low) * 0.02,
-                      f'{value:.3f}', ha='center', fontsize=8.5)
+    width = 0.36
+    for metric, shift in ((0, -width / 2 - 0.01), (1, width / 2 + 0.01)):
+        for position, method in enumerate(rows):
+            values = [value(nv, method, metric, held_out) for nv in EVIDENCE_COUNTS]
+            values = [number for number in values if not np.isnan(number)]
+            if not values:
+                continue
+            mean = np.mean(values)
+            spread = (np.max(values) - np.min(values)) / 2 if len(values) > 1 else 0.0
+            colour = COLOURS[method]
+            # ROC a solid bar, ECE a hatched one in the same colour.
+            axis.bar(position + shift, mean, width, yerr=spread, capsize=2.5, zorder=2,
+                     color=colour if metric == 0 else colour + '40', edgecolor=colour,
+                     hatch=None if metric == 0 else '////', linewidth=0 if metric == 0 else 1,
+                     error_kw={'elinewidth': 0.9, 'ecolor': '#666666'})
+            axis.text(position + shift, mean + spread + 0.015, f'{mean:.3f}', ha='center',
+                      fontsize=7.5, color=INK)
 
-    axis.axhline(0.5, color='#7a7a7a', linewidth=1, linestyle=(0, (4, 3)), zorder=3)
-    axis.text(len(labels) - 0.55, 0.5 + (high - low) * 0.015, 'chance', fontsize=8,
-              color='#7a7a7a', ha='right', zorder=4)
-    axis.set_xticks(range(len(labels)))
-    axis.set_xticklabels(labels, fontsize=8)
-    axis.set_ylim(low, high)
-    plain(axis, note.strip(), f'ROC averaged over the {counted()} evidence counts\n{setting}')
+    axis.legend(handles=[Patch(facecolor='#8a8a8a', label='ROC'),
+                         Patch(facecolor='#8a8a8a40', edgecolor='#8a8a8a', hatch='////', label='ECE')],
+                loc='upper right', fontsize=8.5, frameon=False)
+    axis.set_xticks(range(len(names)))
+    axis.set_xticklabels(names, fontsize=9, color=INK)
+    axis.set_ylim(0, 1.0)
+    plain(axis, '', 'ROC / ECE')
     figure.tight_layout()
-    figure.savefig(f'{out_directory}/roc_by_feature_set.png', dpi=160)
+    figure.savefig(f'{out_directory}/roc_ece_by_feature_set.png', dpi=160)
     plt.close(figure)
 
 
@@ -293,12 +267,10 @@ def plot_per_benchmark(out_directory):
     """Every method on every held out group, averaged over the evidence counts."""
     methods = [OURS, OURS_TOTAL] + BASELINES
     grid = np.full((len(methods), len(GROUPS)), np.nan)
-    minorities = []
     for column, group in enumerate(GROUPS):
-        per_nv = [read_results(table_path(nv, 'full'), group) for nv in EVIDENCE_COUNTS]
-        minorities.append(per_nv[EVIDENCE_COUNTS.index(20)].get(method_key(OURS), (0, 0, 0, 0))[3])
         for row, method in enumerate(methods):
-            values = [rows[method_key(method)][0] for rows in per_nv if method_key(method) in rows]
+            values = [value(nv, method, 0, group) for nv in EVIDENCE_COUNTS]
+            values = [number for number in values if not np.isnan(number)]
             if values:
                 grid[row, column] = np.mean(values)
 
@@ -308,68 +280,104 @@ def plot_per_benchmark(out_directory):
     order = [0, 1] + sorted(measured, key=lambda row: -np.nanmean(grid[row]))
     grid, methods = grid[order], [methods[row] for row in order]
 
-    figure, axis = plt.subplots(figsize=(8.8, 5.6))
+    figure, axis = plt.subplots(figsize=(8.8, 0.52 * len(methods) + 1.4))
     image = axis.imshow(grid, cmap='Blues', vmin=0.5, vmax=1.0, aspect='auto')
     for row in range(len(methods)):
         for column in range(len(GROUPS)):
-            value = grid[row, column]
-            axis.text(column, row, f'{value:.3f}', ha='center', va='center', fontsize=9,
-                      color='white' if value > 0.78 else '#1a1a1a',
+            number = grid[row, column]
+            axis.text(column, row, f'{number:.3f}', ha='center', va='center', fontsize=9,
+                      color='white' if number > 0.78 else '#1a1a1a',
                       fontweight='bold' if row < 2 else 'normal')
 
     axis.axhline(1.5, color='white', linewidth=3)
     axis.set_xticks(range(len(GROUPS)))
-    axis.set_xticklabels([f'{label}\n{minority} of the rarer class'
-                          for label, minority in zip(GROUP_LABELS, minorities)], fontsize=8)
+    axis.set_xticklabels(GROUP_LABELS, fontsize=8, color=INK)
     axis.set_yticks(range(len(methods)))
-    axis.set_yticklabels([NAMES[method] for method in methods], fontsize=8.5)
+    axis.set_yticklabels(methods, fontsize=8.5, color=INK)
     for tick, method in zip(axis.get_yticklabels(), methods):
-        tick.set_color(COLOURS[method])
         tick.set_fontweight('bold' if method in (OURS, OURS_TOTAL) else 'normal')
     axis.tick_params(length=0)
     for side in axis.spines.values():
         side.set_visible(False)
     colourbar = figure.colorbar(image, ax=axis, fraction=0.035, pad=0.02)
-    colourbar.set_label(f'ROC, averaged over the {counted()} evidence counts', fontsize=8)
+    colourbar.set_label('ROC', fontsize=8)
     colourbar.outline.set_visible(False)
     figure.tight_layout()
     figure.savefig(f'{out_directory}/roc_by_benchmark.png', dpi=160)
     plt.close(figure)
 
 
-def plot_discrimination_against_calibration(out_directory, held_out = None, label = None):
-    """Ranking and calibration are different questions; this shows both at once."""
-    rows = read_results(table_path(20, 'full'), held_out)
-    setting, note = describe(held_out, label)
+def place_labels(figure, axis, placed):
+    """Each point's name where it covers no other name, no marker and no edge.
 
-    # The offset keeps labels off each other where two points sit close.  Only the
-    # scores that already are probabilities can be placed: the four raw scores
-    # have no ECE by design.
-    points = [(OURS, (9, 3)), (OURS_TOTAL, (9, -12)), ('baseline self cons 0', (9, 3)),
-              ('baseline self cons last', (9, 6)), ('baseline arith mean prob', (-9, -16)),
-              ('baseline budget self cons', (9, -12))]
+    Every label tries the spots around its point, nearest first, and takes the
+    first free one.  A label that had to move away gets a thin line to its point.
+    """
+    figure.canvas.draw()
+    renderer = figure.canvas.get_renderer()
+    frame = axis.get_window_extent(renderer)
+    markers = [axis.transData.transform((ece, roc)) for _, ece, roc in placed]
+    taken = []
+
+    def free(box, own):
+        if box.x0 < frame.x0 or box.x1 > frame.x1 or box.y0 < frame.y0 or box.y1 > frame.y1:
+            return False
+        if any(box.overlaps(other) for other in taken):
+            return False
+        return all(not (box.x0 - 6 < x < box.x1 + 6 and box.y0 - 6 < y < box.y1 + 6)
+                   for index, (x, y) in enumerate(markers) if index != own)
+
+    def measure(method, ece, roc, offset, ha, va, weight):
+        probe = axis.annotate(method, (ece, roc), xytext=offset, textcoords='offset points', ha=ha, va=va,
+                              fontsize=8.5, fontweight=weight)
+        box = probe.get_window_extent(renderer)
+        probe.remove()
+        return box
+
+    # Right, left, above, below, the four corners, then the same further out.
+    directions = [(1, 0, 'left', 'center'), (-1, 0, 'right', 'center'), (0, 1, 'center', 'bottom'),
+                  (0, -1, 'center', 'top'), (1, 1, 'left', 'bottom'), (1, -1, 'left', 'top'),
+                  (-1, 1, 'right', 'bottom'), (-1, -1, 'right', 'top')]
+    spots = [((dx * distance, dy * distance), ha, va, distance)
+             for distance in (7, 14, 22, 32, 44) for dx, dy, ha, va in directions]
+    for own, (method, ece, roc) in enumerate(placed):
+        weight = 'bold' if method in (OURS, OURS_TOTAL) else 'normal'
+        offset, ha, va, distance = next((spot for spot in spots
+                                         if free(measure(method, ece, roc, spot[0], spot[1], spot[2], weight), own)),
+                                        spots[0])
+        line = {'arrowstyle': '-', 'color': '#b0b0b0', 'linewidth': 0.6, 'shrinkA': 1, 'shrinkB': 4}
+        label = axis.annotate(method, (ece, roc), xytext=offset, textcoords='offset points', ha=ha, va=va,
+                              fontsize=8.5, color=INK, fontweight=weight,
+                              arrowprops=line if distance > 7 else None)
+        taken.append(label.get_window_extent(renderer))
+
+
+def plot_discrimination_against_calibration(out_directory, held_out = None):
+    """Ranking and calibration are different questions; this shows both at once.
+
+    Only the scores that already are probabilities are placed: the four raw scores'
+    ECE is measured on a rescaled score, which is not the same calibration question.
+    """
+    points = [method for method in [OURS, OURS_TOTAL] + BASELINES if method not in MINMAX_SCORED]
+    evidence_count = 20 if 20 in EVIDENCE_COUNTS else max(EVIDENCE_COUNTS)
 
     figure, axis = plt.subplots(figsize=(6.6, 4.8))
-    placed_ece, placed_roc = [], []
-    for method, offset in points:
-        if method_key(method) not in rows:
-            continue
-        roc, ece = rows[method_key(method)][:2]
+    placed = []
+    for method in points:
+        roc, ece = value(evidence_count, method, 0, held_out), value(evidence_count, method, 1, held_out)
         if np.isnan(roc) or np.isnan(ece):
             continue
-        placed_ece.append(ece)
-        placed_roc.append(roc)
-        axis.scatter(ece, roc, s=70, color=COLOURS[method], zorder=3)
-        axis.annotate(NAMES[method], (ece, roc), textcoords='offset points',
-                      xytext=offset, fontsize=8.5, color='#333333',
-                      ha='right' if offset[0] < 0 else 'left')
+        placed.append((method, ece, roc))
+        axis.scatter(ece, roc, s=marker_size(method, 60) * 1.5 if MARKERS[method] == '*' else 60,
+                     color=COLOURS[method], marker=MARKERS[method], zorder=3,
+                     edgecolors='white', linewidths=0.8)
 
     axis.axhline(0.5, color='#c0c0c0', linewidth=1, linestyle=':')
-    axis.set_xlim(0.0, max(0.30, max(placed_ece, default=0.0) + 0.05))
-    axis.set_ylim(*roc_range(placed_roc, 0.92))
-    plain(axis, 'expected calibration error (lower is better), 20 evidence steps' + note,
-          f'ROC (higher is better), {setting}')
+    axis.set_xlim(0.0, max(0.30, max((ece for _, ece, _ in placed), default=0.0) + 0.08))
+    axis.set_ylim(*roc_range([roc for _, _, roc in placed], 0.92))
+    plain(axis, 'ECE', 'ROC')
     figure.tight_layout()
+    place_labels(figure, axis, placed)
     figure.savefig(f'{out_directory}/roc_against_ece.png', dpi=160)
     plt.close(figure)
 
@@ -380,8 +388,8 @@ if __name__ == '__main__':
         main_directory = f'{root}/main_average'
         os.makedirs(main_directory, exist_ok=True)
 
-        plot_roc_against_evidence_count(main_directory)
-        plot_ece_against_evidence_count(main_directory)
+        plot_against_evidence_count(main_directory, 0)
+        plot_against_evidence_count(main_directory, 1)
         plot_feature_sets(main_directory)
         plot_per_benchmark(main_directory)
         plot_discrimination_against_calibration(main_directory)
@@ -389,11 +397,11 @@ if __name__ == '__main__':
 
         # The same four plots for every single held out dataset and domain.  The
         # benchmark table is left out: it already puts every group side by side.
-        for held_out, folder, label in HOLD_OUTS:
+        for held_out, folder in HOLD_OUTS:
             out_directory = f'{root}/{folder}'
             os.makedirs(out_directory, exist_ok=True)
-            plot_roc_against_evidence_count(out_directory, held_out, label)
-            plot_ece_against_evidence_count(out_directory, held_out, label)
-            plot_feature_sets(out_directory, held_out, label)
-            plot_discrimination_against_calibration(out_directory, held_out, label)
+            plot_against_evidence_count(out_directory, 0, held_out)
+            plot_against_evidence_count(out_directory, 1, held_out)
+            plot_feature_sets(out_directory, held_out)
+            plot_discrimination_against_calibration(out_directory, held_out)
             print(f'wrote {out_directory}')

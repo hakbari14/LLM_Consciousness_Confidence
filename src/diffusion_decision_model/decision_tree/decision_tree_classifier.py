@@ -4,6 +4,7 @@ from src.logger.diffusion_decision_model.diffusion_decision_model_logger import 
 import os
 import sys
 import copy
+import itertools
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -114,15 +115,14 @@ class decision_tree_classifier:
                 )
 
         channels = ['loss', 'agreement', 'delta_loss', 'delta_agreement']
-        feature_names = [f"step{i // X.shape[2]}_{channels[i % X.shape[2]]}" for i in range(X_flat.shape[1])]
+        feature_names = [f"evidence_{i // X.shape[2] + 1}_{channels[i % X.shape[2]]}" for i in range(X_flat.shape[1])]
 
         # Only the tree with every split that ends in the same class on both sides
         # folded back into its parent is drawn: those splits change no decision.
         merged = self.merge_same_class_leaves(clf)
 
         # Wide enough that every leaf keeps its own box however deep the tree grows.
-        figsize = (max(20, 1.8 * clf.get_n_leaves()), 4 + 2.2 * clf.get_depth())
-        title = f"Decision Tree, max depth {max_depth}, at least {min_samples_leaf} questions per leaf, same-class leaves merged"
+        figsize = (max(11, 1.05 * clf.get_n_leaves()), 3 + 1.5 * clf.get_depth())
         directory = f"./src/diffusion_decision_model/decision_tree/{self.modelname_dir}"
         file_name = f"decision_tree{self.get_number_of_evidence_dir()}_depth_{max_depth}_leaf_{min_samples_leaf}.png"
 
@@ -130,23 +130,43 @@ class decision_tree_classifier:
         print(export_text(merged, feature_names=feature_names, decimals=3))
 
         self.draw_paper_paths(merged, regression, X_flat, keys, set(index_test), feature_names,
-                              figsize, title, f"{directory}/merged_paths", file_name)
+                              figsize, f"{directory}/merged_paths", file_name)
         return clf
 
-    def draw_tree(self, tree, feature_names, figsize, title):
-        """The tree on a new figure; returns the figure and one annotation per drawn node."""
-        figure = plt.figure(figsize=figsize)
-        annotations = plot_tree(
-            tree,
-            filled=True,
-            feature_names=feature_names,
-            class_names=['0: regression <= 0.5', '1: regression > 0.5'],
-            rounded=True,
-            fontsize=8
-        )
-        plt.title(title)
-        plt.tight_layout()
-        return figure, annotations
+    def draw_tree(self, tree, feature_names, figsize):
+        """The tree on a new figure; returns the figure and one annotation per drawn node.
+
+        Starts at figsize and widens until no two boxes come within a clear gap of each
+        other, counting the room the thick path outlines drawn later take.
+        """
+        width, height = figsize
+        while True:
+            figure = plt.figure(figsize=(width, height))
+            annotations = plot_tree(
+                tree,
+                filled=True,
+                impurity=False,
+                feature_names=feature_names,
+                class_names=['Low Confidence', 'High Confidence'],
+                rounded=True,
+                fontsize=10
+            )
+            # Each box keeps its rule, its question count and its class; the class counts
+            # plot_tree always prints are dropped, and the class stands on its own.
+            for annotation in annotations:
+                lines = [line.replace('class = ', '') for line in annotation.get_text().split('\n')
+                         if not line.startswith('value')]
+                annotation.set_text('\n'.join(lines))
+            plt.tight_layout()
+
+            figure.canvas.draw()
+            renderer = figure.canvas.get_renderer()
+            boxes = [annotation.get_bbox_patch().get_window_extent(renderer).padded(9)
+                     for annotation in annotations if annotation.get_bbox_patch() is not None]
+            if not any(first.overlaps(second) for first, second in itertools.combinations(boxes, 2)):
+                return figure, annotations
+            plt.close(figure)
+            width *= 1.06
 
     def held_out_confidence(self, dataset, sample_id):
         """The confidence the paper reports: the per token regression trained with this
@@ -175,10 +195,10 @@ class decision_tree_classifier:
                 stack += [tree.children_right[node], tree.children_left[node]]
         return order
 
-    def draw_paper_paths(self, merged, regression, X_flat, keys, test_indices, feature_names, figsize, title, folder, file_name):
+    def draw_paper_paths(self, merged, regression, X_flat, keys, test_indices, feature_names, figsize, folder, file_name):
         """The merged tree with each paper sample's route from root to leaf in its colour."""
         tree = merged.tree_
-        figure, annotations = self.draw_tree(merged, feature_names, figsize, title + ", paper samples")
+        figure, annotations = self.draw_tree(merged, feature_names, figsize)
         axis = figure.axes[0]
 
         # Tie every drawn box to its node, and make sure the order really matches.  The
@@ -188,7 +208,7 @@ class decision_tree_classifier:
         if len(nodes) != len(annotations):
             raise Exception('drawn boxes do not match the nodes of the tree')
         for node, annotation in zip(nodes, annotations):
-            expected = feature_names[tree.feature[node]] if tree.children_left[node] != -1 else 'gini'
+            expected = feature_names[tree.feature[node]] if tree.children_left[node] != -1 else 'samples'
             if not annotation.get_text().startswith(expected):
                 raise Exception(f'box of node {node} does not show {expected}')
         box = dict(zip(nodes, annotations))
@@ -207,14 +227,14 @@ class decision_tree_classifier:
             paths.append((path, colour))
 
             print(f"{label}: in the {'test' if index in test_indices else 'train'} split, "
-                  f"held out confidence {confidence:.3f}, tree class {leaf_class}")
+                  f"held out confidence {confidence:.3f}, tree says {['Low', 'High'][leaf_class]} Confidence")
             for node in path[:-1]:
                 feature, threshold = tree.feature[node], tree.threshold[node]
                 side = '<=' if np.float32(x[feature]) <= threshold else '> '
                 print(f"    {feature_names[feature]:<22} = {x[feature]:>9.3f}  {side} {threshold:.3f}")
             print(f"    leaf: {tree.n_node_samples[leaf]} questions, class {leaf_class}")
             handles.append(Line2D([0], [0], color=colour, linewidth=4,
-                                  label=f"{label}  →  class {leaf_class} (held out confidence {confidence:.3f})"))
+                                  label=label.split(':')[0]))
 
         # Edges: a thick line under the boxes, offset side by side where both samples pass.
         edges = [set(zip(path, path[1:])) for path, _ in paths]
@@ -244,7 +264,7 @@ class decision_tree_classifier:
                                                      fill=False, edgecolor=colour, linewidth=3.5,
                                                      transform=figure.transFigure, figure=figure, zorder=200))
 
-        axis.legend(handles=handles, loc='upper left', fontsize=11, frameon=False)
+        axis.legend(handles=handles, loc='lower left', bbox_to_anchor=(0, 1.0), fontsize=11, frameon=False)
         os.makedirs(folder, exist_ok=True)
         plt.savefig(f"{folder}/{file_name}", dpi=300, bbox_inches="tight")
         plt.close()

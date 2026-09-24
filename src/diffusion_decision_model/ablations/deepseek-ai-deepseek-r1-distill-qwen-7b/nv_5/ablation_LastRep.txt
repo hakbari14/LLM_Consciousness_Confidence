@@ -1,0 +1,446 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+-----------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.7219
+ROC : 0.7888
+ECE : 0.0666
+Accuracy Completion : 0.6885
+ROC Completion : 0.6717
+ECE Completion : 0.1948
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: random split
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+random split           run LastRep                     False      none   ok   1225   307      103   0.737   0.019     0.219   0.010
+random split           run LastRep                     False  balanced   ok   1225   307      103   0.736   0.019     0.219   0.011
+random split           run LastRep                      True      none   ok   1225   307      103   0.738   0.017     0.220   0.010
+random split           run LastRep                      True  balanced   ok   1225   307      103   0.737   0.017     0.225   0.009
+random split           run SC-10                           -         -   ok      0   307      103   0.718   0.028     0.139   0.027
+random split           run SC-10-Last                      -         -   ok      0   307      103   0.714   0.028     0.254   0.028
+random split           run Sum-Loss                        -         -   ok      0   307      103   0.583   0.038     0.215   0.026
+random split           run Mean-Loss                       -         -   ok      0   307      103   0.725   0.034     0.058   0.028
+random split           run Sum-Ent                         -         -   ok      0   307      103   0.587   0.039     0.207   0.024
+random split           run Mean-Ent                        -         -   ok      0   307      103   0.724   0.031     0.058   0.029
+random split           run Mean-Prob                       -         -   ok      0   307      103   0.725   0.032     0.159   0.025
+random split           run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+random split          vote LastRep                     False      none   ok   1225   307       85   0.750   0.031     0.181   0.019
+random split          vote LastRep                     False  balanced   ok   1225   307       85   0.750   0.031     0.185   0.022
+random split          vote LastRep                      True      none   ok   1225   307       85   0.751   0.032     0.192   0.017
+random split          vote LastRep                      True  balanced   ok   1225   307       85   0.751   0.032     0.196   0.019
+random split          vote SC-10                           -         -   ok      0   307       85   0.809   0.022     0.062   0.016
+random split          vote SC-10-Last                      -         -   ok      0   306       85   0.661   0.031     0.162   0.027
+random split          vote Sum-Loss                        -         -   ok      0   307       85   0.584   0.048     0.190   0.021
+random split          vote Mean-Loss                       -         -   ok      0   307       85   0.658   0.032     0.121   0.019
+random split          vote Sum-Ent                         -         -   ok      0   307       85   0.593   0.049     0.189   0.021
+random split          vote Mean-Ent                        -         -   ok      0   307       85   0.666   0.031     0.096   0.023
+random split          vote Mean-Prob                       -         -   ok      0   307       85   0.657   0.032     0.118   0.019
+random split          vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: gpqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run LastRep                     False      none   ok   1375   157       77   0.648   0.040     0.281   0.038
+gpqa                   run LastRep                     False  balanced   ok   1375   157       77   0.647   0.040     0.286   0.035
+gpqa                   run LastRep                      True      none   ok   1375   157       77   0.666   0.041     0.277   0.034
+gpqa                   run LastRep                      True  balanced   ok   1375   157       77   0.659   0.041     0.274   0.031
+gpqa                   run SC-10                           -         -   ok      0   157       77   0.730   0.037     0.200   0.033
+gpqa                   run SC-10-Last                      -         -   ok      0   156       77   0.569   0.048     0.303   0.048
+gpqa                   run Sum-Loss                        -         -   ok      0   157       77   0.601   0.046     0.219   0.030
+gpqa                   run Mean-Loss                       -         -   ok      0   157       77   0.548   0.048     0.173   0.039
+gpqa                   run Sum-Ent                         -         -   ok      0   157       77   0.600   0.046     0.232   0.032
+gpqa                   run Mean-Ent                        -         -   ok      0   157       77   0.562   0.048     0.173   0.032
+gpqa                   run Mean-Prob                       -         -   ok      0   157       77   0.563   0.049     0.340   0.042
+gpqa                   run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+gpqa                  vote LastRep                     False      none   ok   1375   157       72   0.707   0.039     0.283   0.039
+gpqa                  vote LastRep                     False  balanced   ok   1375   157       72   0.707   0.039     0.282   0.038
+gpqa                  vote LastRep                      True      none   ok   1375   157       72   0.723   0.039     0.258   0.041
+gpqa                  vote LastRep                      True  balanced   ok   1375   157       72   0.716   0.040     0.263   0.042
+gpqa                  vote SC-10                           -         -   ok      0   157       72   0.755   0.040     0.142   0.032
+gpqa                  vote SC-10-Last                      -         -   ok      0   156       72   0.578   0.042     0.235   0.036
+gpqa                  vote Sum-Loss                        -         -   ok      0   157       72   0.672   0.051     0.166   0.035
+gpqa                  vote Mean-Loss                       -         -   ok      0   157       72   0.513   0.037     0.160   0.026
+gpqa                  vote Sum-Ent                         -         -   ok      0   157       72   0.675   0.051     0.164   0.031
+gpqa                  vote Mean-Ent                        -         -   ok      0   157       72   0.542   0.037     0.126   0.032
+gpqa                  vote Mean-Prob                       -         -   ok      0   157       72   0.527   0.037     0.288   0.033
+gpqa                  vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: countdown
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+countdown              run LastRep                     False      none   ok   1425   107        4   0.578   0.120     0.713   0.033
+countdown              run LastRep                     False  balanced   ok   1425   107        4   0.578   0.120     0.745   0.031
+countdown              run LastRep                      True      none   ok   1425   107        4   0.544   0.111     0.543   0.035
+countdown              run LastRep                      True  balanced   ok   1425   107        4   0.549   0.116     0.536   0.034
+countdown              run SC-10                           -         -   ok      0   107        4   0.801   0.149     0.517   0.021
+countdown              run SC-10-Last                      -         -   ok      0   107        4   0.863   0.073     0.104   0.025
+countdown              run Sum-Loss                        -         -   ok      0   107        4   0.842   0.126     0.262   0.024
+countdown              run Mean-Loss                       -         -   ok      0   107        4   0.345   0.135     0.374   0.058
+countdown              run Sum-Ent                         -         -   ok      0   107        4   0.840   0.128     0.267   0.024
+countdown              run Mean-Ent                        -         -   ok      0   107        4   0.323   0.134     0.375   0.076
+countdown              run Mean-Prob                       -         -   ok      0   107        4   0.313   0.128     0.099   0.012
+countdown              run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+countdown             vote LastRep                     False      none   ok   1425   107       10   0.344   0.093     0.094   0.029
+countdown             vote LastRep                     False  balanced   ok   1425   107       10   0.344   0.093     0.094   0.029
+countdown             vote LastRep                      True      none   ok   1425   107       10   0.332   0.098     0.094   0.030
+countdown             vote LastRep                      True  balanced   ok   1425   107       10   0.331   0.098     0.094   0.030
+countdown             vote SC-10                           -         -   ok      0   107       10   0.908   0.058     0.476   0.022
+countdown             vote SC-10-Last                      -         -   ok      0   107       10   0.673   0.091     0.085   0.025
+countdown             vote Sum-Loss                        -         -   ok      0   107       10   0.523   0.111     0.248   0.028
+countdown             vote Mean-Loss                       -         -   ok      0   107       10   0.392   0.081     0.332   0.059
+countdown             vote Sum-Ent                         -         -   ok      0   107       10   0.527   0.109     0.241   0.029
+countdown             vote Mean-Ent                        -         -   ok      0   107       10   0.387   0.085     0.333   0.076
+countdown             vote Mean-Prob                       -         -   ok      0   107       10   0.394   0.085     0.079   0.017
+countdown             vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: math500
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+math500                run LastRep                     False      none   ok   1401   131        3   0.839   0.118     0.052   0.014
+math500                run LastRep                     False  balanced   ok   1401   131        3   0.836   0.121     0.061   0.015
+math500                run LastRep                      True      none   ok   1401   131        3   0.836   0.121     0.059   0.013
+math500                run LastRep                      True  balanced   ok   1401   131        3   0.836   0.119     0.069   0.014
+math500                run SC-10                           -         -   ok      0   131        3   0.974   0.016     0.039   0.030
+math500                run SC-10-Last                      -         -   ok      0   131        3   0.768   0.132     0.022   0.037
+math500                run Sum-Loss                        -         -   ok      0   131        3   0.727   0.193     0.129   0.018
+math500                run Mean-Loss                       -         -   ok      0   131        3   0.659   0.254     0.317   0.049
+math500                run Sum-Ent                         -         -   ok      0   131        3   0.737   0.187     0.125   0.018
+math500                run Mean-Ent                        -         -   ok      0   131        3   0.651   0.252     0.304   0.051
+math500                run Mean-Prob                       -         -   ok      0   131        3   0.656   0.255     0.078   0.009
+math500                run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+math500               vote LastRep                     False      none   ok   1401   131        3   0.646   0.083     0.060   0.018
+math500               vote LastRep                     False  balanced   ok   1401   131        3   0.643   0.081     0.066   0.018
+math500               vote LastRep                      True      none   ok   1401   131        3   0.633   0.069     0.053   0.019
+math500               vote LastRep                      True  balanced   ok   1401   131        3   0.625   0.066     0.057   0.020
+math500               vote SC-10                           -         -   ok      0   131        3   0.974   0.016     0.039   0.030
+math500               vote SC-10-Last                      -         -   ok      0   131        3   0.768   0.132     0.022   0.037
+math500               vote Sum-Loss                        -         -   ok      0   131        3   0.727   0.193     0.129   0.018
+math500               vote Mean-Loss                       -         -   ok      0   131        3   0.659   0.254     0.317   0.049
+math500               vote Sum-Ent                         -         -   ok      0   131        3   0.737   0.187     0.125   0.018
+math500               vote Mean-Ent                        -         -   ok      0   131        3   0.651   0.252     0.304   0.051
+math500               vote Mean-Prob                       -         -   ok      0   131        3   0.656   0.255     0.078   0.009
+math500               vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: gsm8k
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run LastRep                     False      none   ok   1333   199       19   0.570   0.052     0.141   0.024
+gsm8k                  run LastRep                     False  balanced   ok   1333   199       19   0.570   0.052     0.146   0.025
+gsm8k                  run LastRep                      True      none   ok   1333   199       19   0.565   0.043     0.166   0.023
+gsm8k                  run LastRep                      True  balanced   ok   1333   199       19   0.570   0.043     0.170   0.025
+gsm8k                  run SC-10                           -         -   ok      0   199       19   0.701   0.076     0.090   0.039
+gsm8k                  run SC-10-Last                      -         -   ok      0   199       19   0.676   0.054     0.053   0.025
+gsm8k                  run Sum-Loss                        -         -   ok      0   199       19   0.558   0.085     0.069   0.018
+gsm8k                  run Mean-Loss                       -         -   ok      0   199       19   0.679   0.071     0.209   0.025
+gsm8k                  run Sum-Ent                         -         -   ok      0   199       19   0.568   0.076     0.070   0.018
+gsm8k                  run Mean-Ent                        -         -   ok      0   199       19   0.701   0.063     0.217   0.026
+gsm8k                  run Mean-Prob                       -         -   ok      0   199       19   0.685   0.070     0.037   0.016
+gsm8k                  run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+gsm8k                 vote LastRep                     False      none   ok   1333   199        9   0.557   0.119     0.103   0.020
+gsm8k                 vote LastRep                     False  balanced   ok   1333   199        9   0.557   0.119     0.115   0.021
+gsm8k                 vote LastRep                      True      none   ok   1333   199        9   0.567   0.117     0.123   0.020
+gsm8k                 vote LastRep                      True  balanced   ok   1333   199        9   0.567   0.116     0.133   0.021
+gsm8k                 vote SC-10                           -         -   ok      0   199        9   0.863   0.061     0.089   0.035
+gsm8k                 vote SC-10-Last                      -         -   ok      0   199        9   0.592   0.088     0.081   0.027
+gsm8k                 vote Sum-Loss                        -         -   ok      0   199        9   0.618   0.138     0.049   0.025
+gsm8k                 vote Mean-Loss                       -         -   ok      0   199        9   0.603   0.123     0.259   0.022
+gsm8k                 vote Sum-Ent                         -         -   ok      0   199        9   0.621   0.131     0.047   0.023
+gsm8k                 vote Mean-Ent                        -         -   ok      0   199        9   0.614   0.112     0.267   0.025
+gsm8k                 vote Mean-Prob                       -         -   ok      0   199        9   0.591   0.128     0.062   0.009
+gsm8k                 vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: mmlu
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run LastRep                     False      none   ok   1255   277      100   0.581   0.031     0.349   0.030
+mmlu                   run LastRep                     False  balanced   ok   1255   277      100   0.579   0.031     0.353   0.029
+mmlu                   run LastRep                      True      none   ok   1255   277      100   0.567   0.035     0.394   0.034
+mmlu                   run LastRep                      True  balanced   ok   1255   277      100   0.567   0.035     0.398   0.032
+mmlu                   run SC-10                           -         -   ok      0   277      100   0.682   0.029     0.164   0.028
+mmlu                   run SC-10-Last                      -         -   ok      0   275       98   0.644   0.032     0.277   0.034
+mmlu                   run Sum-Loss                        -         -   ok      0   277      100   0.639   0.033     0.193   0.023
+mmlu                   run Mean-Loss                       -         -   ok      0   277      100   0.574   0.029     0.212   0.028
+mmlu                   run Sum-Ent                         -         -   ok      0   277      100   0.640   0.033     0.196   0.024
+mmlu                   run Mean-Ent                        -         -   ok      0   277      100   0.573   0.031     0.217   0.025
+mmlu                   run Mean-Prob                       -         -   ok      0   277      100   0.579   0.032     0.145   0.023
+mmlu                   run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+mmlu                  vote LastRep                     False      none   ok   1255   277       73   0.643   0.033     0.334   0.027
+mmlu                  vote LastRep                     False  balanced   ok   1255   277       73   0.643   0.033     0.357   0.030
+mmlu                  vote LastRep                      True      none   ok   1255   277       73   0.640   0.033     0.341   0.027
+mmlu                  vote LastRep                      True  balanced   ok   1255   277       73   0.639   0.033     0.350   0.028
+mmlu                  vote SC-10                           -         -   ok      0   277       73   0.774   0.030     0.053   0.021
+mmlu                  vote SC-10-Last                      -         -   ok      0   275       73   0.552   0.038     0.141   0.030
+mmlu                  vote Sum-Loss                        -         -   ok      0   277       73   0.589   0.039     0.160   0.021
+mmlu                  vote Mean-Loss                       -         -   ok      0   277       73   0.607   0.038     0.267   0.027
+mmlu                  vote Sum-Ent                         -         -   ok      0   277       73   0.591   0.039     0.156   0.022
+mmlu                  vote Mean-Ent                        -         -   ok      0   277       73   0.616   0.039     0.272   0.023
+mmlu                  vote Mean-Prob                       -         -   ok      0   277       73   0.613   0.040     0.083   0.019
+mmlu                  vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: truthfulqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run LastRep                     False      none   ok   1233   299      142   0.482   0.034     0.424   0.031
+truthfulqa             run LastRep                     False  balanced   ok   1233   299      142   0.482   0.034     0.426   0.030
+truthfulqa             run LastRep                      True      none   ok   1233   299      142   0.506   0.034     0.414   0.030
+truthfulqa             run LastRep                      True  balanced   ok   1233   299      142   0.507   0.034     0.421   0.031
+truthfulqa             run SC-10                           -         -   ok      0   299      142   0.589   0.032     0.238   0.029
+truthfulqa             run SC-10-Last                      -         -   ok      0   299      142   0.612   0.029     0.377   0.030
+truthfulqa             run Sum-Loss                        -         -   ok      0   299      142   0.550   0.027     0.406   0.034
+truthfulqa             run Mean-Loss                       -         -   ok      0   299      142   0.528   0.032     0.120   0.025
+truthfulqa             run Sum-Ent                         -         -   ok      0   299      142   0.548   0.028     0.407   0.034
+truthfulqa             run Mean-Ent                        -         -   ok      0   299      142   0.526   0.033     0.122   0.028
+truthfulqa             run Mean-Prob                       -         -   ok      0   299      142   0.527   0.033     0.283   0.027
+truthfulqa             run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+truthfulqa            vote LastRep                     False      none   ok   1233   299      134   0.565   0.034     0.367   0.030
+truthfulqa            vote LastRep                     False  balanced   ok   1233   299      134   0.564   0.034     0.349   0.031
+truthfulqa            vote LastRep                      True      none   ok   1233   299      134   0.563   0.034     0.371   0.027
+truthfulqa            vote LastRep                      True  balanced   ok   1233   299      134   0.565   0.034     0.354   0.032
+truthfulqa            vote SC-10                           -         -   ok      0   299      134   0.715   0.029     0.134   0.023
+truthfulqa            vote SC-10-Last                      -         -   ok      0   299      134   0.571   0.027     0.269   0.029
+truthfulqa            vote Sum-Loss                        -         -   ok      0   299      134   0.533   0.024     0.329   0.026
+truthfulqa            vote Mean-Loss                       -         -   ok      0   299      134   0.561   0.032     0.116   0.024
+truthfulqa            vote Sum-Ent                         -         -   ok      0   299      134   0.529   0.023     0.331   0.027
+truthfulqa            vote Mean-Ent                        -         -   ok      0   299      134   0.553   0.031     0.118   0.030
+truthfulqa            vote Mean-Prob                       -         -   ok      0   299      134   0.555   0.031     0.206   0.026
+truthfulqa            vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run LastRep                     False      none   ok   1271   261      130   0.622   0.037     0.329   0.026
+mmlu_pro               run LastRep                     False  balanced   ok   1271   261      130   0.621   0.037     0.320   0.024
+mmlu_pro               run LastRep                      True      none   ok   1271   261      130   0.613   0.040     0.344   0.025
+mmlu_pro               run LastRep                      True  balanced   ok   1271   261      130   0.611   0.040     0.334   0.025
+mmlu_pro               run SC-10                           -         -   ok      0   261      130   0.742   0.028     0.168   0.027
+mmlu_pro               run SC-10-Last                      -         -   ok      0   260      129   0.585   0.034     0.268   0.030
+mmlu_pro               run Sum-Loss                        -         -   ok      0   261      130   0.486   0.039     0.330   0.029
+mmlu_pro               run Mean-Loss                       -         -   ok      0   261      130   0.535   0.039     0.233   0.034
+mmlu_pro               run Sum-Ent                         -         -   ok      0   261      130   0.500   0.039     0.326   0.029
+mmlu_pro               run Mean-Ent                        -         -   ok      0   261      130   0.545   0.039     0.218   0.034
+mmlu_pro               run Mean-Prob                       -         -   ok      0   261      130   0.538   0.039     0.349   0.030
+mmlu_pro               run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+mmlu_pro              vote LastRep                     False      none   ok   1271   261      113   0.675   0.032     0.282   0.027
+mmlu_pro              vote LastRep                     False  balanced   ok   1271   261      113   0.675   0.032     0.268   0.027
+mmlu_pro              vote LastRep                      True      none   ok   1271   261      113   0.664   0.031     0.278   0.025
+mmlu_pro              vote LastRep                      True  balanced   ok   1271   261      113   0.664   0.031     0.268   0.026
+mmlu_pro              vote SC-10                           -         -   ok      0   261      113   0.837   0.024     0.099   0.021
+mmlu_pro              vote SC-10-Last                      -         -   ok      0   260      112   0.591   0.038     0.211   0.031
+mmlu_pro              vote Sum-Loss                        -         -   ok      0   261      113   0.530   0.031     0.288   0.029
+mmlu_pro              vote Mean-Loss                       -         -   ok      0   261      113   0.571   0.035     0.178   0.029
+mmlu_pro              vote Sum-Ent                         -         -   ok      0   261      113   0.547   0.032     0.283   0.029
+mmlu_pro              vote Mean-Ent                        -         -   ok      0   261      113   0.584   0.035     0.187   0.030
+mmlu_pro              vote Mean-Prob                       -         -   ok      0   261      113   0.572   0.035     0.284   0.031
+mmlu_pro              vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+aime                   run LastRep                     False      none   ok   1431   101       20   0.770   0.049     0.151   0.032
+aime                   run LastRep                     False  balanced   ok   1431   101       20   0.769   0.049     0.145   0.033
+aime                   run LastRep                      True      none   ok   1431   101       20   0.731   0.055     0.147   0.035
+aime                   run LastRep                      True  balanced   ok   1431   101       20   0.733   0.055     0.139   0.034
+aime                   run SC-10                           -         -   ok      0   101       20   0.852   0.056     0.071   0.038
+aime                   run SC-10-Last                      -         -   ok      0   101       20   0.860   0.047     0.166   0.070
+aime                   run Sum-Loss                        -         -   ok      0   101       20   0.848   0.044     0.077   0.023
+aime                   run Mean-Loss                       -         -   ok      0   101       20   0.700   0.053     0.192   0.049
+aime                   run Sum-Ent                         -         -   ok      0   101       20   0.847   0.044     0.096   0.024
+aime                   run Mean-Ent                        -         -   ok      0   101       20   0.711   0.051     0.186   0.054
+aime                   run Mean-Prob                       -         -   ok      0   101       20   0.687   0.056     0.122   0.032
+aime                   run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+aime                  vote LastRep                     False      none   ok   1431   101       12   0.722   0.083     0.082   0.028
+aime                  vote LastRep                     False  balanced   ok   1431   101       12   0.722   0.083     0.077   0.028
+aime                  vote LastRep                      True      none   ok   1431   101       12   0.698   0.084     0.096   0.029
+aime                  vote LastRep                      True  balanced   ok   1431   101       12   0.698   0.085     0.101   0.031
+aime                  vote SC-10                           -         -   ok      0   101       12   0.884   0.065     0.160   0.034
+aime                  vote SC-10-Last                      -         -   ok      0   101       12   0.850   0.056     0.121   0.070
+aime                  vote Sum-Loss                        -         -   ok      0   101       12   0.866   0.047     0.089   0.033
+aime                  vote Mean-Loss                       -         -   ok      0   101       12   0.814   0.062     0.262   0.047
+aime                  vote Sum-Ent                         -         -   ok      0   101       12   0.866   0.047     0.096   0.030
+aime                  vote Mean-Ent                        -         -   ok      0   101       12   0.816   0.060     0.265   0.056
+aime                  vote Mean-Prob                       -         -   ok      0   101       12   0.805   0.065     0.101   0.026
+aime                  vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+averaged over every held out dataset:
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    LastRep       False     balanced    0.635       0.025 0.310   0.010
+   run    LastRep       False         none    0.636       0.025 0.305   0.010
+   run    LastRep        True     balanced    0.629       0.024 0.293   0.010
+   run    LastRep        True         none    0.628       0.024 0.293   0.010
+   run   Mean-Ent           -            -    0.574       0.038 0.226   0.016
+   run  Mean-Loss           -            -    0.571       0.039 0.229   0.014
+   run  Mean-Prob           -            -    0.568       0.039 0.182   0.009
+   run      SC-10           -            -    0.759       0.023 0.186   0.011
+   run SC-10-Last           -            -    0.697       0.023 0.196   0.014
+   run  SC-Budget           -            -      NaN         NaN   NaN     NaN
+   run    Sum-Ent           -            -    0.660       0.032 0.215   0.009
+   run   Sum-Loss           -            -    0.656       0.033 0.211   0.009
+  vote    LastRep       False     balanced    0.607       0.025 0.201   0.010
+  vote    LastRep       False         none    0.607       0.025 0.200   0.010
+  vote    LastRep        True     balanced    0.601       0.025 0.203   0.010
+  vote    LastRep        True         none    0.602       0.025 0.202   0.010
+  vote   Mean-Ent           -            -    0.595       0.038 0.234   0.016
+  vote  Mean-Loss           -            -    0.590       0.039 0.236   0.013
+  vote  Mean-Prob           -            -    0.589       0.039 0.148   0.008
+  vote      SC-10           -            -    0.839       0.016 0.149   0.010
+  vote SC-10-Last           -            -    0.647       0.026 0.146   0.014
+  vote  SC-Budget           -            -      NaN         NaN   NaN     NaN
+  vote    Sum-Ent           -            -    0.637       0.034 0.180   0.009
+  vote   Sum-Loss           -            -    0.632       0.035 0.182   0.010
+
+
+averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, mmlu, truthfulqa, mmlu_pro):
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    LastRep       False     balanced    0.582       0.018 0.346   0.015
+   run    LastRep       False         none    0.583       0.018 0.346   0.016
+   run    LastRep        True     balanced    0.586       0.019 0.357   0.015
+   run    LastRep        True         none    0.588       0.019 0.357   0.015
+   run   Mean-Ent           -            -    0.552       0.019 0.183   0.015
+   run  Mean-Loss           -            -    0.546       0.019 0.185   0.016
+   run  Mean-Prob           -            -    0.552       0.019 0.279   0.016
+   run      SC-10           -            -    0.686       0.016 0.192   0.015
+   run SC-10-Last           -            -    0.603       0.018 0.306   0.018
+   run  SC-Budget           -            -      NaN         NaN   NaN     NaN
+   run    Sum-Ent           -            -    0.572       0.019 0.290   0.015
+   run   Sum-Loss           -            -    0.569       0.018 0.287   0.015
+  vote    LastRep       False     balanced    0.647       0.017 0.314   0.016
+  vote    LastRep       False         none    0.647       0.017 0.316   0.015
+  vote    LastRep        True     balanced    0.646       0.017 0.309   0.016
+  vote    LastRep        True         none    0.647       0.017 0.312   0.015
+  vote   Mean-Ent           -            -    0.574       0.018 0.176   0.014
+  vote  Mean-Loss           -            -    0.563       0.018 0.180   0.013
+  vote  Mean-Prob           -            -    0.567       0.018 0.215   0.014
+  vote      SC-10           -            -    0.770       0.016 0.107   0.012
+  vote SC-10-Last           -            -    0.573       0.018 0.214   0.016
+  vote  SC-Budget           -            -      NaN         NaN   NaN     NaN
+  vote    Sum-Ent           -            -    0.586       0.019 0.234   0.014
+  vote   Sum-Loss           -            -    0.581       0.019 0.235   0.014
+
+
+held out as a domain: multiple choice knowledge
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: mmlu,mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run LastRep                     False      none   ok    994   538      230   0.573   0.024     0.337   0.019
+mmlu,mmlu_pro          run LastRep                     False  balanced   ok    994   538      230   0.573   0.024     0.343   0.020
+mmlu,mmlu_pro          run LastRep                      True      none   ok    994   538      230   0.578   0.023     0.348   0.019
+mmlu,mmlu_pro          run LastRep                      True  balanced   ok    994   538      230   0.577   0.022     0.351   0.019
+mmlu,mmlu_pro          run SC-10                           -         -   ok      0   538      230   0.724   0.023     0.150   0.016
+mmlu,mmlu_pro          run SC-10-Last                      -         -   ok      0   535      227   0.626   0.022     0.251   0.025
+mmlu,mmlu_pro          run Sum-Loss                        -         -   ok      0   538      230   0.578   0.023     0.277   0.023
+mmlu,mmlu_pro          run Mean-Loss                       -         -   ok      0   538      230   0.537   0.026     0.120   0.035
+mmlu,mmlu_pro          run Sum-Ent                         -         -   ok      0   538      230   0.588   0.023     0.274   0.023
+mmlu,mmlu_pro          run Mean-Ent                        -         -   ok      0   538      230   0.542   0.025     0.140   0.034
+mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0   538      230   0.539   0.026     0.237   0.021
+mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+mmlu,mmlu_pro         vote LastRep                     False      none   ok    994   538      186   0.614   0.022     0.289   0.017
+mmlu,mmlu_pro         vote LastRep                     False  balanced   ok    994   538      186   0.612   0.022     0.303   0.018
+mmlu,mmlu_pro         vote LastRep                      True      none   ok    994   538      186   0.597   0.021     0.321   0.017
+mmlu,mmlu_pro         vote LastRep                      True  balanced   ok    994   538      186   0.597   0.021     0.334   0.018
+mmlu,mmlu_pro         vote SC-10                           -         -   ok      0   538      186   0.817   0.020     0.083   0.015
+mmlu,mmlu_pro         vote SC-10-Last                      -         -   ok      0   535      185   0.590   0.020     0.163   0.024
+mmlu,mmlu_pro         vote Sum-Loss                        -         -   ok      0   538      186   0.580   0.028     0.215   0.021
+mmlu,mmlu_pro         vote Mean-Loss                       -         -   ok      0   538      186   0.564   0.028     0.121   0.052
+mmlu,mmlu_pro         vote Sum-Ent                         -         -   ok      0   538      186   0.591   0.028     0.205   0.022
+mmlu,mmlu_pro         vote Mean-Ent                        -         -   ok      0   538      186   0.575   0.027     0.157   0.044
+mmlu,mmlu_pro         vote Mean-Prob                       -         -   ok      0   538      186   0.565   0.027     0.156   0.019
+mmlu,mmlu_pro         vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+held out as a domain: mathematics
+
+===================================================================================================================================
+== ablation, features: LastRep, held out: gsm8k,math500,aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run LastRep                     False      none   ok   1101   431       42   0.636   0.038     0.195   0.018
+gsm8k,math500,aime     run LastRep                     False  balanced   ok   1101   431       42   0.636   0.038     0.199   0.018
+gsm8k,math500,aime     run LastRep                      True      none   ok   1101   431       42   0.629   0.039     0.207   0.020
+gsm8k,math500,aime     run LastRep                      True  balanced   ok   1101   431       42   0.628   0.039     0.215   0.022
+gsm8k,math500,aime     run SC-10                           -         -   ok      0   431       42   0.812   0.037     0.056   0.019
+gsm8k,math500,aime     run SC-10-Last                      -         -   ok      0   431       42   0.777   0.036     0.070   0.030
+gsm8k,math500,aime     run Sum-Loss                        -         -   ok      0   431       42   0.656   0.050     0.060   0.015
+gsm8k,math500,aime     run Mean-Loss                       -         -   ok      0   431       42   0.684   0.048     0.236   0.019
+gsm8k,math500,aime     run Sum-Ent                         -         -   ok      0   431       42   0.659   0.049     0.060   0.015
+gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0   431       42   0.695   0.047     0.233   0.021
+gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0   431       42   0.683   0.049     0.037   0.011
+gsm8k,math500,aime     run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+gsm8k,math500,aime    vote LastRep                     False      none   ok   1101   431       24   0.600   0.053     0.081   0.013
+gsm8k,math500,aime    vote LastRep                     False  balanced   ok   1101   431       24   0.600   0.053     0.087   0.013
+gsm8k,math500,aime    vote LastRep                      True      none   ok   1101   431       24   0.573   0.059     0.093   0.013
+gsm8k,math500,aime    vote LastRep                      True  balanced   ok   1101   431       24   0.575   0.059     0.102   0.013
+gsm8k,math500,aime    vote SC-10                           -         -   ok      0   431       24   0.896   0.028     0.107   0.022
+gsm8k,math500,aime    vote SC-10-Last                      -         -   ok      0   431       24   0.754   0.045     0.043   0.030
+gsm8k,math500,aime    vote Sum-Loss                        -         -   ok      0   431       24   0.733   0.055     0.052   0.017
+gsm8k,math500,aime    vote Mean-Loss                       -         -   ok      0   431       24   0.710   0.067     0.278   0.017
+gsm8k,math500,aime    vote Sum-Ent                         -         -   ok      0   431       24   0.736   0.055     0.052   0.016
+gsm8k,math500,aime    vote Mean-Ent                        -         -   ok      0   431       24   0.709   0.065     0.275   0.019
+gsm8k,math500,aime    vote Mean-Prob                       -         -   ok      0   431       24   0.703   0.068     0.051   0.008
+gsm8k,math500,aime    vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+MAIN AVERAGE, over these four held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the two domains held out together,
+and only groups carrying at least 30 of the rarer class
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    LastRep       False     balanced    0.584       0.017 0.314   0.013
+   run    LastRep       False         none    0.584       0.017 0.309   0.014
+   run    LastRep        True     balanced    0.593       0.017 0.315   0.013
+   run    LastRep        True         none    0.595       0.017 0.311   0.013
+   run   Mean-Ent           -            -    0.581       0.020 0.167   0.015
+   run  Mean-Loss           -            -    0.574       0.020 0.162   0.015
+   run  Mean-Prob           -            -    0.578       0.020 0.225   0.014
+   run      SC-10           -            -    0.714       0.016 0.161   0.013
+   run SC-10-Last           -            -    0.646       0.017 0.250   0.017
+   run  SC-Budget           -            -      NaN         NaN   NaN     NaN
+   run    Sum-Ent           -            -    0.599       0.019 0.243   0.014
+   run   Sum-Loss           -            -    0.596       0.019 0.240   0.013
+  vote    LastRep       False     balanced    0.621       0.019 0.256   0.014
+  vote    LastRep       False         none    0.621       0.019 0.255   0.013
+  vote    LastRep        True     balanced    0.613       0.020 0.263   0.014
+  vote    LastRep        True         none    0.614       0.020 0.261   0.013
+  vote   Mean-Ent           -            -    0.595       0.021 0.169   0.016
+  vote  Mean-Loss           -            -    0.587       0.022 0.169   0.016
+  vote  Mean-Prob           -            -    0.588       0.022 0.175   0.012
+  vote      SC-10           -            -    0.796       0.015 0.117   0.012
+  vote SC-10-Last           -            -    0.623       0.017 0.178   0.015
+  vote  SC-Budget           -            -      NaN         NaN   NaN     NaN
+  vote    Sum-Ent           -            -    0.633       0.021 0.188   0.012
+  vote   Sum-Loss           -            -    0.629       0.021 0.190   0.013
