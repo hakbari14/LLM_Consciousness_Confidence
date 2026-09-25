@@ -1,0 +1,38 @@
+\begin{table}[h]
+    \centering
+    \caption{Same as Table~\ref{tab:confidence_results}, with GPQA held out.}
+    \label{tab:holdout_gpqa}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{lcc|cc}
+        \toprule
+        \multirow{2}{*}{Method} &
+        \multicolumn{2}{c|}{Qwen3-8B} &
+        \multicolumn{2}{c}{DeepSeek-R1-Distill-Qwen-7B} \\
+        & AUROC $\uparrow$ & ECE $\downarrow$
+        & AUROC $\uparrow$ & ECE $\downarrow$ \\
+        \midrule
+        \multicolumn{5}{c}{\textit{Token-level baselines}} \\
+        \midrule
+        Mean-Ent & $0.58 \pm 0.04$ & $\mathbf{0.14 \pm 0.03}$ & $0.56 \pm 0.05$ & $0.17 \pm 0.03$ \\
+        Sum-Ent & $0.53 \pm 0.04$ & $0.43 \pm 0.04$ & $0.60 \pm 0.05$ & $0.23 \pm 0.03$ \\
+        Mean-Loss & $0.57 \pm 0.04$ & $0.16 \pm 0.03$ & $0.55 \pm 0.05$ & $0.17 \pm 0.04$ \\
+        Sum-Loss & $0.53 \pm 0.04$ & $0.43 \pm 0.04$ & $0.60 \pm 0.05$ & $0.22 \pm 0.03$ \\
+        Mean-Prob & $0.56 \pm 0.04$ & $0.38 \pm 0.04$ & $0.56 \pm 0.05$ & $0.34 \pm 0.04$ \\
+        \midrule
+        \multicolumn{5}{c}{\textit{Representation-based baseline}} \\
+        \midrule
+        LastRep & $0.57 \pm 0.04$ & $0.33 \pm 0.03$ & $0.65 \pm 0.04$ & $0.28 \pm 0.04$ \\
+        \midrule
+        \multicolumn{5}{c}{\textit{Self-consistency baselines}} \\
+        \midrule
+        SC-10 & $0.61 \pm 0.04$ & $0.31 \pm 0.05$ & $0.73 \pm 0.04$ & $0.20 \pm 0.03$ \\
+        SC-Budget & $0.64 \pm 0.04$ & $0.29 \pm 0.04$ & --- & --- \\
+        \midrule
+        \multicolumn{5}{c}{\textit{Proposed method}} \\
+        \midrule
+        CoT-EIG-Mean & $\mathbf{0.72 \pm 0.04}$ & $0.25 \pm 0.03$ & $\mathbf{0.79 \pm 0.03}$ & $\mathbf{0.14 \pm 0.03}$ \\
+        CoT-EIG-Sum & $0.67 \pm 0.04$ & $0.25 \pm 0.04$ & $\mathbf{0.79 \pm 0.03}$ & $0.15 \pm 0.03$ \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}

@@ -221,7 +221,7 @@ def plot_against_evidence_count(out_directory, metric, held_out = None):
     axis.set_xticks(EVIDENCE_COUNTS)
     axis.set_xlim(min(EVIDENCE_COUNTS) - 1, max(EVIDENCE_COUNTS) + 6)
     axis.set_ylim(low, high)
-    plain(axis, 'number of evidence steps', ['ROC', 'ECE'][metric])
+    plain(axis, 'number of evidence steps', ['AUROC', 'ECE'][metric])
     figure.tight_layout()
     figure.savefig(f"{out_directory}/{['roc', 'ece'][metric]}_by_evidence_count.png", dpi=160)
     plt.close(figure)
@@ -251,13 +251,13 @@ def plot_feature_sets(out_directory, held_out = None):
             axis.text(position + shift, mean + spread + 0.015, f'{mean:.3f}', ha='center',
                       fontsize=7.5, color=INK)
 
-    axis.legend(handles=[Patch(facecolor='#8a8a8a', label='ROC'),
+    axis.legend(handles=[Patch(facecolor='#8a8a8a', label='AUROC'),
                          Patch(facecolor='#8a8a8a40', edgecolor='#8a8a8a', hatch='////', label='ECE')],
                 loc='upper right', fontsize=8.5, frameon=False)
     axis.set_xticks(range(len(names)))
     axis.set_xticklabels(names, fontsize=9, color=INK)
     axis.set_ylim(0, 1.0)
-    plain(axis, '', 'ROC / ECE')
+    plain(axis, '', 'AUROC / ECE')
     figure.tight_layout()
     figure.savefig(f'{out_directory}/roc_ece_by_feature_set.png', dpi=160)
     plt.close(figure)
@@ -300,7 +300,7 @@ def plot_per_benchmark(out_directory):
     for side in axis.spines.values():
         side.set_visible(False)
     colourbar = figure.colorbar(image, ax=axis, fraction=0.035, pad=0.02)
-    colourbar.set_label('ROC', fontsize=8)
+    colourbar.set_label('AUROC', fontsize=8)
     colourbar.outline.set_visible(False)
     figure.tight_layout()
     figure.savefig(f'{out_directory}/roc_by_benchmark.png', dpi=160)
@@ -375,7 +375,7 @@ def plot_discrimination_against_calibration(out_directory, held_out = None):
     axis.axhline(0.5, color='#c0c0c0', linewidth=1, linestyle=':')
     axis.set_xlim(0.0, max(0.30, max((ece for _, ece, _ in placed), default=0.0) + 0.08))
     axis.set_ylim(*roc_range([roc for _, _, roc in placed], 0.92))
-    plain(axis, 'ECE', 'ROC')
+    plain(axis, 'ECE', 'AUROC')
     figure.tight_layout()
     place_labels(figure, axis, placed)
     figure.savefig(f'{out_directory}/roc_against_ece.png', dpi=160)

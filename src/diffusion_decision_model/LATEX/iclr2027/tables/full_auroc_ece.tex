@@ -1,9 +1,6 @@
 \begin{table}[t]
     \centering
-    \caption{Confidence estimation performance of different baselines and
-    the proposed CoT-EIG method on Qwen3-8B and DeepSeek-R1-Distill-Qwen-7B.
-    Results are reported as mean $\pm$ standard deviation over five
-    independent runs.}
+    \caption{Confidence estimation performance of different baselines and the proposed CoT-EIG method on Qwen3-8B and DeepSeek-R1-Distill-Qwen-7B, using 5 CoT evidences. Results are reported as mean $\pm$ standard deviation over 50 independent runs.}
     \label{tab:confidence_results}
     \resizebox{\linewidth}{!}{%
     \begin{tabular}{lcc|cc}
@@ -11,8 +8,8 @@
         \multirow{2}{*}{Method} &
         \multicolumn{2}{c|}{Qwen3-8B} &
         \multicolumn{2}{c}{DeepSeek-R1-Distill-Qwen-7B} \\
-        & ROC-AUC $\uparrow$ & ECE $\downarrow$
-        & ROC-AUC $\uparrow$ & ECE $\downarrow$ \\
+        & AUROC $\uparrow$ & ECE $\downarrow$
+        & AUROC $\uparrow$ & ECE $\downarrow$ \\
         \midrule
 
         \multicolumn{5}{c}{\textit{Token-level baselines}} \\
@@ -50,6 +47,17 @@
 
         \midrule
 
+        \multicolumn{5}{c}{\textit{Representation-based baseline}} \\
+        \midrule
+
+        LastRep
+        & $0.60 \pm 0.02$
+        & $0.28 \pm 0.01$
+        & $0.58 \pm 0.02$
+        & $0.31 \pm 0.01$ \\
+
+        \midrule
+
         \multicolumn{5}{c}{\textit{Self-consistency baselines}} \\
         \midrule
 
@@ -71,7 +79,7 @@
 
         CoT-EIG-Mean
         & $\mathbf{0.84 \pm 0.01}$
-        & $\mathbf{0.11 \pm 0.01$}
+        & $\mathbf{0.11 \pm 0.01}$
         & $0.83 \pm 0.01$
         & $\mathbf{0.08 \pm 0.01}$ \\
 
