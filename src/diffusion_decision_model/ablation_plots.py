@@ -23,7 +23,7 @@ EVIDENCE_COUNTS = [5, 10, 15, 20, 25]
 # Every model that has ablation tables, with the evidence counts it was run at.  The
 # main block draws each in turn by rebinding MODEL and EVIDENCE_COUNTS above.
 PLOT_RUNS = [('qwen-qwen3-8b', [5, 10, 15, 20, 25]),
-             ('deepseek-ai-deepseek-r1-distill-qwen-7b', [5, 10, 15, 20])]
+             ('deepseek-ai-deepseek-r1-distill-qwen-7b', [5, 10, 15, 20, 25])]
 
 # The four groups the main average covers, in the order they read best.
 GROUPS = ['mmlu,mmlu_pro', 'gsm8k,math500,aime', 'gpqa', 'truthfulqa']

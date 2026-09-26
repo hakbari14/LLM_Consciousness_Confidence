@@ -688,7 +688,8 @@ if __name__ == '__main__':
             ('deepseek-ai-deepseek-r1-distill-qwen-7b', 5),
             ('deepseek-ai-deepseek-r1-distill-qwen-7b', 10),
             ('deepseek-ai-deepseek-r1-distill-qwen-7b', 15),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 20)]
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 20),
+            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 25)]
 
     # Everything by default.  Name feature sets and / or models on the command line to
     # run only those, which is how a new set or a new model's logs are filled in
