@@ -1,5 +1,5 @@
 from src.confidence.self_consistency_generation import self_consistency_generation
-from src.datasets.math.gsm8k_dataset import gsm8k_dataset
+from src.datasets.math.gsm8k.gsm8k_dataset import gsm8k_dataset
 from src.datasets.dataset_config import dataset_config
 from src.logger.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
 

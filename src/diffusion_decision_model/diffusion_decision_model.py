@@ -60,6 +60,8 @@ class diffusion_decision_model(ABC):
             logger.write_to_log_file()
             
             print(f"{'*' * 210}")
+            
+        self.released_gpu_memory()
 
     def baseline_features_extractor(self, from_run_number: int , to_run_number: int) -> None:
         bnb_config = BitsAndBytesConfig(
@@ -83,12 +85,15 @@ class diffusion_decision_model(ABC):
             
             df.to_csv(logger.get_log_file_name(), index=False)            
             print(f"{'*' * 210}")
+            
+        self.released_gpu_memory()
 
     def calculate_accracy(self, run_number: int) -> None:
         logger = self.create_logger(run_number)
         df = pd.read_csv(logger.get_log_file_name())
         percentage_true = df["Accuracy"].mean() * 100
-        print(f"Accuracy = {percentage_true}")        
+        token_count = df["Token_Count"].mean()
+        print(f"Accuracy = {percentage_true}, token count = {token_count}")        
 
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
@@ -467,6 +472,15 @@ class diffusion_decision_model(ABC):
 
     def get_max_new_tokens(self) -> int:
         return 15000
+    
+    def released_gpu_memory(self) -> None:
+        del self.model
+        del self.tokenizer
+
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect() 
+        
 
     def get_modelname_dir(self) -> str:
         return self.modelname.replace('/', '-').lower()

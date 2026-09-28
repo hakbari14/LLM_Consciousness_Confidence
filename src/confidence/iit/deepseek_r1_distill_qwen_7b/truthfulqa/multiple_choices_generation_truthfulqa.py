@@ -1,5 +1,5 @@
 from src.confidence.multiple_choices_generation import multiple_choices_generation
-from src.datasets.confidence.truthfulqa_dataset import truthfulqa_dataset
+from src.datasets.confidence.truthfulqa.truthfulqa_dataset import truthfulqa_dataset
 from src.datasets.dataset_config import dataset_config
 from src.logger.multiple_choices.multiple_choices_inference_logger import multiple_choices_inference_logger
 

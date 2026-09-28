@@ -1,5 +1,5 @@
 from src.confidence.self_consistency_generation import self_consistency_generation
-from src.datasets.math.math_500_dataset import math_500_dataset
+from src.datasets.math.math_500.math_500_dataset import math_500_dataset
 from src.datasets.dataset_config import dataset_config
 from src.logger.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
 

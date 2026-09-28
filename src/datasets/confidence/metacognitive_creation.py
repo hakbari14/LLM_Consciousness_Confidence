@@ -1,5 +1,5 @@
 from datasets import Dataset, Features, Value, concatenate_datasets, load_dataset
-from src.datasets.math.gsm8k_dataset import gsm8k_dataset
+from src.datasets.math.gsm8k.gsm8k_dataset import gsm8k_dataset
 import re
 import random
 import pandas as pd 

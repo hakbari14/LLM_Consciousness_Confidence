@@ -2,7 +2,7 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 from confidence.services.confidence_inference_client import confidence_inference_client
-from src.datasets.math.gsm8k_dataset import gsm8k_dataset
+from src.datasets.math.gsm8k.gsm8k_dataset import gsm8k_dataset
 from src.datasets.dataset_config import dataset_config
 from src.logger.inference.self_consistency.self_consistency_inference_logger import self_consistency_inference_logger
 

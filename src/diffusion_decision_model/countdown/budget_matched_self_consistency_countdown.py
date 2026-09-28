@@ -23,5 +23,8 @@ class budget_matched_self_consistency_countdown(budget_matched_self_consistency)
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/countdown/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_countdown.csv')
 
-t = budget_matched_self_consistency_countdown(modelname='Qwen/Qwen3-8B')
+# t = budget_matched_self_consistency_countdown(modelname='Qwen/Qwen3-8B')
+# t.run(from_run_number=1, to_run_number=2)
+
+t = budget_matched_self_consistency_countdown(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
 t.run(from_run_number=1, to_run_number=2)
