@@ -266,6 +266,7 @@ class diffusion_decision_model(ABC):
                 previous = log.evidence_list[i - 1]
                 current.delta_evidence_self_consistency = current.evidence_accumulation_self_consistency - previous.evidence_accumulation_self_consistency
                 current.delta_evidence_loss = previous.evidence_accumulation_loss - current.evidence_accumulation_loss
+                current.delta_evidence_avg_prob = current.evidence_accumulation_avg_prob - previous.evidence_accumulation_avg_prob
             
             self.calculate_self_consistency_log(log)
             self.calculate_self_consistency_completion_log(log)
@@ -443,17 +444,20 @@ class diffusion_decision_model(ABC):
         token_ids = response.token_ids 
         start = 0
 
-        evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = 0, evidence = '', partial_cot = '', partial_completion = log.completion, partial_cot_loss = log.completion_loss)
+        evidence_accumulation_avg_prob: float = my_utils.get_avg_prob_from_vllm_output(response, token_start = 0, token_end = token_count)
+        evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = 0, evidence = '', evidence_token_count= token_count, partial_cot = '', partial_completion = log.completion, partial_cot_loss = log.completion_loss, evidence_accumulation_avg_prob = evidence_accumulation_avg_prob)
         log.add_evidence_list(evidence_log)
 
         for i in range(1, self.number_of_evidence):
             group_size = base + (1 if i < remainder else 0)
             evidence = self.tokenizer.decode(token_ids[start:start + group_size], skip_special_tokens=True)
+            evidence_token_count = group_size
             partial_cot = self.tokenizer.decode(token_ids[0:start + group_size], skip_special_tokens=True)
             partial_completion = self.tokenizer.decode(token_ids[start + group_size:], skip_special_tokens=True)
             partial_cot_loss: float = my_utils.get_loss_from_vllm_output(response, token_start = start + group_size)
+            evidence_accumulation_avg_prob: float = my_utils.get_avg_prob_from_vllm_output(response, token_start = start, token_end = start + group_size)
 
-            evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = i, evidence = evidence, partial_cot = partial_cot, partial_completion = partial_completion, partial_cot_loss = partial_cot_loss)
+            evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = i, evidence = evidence, evidence_token_count = evidence_token_count, partial_cot = partial_cot, partial_completion = partial_completion, partial_cot_loss = partial_cot_loss, evidence_accumulation_avg_prob = evidence_accumulation_avg_prob)
             log.add_evidence_list(evidence_log)
 
             start += group_size
@@ -461,13 +465,15 @@ class diffusion_decision_model(ABC):
                 
         return log
 
-    def create_evidence_log(self, index: int, evidence: str , partial_cot: str, partial_completion: str, partial_cot_loss: float) -> int:
+    def create_evidence_log(self, index: int, evidence: str , evidence_token_count: int, partial_cot: str, partial_completion: str, partial_cot_loss: float, evidence_accumulation_avg_prob: float) -> int:
         evidence_log = diffusion_decision_model_evidence_log_entity()
         evidence_log.index = index
         evidence_log.evidence = evidence
+        evidence_log.evidence_token_count = evidence_token_count
         evidence_log.partial_cot = partial_cot
         evidence_log.partial_completion = partial_completion
         evidence_log.partial_cot_loss = partial_cot_loss
+        evidence_log.evidence_accumulation_avg_prob = evidence_accumulation_avg_prob
         return evidence_log
 
     def get_max_new_tokens(self) -> int:

@@ -96,6 +96,7 @@ class diffusion_decision_model_logger(logger):
                 log_evidence = diffusion_decision_model_evidence_log_entity()
                 log_evidence.index = b_row["Evidence_Index"]
                 log_evidence.evidence = b_row["Evidence"]
+                log_evidence.evidence_token_count = b_row["Evidence_Token_Count"]
                 log_evidence.partial_cot = b_row["Partial_COT"]
                 log_evidence.partial_cot_loss = b_row["Partial_COT_Loss"]
                 log_evidence.partial_completion = b_row["Partial_Completion"]
@@ -103,6 +104,8 @@ class diffusion_decision_model_logger(logger):
                 log_evidence.delta_evidence_self_consistency = b_row["Delta_Evidence_Self_Consistency"]
                 log_evidence.evidence_accumulation_loss = b_row["Evidence_Accumulation_Loss"]
                 log_evidence.delta_evidence_loss = b_row["Delta_Evidence_Loss"]
+                log_evidence.evidence_accumulation_avg_prob = b_row["Evidence_Accumulation_Avg_Prob"]
+                log_evidence.delta_evidence_avg_prob = b_row["Delta_Evidence_Avg_Prob"]
 
                 s_subset = df_samples[(df_samples["Sample_ID"] == log.sample_ID) & (df_samples["Evidence_Index"] == log_evidence.index)]
                 for _, s_row in s_subset.iterrows():
@@ -202,6 +205,7 @@ class diffusion_decision_model_logger(logger):
                     'Sample_ID': log.sample_ID,
                     'Parent_ID': log.ID,
                     'Evidence': evidence_log.evidence,
+                    'Evidence_Token_Count': evidence_log.evidence_token_count,
                     'Partial_COT': evidence_log.partial_cot,
                     'Partial_Completion': evidence_log.partial_completion,
                     'Partial_COT_Loss': evidence_log.partial_cot_loss,
@@ -211,6 +215,8 @@ class diffusion_decision_model_logger(logger):
                     'Delta_Evidence_Loss': evidence_log.delta_evidence_loss,
                     'Consistency_Count': len(evidence_log.consistency_list),
                     'Original_Final_Answer': log.final_answer,
+                    'Evidence_Accumulation_Avg_Prob': log.evidence_accumulation_avg_prob,
+                    'Delta_Evidence_Avg_Prob': log.delta_evidence_avg_prob,
                     }
                 list.append(b)
         return list
@@ -221,6 +227,7 @@ class diffusion_decision_model_logger(logger):
                 'Sample_ID',
                 'Parent_ID',
                 'Evidence',
+                'Evidence_Token_Count',
                 'Partial_COT',
                 'Partial_Completion',
                 'Partial_COT_Loss',
@@ -230,6 +237,8 @@ class diffusion_decision_model_logger(logger):
                 'Delta_Evidence_Loss',
                 'Consistency_Count',
                 'Original_Final_Answer',
+                'Evidence_Accumulation_Avg_Prob',
+                'Delta_Evidence_Avg_Prob',
                 ]
 
     def convert_samples_buffer(self):
