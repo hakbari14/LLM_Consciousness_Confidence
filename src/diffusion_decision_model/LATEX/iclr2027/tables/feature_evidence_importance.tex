@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\caption{Feature importance based on the fitted decision tree, with higher-importance evidence--feature pairs reported in descending order. The decision tree is fitted on the combined data from all benchmarks evaluated using Qwen3-8B.}
+\label{tab:feature_importance}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Evidence} & \textbf{Feature} & \textbf{Importance} \\
+\midrule
+1 & self-consistency        & 0.6393 \\
+3 & self-consistency        & 0.1184 \\
+3 & loss             & 0.0847 \\
+4 & self-consistency        & 0.0539 \\
+1 & loss             & 0.0304 \\
+2 & delta\_loss      & 0.0219 \\
+5 & loss             & 0.0094 \\
+2 & delta\_self-consistency & 0.0084 \\
+4 & delta\_self-consistency & 0.0083 \\
+3 & delta\_loss      & 0.0078 \\
+4 & delta\_loss      & 0.0070 \\
+2 & loss             & 0.0056 \\
+5 & self-consistency        & 0.0028 \\
+5 & delta\_self-consistency & 0.0020 \\
+\bottomrule
+\end{tabular}
+\end{table}

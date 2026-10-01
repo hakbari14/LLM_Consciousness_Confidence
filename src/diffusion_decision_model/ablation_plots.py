@@ -359,7 +359,8 @@ def plot_discrimination_against_calibration(out_directory, held_out = None):
     ECE is measured on a rescaled score, which is not the same calibration question.
     """
     points = [method for method in [OURS, OURS_TOTAL] + BASELINES if method not in MINMAX_SCORED]
-    evidence_count = 20 if 20 in EVIDENCE_COUNTS else max(EVIDENCE_COUNTS)
+    # The same evidence count as Table 1, so the figure and the table agree.
+    evidence_count = 5 if 5 in EVIDENCE_COUNTS else min(EVIDENCE_COUNTS)
 
     figure, axis = plt.subplots(figsize=(6.6, 4.8))
     placed = []
