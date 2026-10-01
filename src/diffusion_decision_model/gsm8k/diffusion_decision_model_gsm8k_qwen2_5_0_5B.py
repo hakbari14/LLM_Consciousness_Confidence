@@ -1,5 +1,5 @@
 from src.diffusion_decision_model.diffusion_decision_model import diffusion_decision_model
-from src.datasets.math.gsm8k.gsm8k_dataset_qwen3_5_0_5B import gsm8k_dataset_qwen3_5_0_5B
+from src.datasets.math.gsm8k.gsm8k_dataset_qwen2_5_0_5B import gsm8k_dataset_qwen2_5_0_5B
 from src.datasets.dataset_config import dataset_config
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity import diffusion_decision_model_log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
@@ -10,10 +10,10 @@ class diffusion_decision_model_gsm8k_qwen2_5_0_5B(diffusion_decision_model):
         super().__init__(modelname, number_of_evidence)
         
 
-    def get_dataset(self) -> gsm8k_dataset_qwen3_5_0_5B:
+    def get_dataset(self) -> gsm8k_dataset_qwen2_5_0_5B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            self.dataset = gsm8k_dataset_qwen3_5_0_5B(config)
+            self.dataset = gsm8k_dataset_qwen2_5_0_5B(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:

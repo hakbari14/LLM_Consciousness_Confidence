@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from datasets import Dataset
 import configparser
 import random
+from datasets import disable_caching
 
 class dataset_handler(ABC): 
 
@@ -16,6 +17,7 @@ class dataset_handler(ABC):
         self.prompt_config.read('src/datasets/dataset_prompt.cfg')
 
     def preprocess_dataset(self) -> tuple[Dataset, Dataset]:
+        disable_caching()
         train_dataset = self.train_dataset.map(lambda x: self.generate_model_prompt(x))
         train_dataset = train_dataset.filter(lambda x: self.filter_by_required_criteria(x, dataset_element_type_enum.TRAIN))
 

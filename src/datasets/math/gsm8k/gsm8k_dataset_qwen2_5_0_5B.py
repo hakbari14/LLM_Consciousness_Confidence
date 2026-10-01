@@ -2,7 +2,7 @@ from src.datasets.math.gsm8k.gsm8k_dataset import gsm8k_dataset
 from src.datasets.dataset_config import dataset_config
 
 
-class gsm8k_dataset_qwen3_5_0_5B(gsm8k_dataset): 
+class gsm8k_dataset_qwen2_5_0_5B(gsm8k_dataset): 
 
     def __init__(self, config: dataset_config) -> None:
         super().__init__(config)
