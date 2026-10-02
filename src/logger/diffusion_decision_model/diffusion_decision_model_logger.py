@@ -215,8 +215,8 @@ class diffusion_decision_model_logger(logger):
                     'Delta_Evidence_Loss': evidence_log.delta_evidence_loss,
                     'Consistency_Count': len(evidence_log.consistency_list),
                     'Original_Final_Answer': log.final_answer,
-                    'Evidence_Accumulation_Avg_Prob': log.evidence_accumulation_avg_prob,
-                    'Delta_Evidence_Avg_Prob': log.delta_evidence_avg_prob,
+                    'Evidence_Accumulation_Avg_Prob': evidence_log.evidence_accumulation_avg_prob,
+                    'Delta_Evidence_Avg_Prob': evidence_log.delta_evidence_avg_prob,
                     }
                 list.append(b)
         return list

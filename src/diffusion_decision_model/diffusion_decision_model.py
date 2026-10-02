@@ -88,12 +88,38 @@ class diffusion_decision_model(ABC):
             
         self.released_gpu_memory()
 
+    def evidence_features_extractor(self, from_run_number: int , to_run_number: int) -> None:
+        bnb_config = BitsAndBytesConfig(
+        load_in_4bit = True,
+        bnb_4bit_quant_type = "nf4",
+        bnb_4bit_compute_dtype = getattr(torch, "bfloat16"),
+        bnb_4bit_use_double_quant = False,
+        )
+        self.model = AutoModelForCausalLM.from_pretrained(self.modelname, quantization_config = bnb_config)
+        self.model.config.use_cache = False
+        self.model.config.pretraining_tp = 1        
+        self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
+
+        print(f"{'*' * 100}  {self.modelname}  {'*' * 100}")
+        for run_number in range(from_run_number,to_run_number):
+            print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
+            logger = self.create_logger(run_number)
+            df = pd.read_csv(logger.get_log_file_name())
+            df_evidence = pd.read_csv(logger.get_evidence_log_file_name())
+            
+            df_evidence = self.calculate_evidence_features(df, df_evidence)
+            
+            df_evidence.to_csv(logger.get_evidence_log_file_name(), index=False)            
+            print(f"{'*' * 210}")
+            
+        self.released_gpu_memory()
+
     def calculate_accracy(self, run_number: int) -> None:
         logger = self.create_logger(run_number)
         df = pd.read_csv(logger.get_log_file_name())
         percentage_true = df["Accuracy"].mean() * 100
         token_count = df["Token_Count"].mean()
-        print(f"Accuracy = {percentage_true}, token count = {token_count}")        
+        print(f"Records = {len(df)}, Accuracy = {percentage_true}, token count = {token_count}")        
 
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 
@@ -334,22 +360,105 @@ class diffusion_decision_model(ABC):
 
         return df 
     
+    def calculate_evidence_features(self, df: pd.DataFrame, df_evidence: pd.DataFrame) -> pd.DataFrame:
+        results = [] 
+        for index, row in tqdm(df.iterrows(), total=len(df)):
+            sample_ID = df.loc[index, "Sample_ID"]
+            prompt = df.loc[index, "Prompt"]
+            completion = df.loc[index, "Completion"]
+            
+            with torch.inference_mode():
+                try:
+                    device = next(self.model.parameters()).device
+                    
+                    inputs = self.tokenizer(prompt + completion, return_tensors='pt')
+                    inputs = {k: v.to(device) for k, v in inputs.items()}
+                    input_ids = inputs["input_ids"]
+
+                    prompt_length = self.tokenizer(prompt, return_tensors='pt')["input_ids"].shape[1]
+                    prompt_completion_length = input_ids.shape[1]
+
+                    outputs = self.model(**inputs, labels=inputs["input_ids"])
+                    logits = outputs.logits
+
+                    shift_logits = logits[:, :-1, :]
+                    shift_labels = input_ids[:, 1:]
+
+                    log_probs = F.log_softmax(shift_logits, dim=-1)
+                    probs = torch.exp(log_probs)
+
+                    token_count = prompt_completion_length - prompt_length
+                    base = token_count // (self.number_of_evidence + 1)
+                    remainder = token_count % (self.number_of_evidence + 1)
+                    
+                    start = prompt_length - 1
+                    old_evidence_accumulation_avg_prob = 0.0
+                    for i in range(1, self.number_of_evidence):
+                        group_size = base + (1 if i < remainder else 0)
+                        evidence_index = i
+                        evidence_token_count = group_size
+                        token_probs = []
+                        for t in range(start, start + evidence_token_count):
+                            true_token_id = shift_labels[0, t].item()
+                            prob = probs[0, t, true_token_id].item()
+                            token_probs.append(prob)
+
+                        evidence_accumulation_avg_prob = sum(token_probs) / len(token_probs) if len(token_probs) != 0 else 0.0
+                        results.append({
+                            "Sample_ID": sample_ID,
+                            "Evidence_Index": evidence_index,
+                            "Evidence_Token_Count": evidence_token_count,
+                            "Evidence_Accumulation_Avg_Prob": evidence_accumulation_avg_prob,
+                            "Delta_Evidence_Avg_Prob": evidence_accumulation_avg_prob - old_evidence_accumulation_avg_prob
+                        })                        
+                        start = start + evidence_token_count
+                        old_evidence_accumulation_avg_prob = evidence_accumulation_avg_prob
+
+                except Exception as e:
+                    logging.exception("An exception occurred")                        
+                    print(f"[WARN]: {e}")
+                    traceback.print_exc()                        
+                finally:            
+                    del outputs, logits
+                    del inputs, input_ids
+                    del shift_logits, shift_labels, probs, log_probs
+                    gc.collect()
+                    torch.cuda.empty_cache()
+
+        df_evidence['Evidence_Token_Count'] = np.nan
+        df_evidence['Evidence_Token_Count'] = df_evidence['Evidence_Token_Count'].astype('Int64')
+        df_evidence['Evidence_Accumulation_Avg_Prob'] = np.nan
+        df_evidence['Evidence_Accumulation_Avg_Prob'] = df_evidence['Evidence_Accumulation_Avg_Prob'].astype('float64')
+        df_evidence['Delta_Evidence_Avg_Prob'] = np.nan
+        df_evidence['Delta_Evidence_Avg_Prob'] = df_evidence['Delta_Evidence_Avg_Prob'].astype('float64')
+        for index, row in df_evidence.iterrows():
+            sample_ID = df_evidence.loc[index, "Sample_ID"]
+            evidence_index = df_evidence.loc[index, "Evidence_Index"]
+            filter_list = list(filter(lambda x: x["Sample_ID"] == sample_ID and x["Evidence_Index"] == evidence_index , results))
+            if len(filter_list) != 0: 
+                item = filter_list[0]
+                df_evidence.at[index, "Evidence_Token_Count"] = item["Evidence_Token_Count"]
+                df_evidence.at[index, "Evidence_Accumulation_Avg_Prob"] = item["Evidence_Accumulation_Avg_Prob"]
+                df_evidence.at[index, "Delta_Evidence_Avg_Prob"] = item["Delta_Evidence_Avg_Prob"]
+            else: 
+                df_evidence.at[index, "Evidence_Token_Count"] = 0
+                df_evidence.at[index, "Evidence_Accumulation_Avg_Prob"] = 0.0
+                df_evidence.at[index, "Delta_Evidence_Avg_Prob"] = 0.0
+            
+
+        return df_evidence 
+
     def create_columns_baseline_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        # if 'Entropy' not in df.columns:
         df['Entropy'] = np.nan
         df['Entropy'] = df['Entropy'].astype('float64')
-        # if 'Mean_Entropy' not in df.columns:
         df['Mean_Entropy'] = np.nan
         df['Mean_Entropy'] = df['Mean_Entropy'].astype('float64')
         
-        # if 'Sequence_Probability' not in df.columns:
         df['Sequence_Probability'] = np.nan
         df['Sequence_Probability'] = df['Sequence_Probability'].astype('float64')
-        # if 'Length_Normalized_Sequence_Probability' not in df.columns:
         df['Length_Normalized_Sequence_Probability'] = np.nan
         df['Length_Normalized_Sequence_Probability'] = df['Length_Normalized_Sequence_Probability'].astype('float64')
 
-        # if 'Last_Layer_Representations' not in df.columns:
         df['Last_Layer_Representations'] = np.nan
         df['Last_Layer_Representations'] = df['Last_Layer_Representations'].astype('str')
         

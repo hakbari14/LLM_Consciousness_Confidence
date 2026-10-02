@@ -23,10 +23,10 @@ class diffusion_decision_model_gpqa_deepSeek_r1_distill_qwen_7B(diffusion_decisi
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/gpqa/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_gpqa{self.get_number_of_evidence_dir()}.csv')
 
 
-# for nv in [5, 10, 15, 20, 25]:
-for nv in [5]:
+for nv in [5, 10, 15, 20, 25]:
     print(f"{'*' * 100}  Number Of Evidence {nv}  {'*' * 100}")
     t = diffusion_decision_model_gpqa_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=nv)
     t.run(from_run_number=1, to_run_number=2)
     t.baseline_features_extractor(from_run_number=1, to_run_number=2)
     print(f"{'*' * 210}")
+

@@ -22,7 +22,7 @@ class gsm8k_dataset(math_dataset_handler):
         self.force_generate_answer_text = '####'
 
     def final_answer_extraction(self, prompt: str, solution: str, target: str) -> str :
-        return gsm8k_dataset.gsm8k_answer_extraction(solution)
+        return self.gsm8k_answer_extraction(solution)
 
     def generate_model_prompt(self, x):
         question = x['question']
@@ -66,8 +66,7 @@ class gsm8k_dataset(math_dataset_handler):
             return self.tokenizer.apply_chat_template(prefix, tokenize=False, continue_final_message=True)
 
 
-    @staticmethod
-    def gsm8k_answer_extraction(solution: str) -> str :
+    def gsm8k_answer_extraction(self, solution: str) -> str :
         _SOLUTION_CLIP_CHARS = 300
         if len(solution) > _SOLUTION_CLIP_CHARS:
             solution = solution[-_SOLUTION_CLIP_CHARS:]

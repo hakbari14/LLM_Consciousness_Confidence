@@ -13,7 +13,6 @@ class diffusion_decision_model_gsm8k_deepSeek_r1_distill_qwen_1_5B(diffusion_dec
     def get_dataset(self) -> gsm8k_dataset_deepSeek_r1_distill_qwen_1_5B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(200)
             self.dataset = gsm8k_dataset_deepSeek_r1_distill_qwen_1_5B(config)
         return self.dataset
 
