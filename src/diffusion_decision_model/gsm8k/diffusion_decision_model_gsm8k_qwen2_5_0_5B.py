@@ -30,4 +30,7 @@ for nv in [5, 10, 15, 20, 25]:
     t.baseline_features_extractor(from_run_number=1, to_run_number=2)
     print(f"{'*' * 210}")
 
+for nv in [5, 10, 15, 20, 25]:
+    t = diffusion_decision_model_gsm8k_qwen2_5_0_5B(modelname='Qwen/Qwen2.5-0.5B', number_of_evidence=nv)
+    t.calculate_accracy(run_number=1)
 
