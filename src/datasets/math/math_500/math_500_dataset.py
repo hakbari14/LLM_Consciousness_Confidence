@@ -52,7 +52,7 @@ class math_500_dataset(math_dataset_handler):
         ]
         
         return {
-                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
+                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, add_generation_prompt=True), 
                 "target": final_answer,
                 "question": question,
                 "problem_id": problem_id

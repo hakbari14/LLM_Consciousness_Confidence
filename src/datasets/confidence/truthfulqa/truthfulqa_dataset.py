@@ -51,7 +51,7 @@ class truthfulqa_dataset(dataset_handler):
         ]
         
         return {
-                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
+                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, add_generation_prompt=True), 
                 "target": label,
                 "problem_id": unique_id
                 }
