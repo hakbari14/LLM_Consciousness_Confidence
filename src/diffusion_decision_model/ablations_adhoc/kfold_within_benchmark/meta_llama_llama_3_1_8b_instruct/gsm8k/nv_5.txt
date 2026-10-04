@@ -1,0 +1,44 @@
+5 fold cross validation inside gsm8k, meta_llama_llama_3_1_8b_instruct, nv 5
+1224 samples, 282 answered wrong, so about 56.4 wrong answers in each fold
+0 generations stopped by the token limit, 0 of them graded wrong
+regression: unscaled features, no class weight, as in the paper's tables
+pooled: the five folds' predictions put together and measured once
+
+== ROC, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG-Mean     0.973   0.963   0.974   0.972   0.965    0.969  0.004   0.969
+CoT-EIG-Sum      0.969   0.960   0.968   0.970   0.967    0.967  0.004   0.967
+SC-10            0.780   0.702   0.755   0.744   0.742    0.745  0.025   0.745
+SC-10-Last       0.742   0.715   0.757   0.753   0.752    0.744  0.015   0.743
+Sum-Loss         0.694   0.651   0.709   0.716   0.638    0.682  0.031   0.681
+Mean-Loss        0.595   0.562   0.682   0.609   0.561    0.602  0.044   0.602
+Sum-Ent          0.700   0.642   0.715   0.717   0.631    0.681  0.037   0.682
+Mean-Ent         0.603   0.562   0.693   0.615   0.553    0.605  0.050   0.606
+Mean-Prob        0.594   0.552   0.690   0.613   0.539    0.598  0.053   0.599
+SC-Budget          nan     nan     nan     nan     nan      nan    nan     nan
+
+== ECE, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG-Mean     0.028   0.031   0.027   0.022   0.043    0.030  0.007   0.014
+CoT-EIG-Sum      0.026   0.039   0.042   0.024   0.032    0.033  0.007   0.017
+SC-10            0.071   0.081   0.095   0.057   0.067    0.074  0.013   0.040
+SC-10-Last       0.069   0.108   0.141   0.072   0.105    0.099  0.027   0.097
+Sum-Loss         0.106   0.091   0.054   0.085   0.137    0.095  0.027   0.133
+Mean-Loss        0.111   0.151   0.173   0.081   0.085    0.120  0.036   0.059
+Sum-Ent          0.107   0.079   0.045   0.089   0.169    0.098  0.041   0.172
+Mean-Ent         0.079   0.123   0.141   0.058   0.082    0.096  0.031   0.042
+Mean-Prob        0.135   0.134   0.149   0.139   0.137    0.139  0.005   0.137
+SC-Budget          nan     nan     nan     nan     nan      nan    nan     nan
+
+== ROC when the folds are drawn again, 10 seeds (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
+method          mean of folds  lowest  highest    pooled  lowest  highest
+CoT-EIG-Mean            0.970   0.969    0.970     0.968   0.968    0.969
+CoT-EIG-Sum             0.966   0.964    0.968     0.965   0.962    0.967
+SC-10                   0.745   0.743    0.745     0.745   0.745    0.745
+SC-10-Last              0.743   0.742    0.745     0.743   0.743    0.743
+Sum-Loss                0.681   0.680    0.683     0.681   0.681    0.681
+Mean-Loss               0.602   0.600    0.604     0.602   0.602    0.602
+Sum-Ent                 0.682   0.681    0.683     0.682   0.682    0.682
+Mean-Ent                0.606   0.604    0.609     0.606   0.606    0.606
+Mean-Prob               0.599   0.597    0.601     0.599   0.599    0.599
+SC-Budget                 nan     nan      nan       nan     nan      nan
