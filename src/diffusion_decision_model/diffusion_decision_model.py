@@ -174,6 +174,8 @@ class diffusion_decision_model(ABC):
                     
                     if output.outputs is None: continue
                     response = output.outputs[0]
+                    # Stopped by the token limit: the answer was never finished, so whatever is read from the cut text is not the model's answer.
+                    if response.finish_reason == 'length': continue
                     completion = response.text
                     
                     log.completion = completion

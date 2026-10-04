@@ -37,7 +37,7 @@ class gsm8k_dataset(math_dataset_handler):
         ]
         
         return {
-                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), 
+                "prompt": self.tokenizer.apply_chat_template(r1_prefix, tokenize=False, add_generation_prompt=True), 
                 "target": final_answer,
                 "problem_id": None
                 }
