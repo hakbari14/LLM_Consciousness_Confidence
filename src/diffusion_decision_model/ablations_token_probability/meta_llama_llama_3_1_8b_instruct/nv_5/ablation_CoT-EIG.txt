@@ -1,0 +1,44 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+-----------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.9118
+ROC : 0.8712
+ECE : 0.1435
+Accuracy Completion : 0.8497
+ROC Completion : 0.7836
+ECE Completion : 0.0326
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT-EIG, held out: random split
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+random split           run CoT-EIG                     False      none   ok    978   245       56   0.972   0.013     0.029   0.006
+random split           run CoT-EIG                     False  balanced   ok    978   245       56   0.971   0.013     0.070   0.013
+random split           run CoT-EIG                      True      none   ok    978   245       56   0.972   0.012     0.027   0.005
+random split           run CoT-EIG                      True  balanced   ok    978   245       56   0.971   0.012     0.065   0.013
+random split           run SC-10                           -         -   ok      0   245       56   0.757   0.035     0.054   0.024
+random split           run SC-10-Last                      -         -   ok      0   245       56   0.745   0.034     0.114   0.035
+random split           run Sum-Loss                        -         -   ok      0   245       56   0.640   0.041     0.076   0.021
+random split           run Mean-Loss                       -         -   ok      0   245       56   0.583   0.044     0.153   0.040
+random split           run Sum-Ent                         -         -   ok      0   245       56   0.633   0.041     0.087   0.022
+random split           run Mean-Ent                        -         -   ok      0   245       56   0.560   0.045     0.134   0.052
+random split           run Mean-Prob                       -         -   ok      0   245       56   0.563   0.044     0.136   0.020
+random split           run SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+random split          vote CoT-EIG                     False      none   ok    978   245       22   0.778   0.038     0.054   0.014
+random split          vote CoT-EIG                     False  balanced   ok    978   245       22   0.779   0.036     0.289   0.024
+random split          vote CoT-EIG                      True      none   ok    978   245       22   0.767   0.036     0.049   0.009
+random split          vote CoT-EIG                      True  balanced   ok    978   245       22   0.775   0.035     0.278   0.025
+random split          vote SC-10                           -         -   ok      0   245       22   0.847   0.042     0.130   0.024
+random split          vote SC-10-Last                      -         -   ok      0   245       22   0.675   0.059     0.124   0.029
+random split          vote Sum-Loss                        -         -   ok      0   245       22   0.705   0.053     0.147   0.017
+random split          vote Mean-Loss                       -         -   ok      0   245       22   0.621   0.069     0.240   0.058
+random split          vote Sum-Ent                         -         -   ok      0   245       22   0.728   0.051     0.110   0.022
+random split          vote Mean-Ent                        -         -   ok      0   245       22   0.653   0.066     0.228   0.051
+random split          vote Mean-Prob                       -         -   ok      0   245       22   0.623   0.067     0.033   0.015
+random split          vote SC-Budget                       -         -   ok      0     0        0     nan     nan       nan     nan
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+only gsm8k has a log for this model, so nothing can be held out
