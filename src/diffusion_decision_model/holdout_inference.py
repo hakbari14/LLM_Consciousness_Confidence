@@ -1,23 +1,24 @@
 """The fitted head for one held out benchmark, and what it predicts there.
 
-Trains exactly as the ablation does: the full feature set with the per token loss,
-unscaled and unweighted, on every benchmark except the held out one.  Prints the
+Trains exactly as the ablation does: the full feature set, unscaled and
+unweighted, on every benchmark except the held out one.  Prints the
 weights and writes one row per held out question.
 
     python -m src.diffusion_decision_model.holdout_inference
 """
 
+import os
 import numpy as np
 import pandas as pd
 
 from src.diffusion_decision_model.diffusion_decision_model_training import (
-    diffusion_decision_model_training, is_true, to_float)
+    diffusion_decision_model_training, OUT_DIRECTORY as ABLATIONS)
 
 HELD_OUT = 'gsm8k'
 EVIDENCE_COUNT = 5
 MODEL = 'qwen-qwen3-8b'
-CHANNELS = ['loss', 'agreement', 'delta_loss', 'delta_agreement']
-OUT_DIRECTORY = f'src/diffusion_decision_model/ablations/{MODEL}/nv_{EVIDENCE_COUNT}'
+CHANNELS = ['agreement', 'delta_agreement', 'probability', 'probability_ratio']
+OUT_DIRECTORY = f'{ABLATIONS}/{MODEL}/nv_{EVIDENCE_COUNT}'
 
 
 def feature_names(evidence_count):
@@ -29,10 +30,8 @@ if __name__ == '__main__':
     training = diffusion_decision_model_training(number_of_evidence = EVIDENCE_COUNT, modelname_dir = MODEL)
     train_datasets = [dataset for dataset in training.datasets if dataset != HELD_OUT]
 
-    X_train, y_train, _ = training.build_matrix(train_datasets, 1, 2, training.LOSS_PER_TOKEN,
-                                                training.TARGET_RUN, training.FULL)
-    X_test, y_test, _ = training.build_matrix([HELD_OUT], 1, 2, training.LOSS_PER_TOKEN,
-                                              training.TARGET_RUN, training.FULL)
+    X_train, y_train, _ = training.build_matrix(train_datasets, 1, 2, training.TARGET_RUN, training.FULL)
+    X_test, y_test, _ = training.build_matrix([HELD_OUT], 1, 2, training.TARGET_RUN, training.FULL)
     X_train_filled, X_test_filled = training.fill_and_scale(X_train, X_test, False)
     model, converged = training.fit_logistic(X_train_filled, y_train, None)
     probability = model.predict_proba(X_test_filled)[:, 1]
@@ -69,6 +68,7 @@ if __name__ == '__main__':
         rows.append(row)
 
     inference = pd.DataFrame(rows)
+    os.makedirs(OUT_DIRECTORY, exist_ok=True)
     path = f'{OUT_DIRECTORY}/inference_{HELD_OUT}.csv'
     inference.to_csv(path, index=False)
 

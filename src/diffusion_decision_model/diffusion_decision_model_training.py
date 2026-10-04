@@ -17,6 +17,13 @@ from sklearn.exceptions import ConvergenceWarning
 
 MISSING = ('', 'nan', 'none')
 
+# The logger parses every sample's last layer representation as it loads, and stops on
+# a log that was written without one.  Only LastRep reads the representation, so an
+# empty one is let through here and LastRep leaves that sample out.
+parse_representation = diffusion_decision_model_log_entity.get_last_layer_representations_numpy
+diffusion_decision_model_log_entity.get_last_layer_representations_numpy = (
+    lambda log: parse_representation(log) if isinstance(log.last_layer_representations, str) else None)
+
 
 def to_float(value) -> float:
     """A logged number, or nan when the field was empty."""
@@ -36,12 +43,11 @@ def mean_or_nan(values) -> float:
     return float(np.mean(values)) if values else float('nan')
 
 
-class diffusion_decision_model_training:
+# Where the sweep writes its tables.
+OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_token_probability'
 
-    # The two ways of reading the evidence loss.  Total is what the run logged;
-    # per token divides it by the tokens behind it so it stops growing with length.
-    LOSS_TOTAL = 'evidence_total_loss'
-    LOSS_PER_TOKEN = 'evidence_per_token_loss'
+
+class diffusion_decision_model_training:
 
     # Which answer is graded.  run: the one the model wrote.  vote: the one the ten
     # rollouts agreed on.  They differ on one sample in eight.
@@ -50,24 +56,22 @@ class diffusion_decision_model_training:
 
     # Which numbers describe a sample, named as in the paper.  Widths with twenty
     # evidence steps:
-    #   CoT-EIG 80 (all of ours), EIG-SC 20 (agreement only), EIG-Loss 20 (loss only),
-    #   CoT_Len 20 (rollout length), Logit_Feat 5 (the published logit scores),
-    #   LastRep 4096 (the last layer's representation)
+    #   CoT-EIG 80 (all of ours), EIG-SC 20 (agreement only), EIG-Prob 40 (token
+    #   probability only), CoT_Len 20 (rollout length), Logit_Feat 5 (the published
+    #   logit scores), LastRep 4096 (the last layer's representation)
     #
-    # EIG-Loss and EIG-SC are the two halves of CoT-EIG, each one channel of twenty
-    # steps, so putting them side by side says which channel CoT-EIG is living on.
+    # CoT-EIG is each evidence's agreement, the change in agreement, the mean
+    # probability of its tokens, and that mean over the whole completion's.  The
+    # evidence loss it used to carry is gone.  EIG-SC and EIG-Prob are its two halves,
+    # so putting them side by side says which half CoT-EIG is living on.
     FULL = 'CoT-EIG'
     ROLLOUT_LENGTH = 'CoT_Len'
-    EVIDENCE_LOSS = 'EIG-Loss'
+    EVIDENCE_PROBABILITY = 'EIG-Prob'
     SELF_CONSISTENCY = 'EIG-SC'
     BASELINE_SCALAR = 'Logit_Feat'
     BASELINE_HIDDEN = 'LastRep'
 
-    FEATURE_SETS = [FULL, ROLLOUT_LENGTH, EVIDENCE_LOSS, SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
-
-    # The sets whose features are read from the evidence loss, so the loss column
-    # means something and both ways of reading it are worth sweeping.
-    LOSS_BEARING_SETS = [FULL, EVIDENCE_LOSS]
+    FEATURE_SETS = [FULL, ROLLOUT_LENGTH, EVIDENCE_PROBABILITY, SELF_CONSISTENCY, BASELINE_SCALAR, BASELINE_HIDDEN]
 
     # The two baselines read the whole completion, not the evidence steps.
     WHOLE_COMPLETION_SETS = [BASELINE_SCALAR, BASELINE_HIDDEN]
@@ -83,7 +87,7 @@ class diffusion_decision_model_training:
 
     METRICS = ['roc_auc', 'ece']
 
-    # The unscaled total loss needs about 4800 rounds; per_token needs about 50.
+    # Far more than the unscaled features have needed; a fit that reaches it is reported.
     MAX_ITER = 10000
 
     # On a random split a seed redraws the split and the model is refitted.
@@ -97,6 +101,17 @@ class diffusion_decision_model_training:
     # A held out set with fewer of the rarer class than this cannot support a ROC.
     MINORITY_FLOOR = 30
 
+    # Every benchmark the generation has been run on.  A model is trained and scored on
+    # the ones it has a log for.  countdown is left out: its logs were written before
+    # the token probability of each evidence was logged, so they can no longer be read,
+    # and it was only ever trained on (the models make three or four mistakes on it).
+    BENCHMARKS = ['gpqa', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime', 'prontoqa']
+
+    # The generation stops a response at one of these many tokens.  A response that
+    # long never reached its final answer, and whatever was read from the cut text was
+    # graded in its place, so such a sample is left out.
+    TOKEN_LIMITS = (5000, 15000)
+
     # Benchmarks of the same kind, held out together so none can lean on a sibling.
     DATASET_GROUPS = {
         'multiple choice knowledge': ['mmlu', 'mmlu_pro'],
@@ -109,8 +124,11 @@ class diffusion_decision_model_training:
 
         self.number_of_evidence = number_of_evidence
         self.modelname_dir = modelname_dir
-        self.datasets = ['gpqa', 'countdown', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime']
         self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence/logs/diffusion_decision_model'
+        self.datasets = [dataset for dataset in self.BENCHMARKS if os.path.exists(self.log_file_name(dataset, 1))]
+        self.dataset_groups = {name: [dataset for dataset in group if dataset in self.datasets]
+                               for name, group in self.DATASET_GROUPS.items()}
+        self.dataset_groups = {name: group for name, group in self.dataset_groups.items() if group}
         self.log_cache = {}
         self.budget_cache = {}
         self.baseline_cache = {}
@@ -154,71 +172,47 @@ class diffusion_decision_model_training:
 
     # ----------------------------------------------------------------- features
 
-    def scored_token_count(self, completion_token_count: float, evidence_index: int) -> float:
-        """How many tokens Partial_COT_Loss was summed over.  Not logged, so rebuilt.
+    def completion_mean_probability(self, log, evidence_list) -> float:
+        """The mean token probability of the whole completion, from the model that scored the evidence.
 
-        Evidence zero carries the loss of the whole completion.  After that the run
-        cuts the completion into number_of_evidence + 1 near equal groups and scores
-        whatever follows the first i of them.
+        A run logged by the pipeline keeps it on evidence 0.  A log whose probabilities
+        were filled in afterwards leaves evidence 0 empty; there the same model wrote
+        the completion's mean to the sample's own row.
         """
-        if math.isnan(completion_token_count) or evidence_index == 0:
-            return completion_token_count
+        if to_float(evidence_list[0].evidence_token_count) > 0:
+            return to_float(evidence_list[0].evidence_accumulation_avg_prob)
+        return to_float(log.length_normalized_sequence_probability)
 
-        groups = self.number_of_evidence + 1
-        base = int(completion_token_count) // groups
-        remainder = int(completion_token_count) % groups
-        prefix = evidence_index * base + max(0, min(evidence_index, remainder - 1))
-        return completion_token_count - prefix
-
-    def per_token_loss(self, log, evidence_log) -> float:
-        """The accumulation loss with every loss divided by its own token count."""
-        values = []
-        for rollout in evidence_log.consistency_list:
-            if is_true(rollout.accuracy) and to_float(rollout.token_count) > 0:
-                values.append(to_float(rollout.loss) / to_float(rollout.token_count))
-
-        scored = self.scored_token_count(to_float(log.token_count), int(evidence_log.index))
-        if scored > 0:
-            values.append(to_float(evidence_log.partial_cot_loss) / scored)
-
-        return mean_or_nan(values)
-
-    def evidence_channels(self, log, loss_mode: str) -> dict:
+    def evidence_channels(self, log) -> dict:
         """One list per channel, one entry per evidence step."""
         evidence_list = sorted(log.evidence_list, key = lambda evidence: int(evidence.index))
-        channels = {name: [] for name in ['loss', 'self_consistency', 'length',
-                                          'delta_loss', 'delta_self_consistency']}
+        channels = {name: [] for name in ['self_consistency', 'delta_self_consistency', 'length',
+                                          'probability', 'probability_ratio']}
 
-        for evidence_log in evidence_list:
+        # The ratio is worked out here; the log only holds the two means.
+        whole = self.completion_mean_probability(log, evidence_list)
+
+        for index, evidence_log in enumerate(evidence_list):
             lengths = [to_float(rollout.token_count) for rollout in evidence_log.consistency_list]
             lengths = [value for value in lengths if not math.isnan(value)]
-
             channels['length'].append(mean_or_nan(lengths))
-            channels['self_consistency'].append(to_float(evidence_log.evidence_accumulation_self_consistency))
 
-            if loss_mode == self.LOSS_TOTAL:
-                channels['loss'].append(to_float(evidence_log.evidence_accumulation_loss))
-            elif loss_mode == self.LOSS_PER_TOKEN:
-                channels['loss'].append(self.per_token_loss(log, evidence_log))
-            else:
-                raise Exception(f'unknown loss mode {loss_mode}')
-
-        # Under total the logged steps still describe the channel, so they are read
-        # as they are and this reproduces the existing pipeline exactly.
-        for index, evidence_log in enumerate(evidence_list):
-            if loss_mode == self.LOSS_TOTAL:
-                channels['delta_loss'].append(to_float(evidence_log.delta_evidence_loss))
-                channels['delta_self_consistency'].append(to_float(evidence_log.delta_evidence_self_consistency))
-            elif index == 0:
-                channels['delta_loss'].append(0.0)
-                channels['delta_self_consistency'].append(0.0)
-            else:
-                channels['delta_loss'].append(channels['loss'][index - 1] - channels['loss'][index])
-                channels['delta_self_consistency'].append(channels['self_consistency'][index] - channels['self_consistency'][index - 1])
+            # Evidence 0 is the question alone: no step before it to change from, and
+            # no tokens of its own, so it carries the completion's mean and a ratio of one.
+            agreement = to_float(evidence_log.evidence_accumulation_self_consistency)
+            probability = whole if index == 0 else to_float(evidence_log.evidence_accumulation_avg_prob)
+            channels['delta_self_consistency'].append(agreement - channels['self_consistency'][-1] if index else 0.0)
+            channels['self_consistency'].append(agreement)
+            channels['probability'].append(probability)
+            channels['probability_ratio'].append(probability / whole if whole > 0 else float('nan'))
 
         return channels
 
-    def sample_features(self, log, loss_mode: str, feature_set: str) -> list:
+    def is_cut_off(self, log) -> bool:
+        """Whether the response was stopped by the token limit before it finished."""
+        return to_float(log.token_count) in self.TOKEN_LIMITS
+
+    def sample_features(self, log, feature_set: str) -> list:
         """The feature row of one sample, or None when it cannot be built."""
         if feature_set == self.BASELINE_SCALAR:
             return [to_float(log.completion_loss),
@@ -233,11 +227,11 @@ class diffusion_decision_model_training:
             except Exception:
                 return None
 
-        channels = self.evidence_channels(log, loss_mode)
+        channels = self.evidence_channels(log)
         wanted = {
-            self.FULL: ['loss', 'self_consistency', 'delta_loss', 'delta_self_consistency'],
+            self.FULL: ['self_consistency', 'delta_self_consistency', 'probability', 'probability_ratio'],
             self.ROLLOUT_LENGTH: ['length'],
-            self.EVIDENCE_LOSS: ['loss'],
+            self.EVIDENCE_PROBABILITY: ['probability', 'probability_ratio'],
             self.SELF_CONSISTENCY: ['self_consistency'],
             }
         if feature_set not in wanted:
@@ -279,7 +273,7 @@ class diffusion_decision_model_training:
             ]
 
     def build_matrix(self, datasets: list, from_run_number: int, to_run_number: int,
-                     loss_mode: str = LOSS_TOTAL, target: str = TARGET_RUN, feature_set: str = FULL):
+                     target: str = TARGET_RUN, feature_set: str = FULL):
         """Features, labels and untrained confidences for the given datasets."""
         if target not in (self.TARGET_RUN, self.TARGET_VOTE):
             raise Exception(f'unknown target {target}')
@@ -289,10 +283,10 @@ class diffusion_decision_model_training:
             for run_number in range(from_run_number, to_run_number):
                 budget_confidence = self.load_budget_confidence(dataset, run_number)
                 for log in self.load_logs(dataset, run_number):
-                    if len(log.evidence_list) != self.number_of_evidence:
+                    if len(log.evidence_list) != self.number_of_evidence or self.is_cut_off(log):
                         continue
 
-                    row = self.sample_features(log, loss_mode, feature_set)
+                    row = self.sample_features(log, feature_set)
                     if row is None:
                         continue
 
@@ -415,7 +409,7 @@ class diffusion_decision_model_training:
     # --------------------------------------------------------------- experiment
 
     def evaluate(self, test_datasets: list = None, from_run_number: int = 1, to_run_number: int = 2,
-                 loss_mode: str = LOSS_TOTAL, standardize: bool = True, class_weight = None,
+                 standardize: bool = True, class_weight = None,
                  target: str = TARGET_RUN, feature_set: str = FULL, seeds = SEEDS) -> dict:
         """Train on everything except the held out datasets, and score only on those.
 
@@ -428,8 +422,8 @@ class diffusion_decision_model_training:
             if not train_datasets:
                 raise Exception('every dataset was held out, nothing is left to train on')
 
-            X_train, y_train, _ = self.build_matrix(train_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
-            X_test, y_test, baselines_test = self.build_matrix(test_datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
+            X_train, y_train, _ = self.build_matrix(train_datasets, from_run_number, to_run_number, target, feature_set)
+            X_test, y_test, baselines_test = self.build_matrix(test_datasets, from_run_number, to_run_number, target, feature_set)
             held_out = ','.join(test_datasets)
 
             # Which dataset is held out fixes the split and the solver is
@@ -444,7 +438,7 @@ class diffusion_decision_model_training:
             spread = self.bootstrap_sd(y_test, probability)
         else:
             spread = None
-            X, y, baselines = self.build_matrix(self.datasets, from_run_number, to_run_number, loss_mode, target, feature_set)
+            X, y, baselines = self.build_matrix(self.datasets, from_run_number, to_run_number, target, feature_set)
             held_out = 'random split'
             measurements, converged = [], True
             for seed in seeds:
@@ -455,11 +449,7 @@ class diffusion_decision_model_training:
                 converged = converged and ok
                 measurements.append(self.measure(y_test, model.predict_proba(X_test)[:, 1]))
 
-        # A row is named by its feature set, and a set built from the loss also by
-        # how the loss is read: CoT-EIG-Mean is per token, CoT-EIG-Sum is summed.
-        method = (f"{feature_set}-{'Mean' if loss_mode == self.LOSS_PER_TOKEN else 'Sum'}"
-                  if feature_set in self.LOSS_BEARING_SETS else feature_set)
-        row = self.result_row(held_out, target, method, y_test)
+        row = self.result_row(held_out, target, feature_set, y_test)
         row.update({'feature_set': feature_set, 'standardize': standardize,
                     'class_weight': class_weight if class_weight else 'none',
                     'train_count': len(y_train), 'converged': converged})
@@ -493,19 +483,13 @@ class diffusion_decision_model_training:
     def ablation(self, test_datasets: list = None, from_run_number: int = 1, to_run_number: int = 2,
                  feature_set: str = FULL, seeds = SEEDS) -> list:
         """Every switch combination on one held out set, for both graded answers."""
-        # Only a set built from the loss sweeps the loss column; for the rest the
-        # mode changes nothing, so one pass is the whole sweep.
-        loss_modes = ([self.LOSS_TOTAL, self.LOSS_PER_TOKEN] if feature_set in self.LOSS_BEARING_SETS
-                      else [self.LOSS_TOTAL])
-
         results = []
         for target in [self.TARGET_RUN, self.TARGET_VOTE]:
             trained = []
-            for loss_mode in loss_modes:
-                for standardize in [False, True]:
-                    for class_weight in [None, 'balanced']:
-                        trained.append(self.evaluate(test_datasets, from_run_number, to_run_number,
-                                                     loss_mode, standardize, class_weight, target, feature_set, seeds))
+            for standardize in [False, True]:
+                for class_weight in [None, 'balanced']:
+                    trained.append(self.evaluate(test_datasets, from_run_number, to_run_number,
+                                                 standardize, class_weight, target, feature_set, seeds))
 
             # The untrained rows do not depend on the switches; take them from the first.
             results.extend(trained)
@@ -515,10 +499,10 @@ class diffusion_decision_model_training:
         self.print_results(results, f'ablation, features: {feature_set}, held out: {held_out}')
         return results
 
-    def train_logistic_regression(self, from_run_number, to_run_number, loss_mode: str = LOSS_TOTAL,
+    def train_logistic_regression(self, from_run_number, to_run_number,
                                   standardize: bool = False, class_weight = None, target: str = TARGET_RUN) -> dict:
         """The random split over every dataset, which is what this has always run."""
-        result = self.evaluate(None, from_run_number, to_run_number, loss_mode, standardize, class_weight, target)
+        result = self.evaluate(None, from_run_number, to_run_number, standardize, class_weight, target)
         self.print_results([result], 'random split over every dataset')
         return result
 
@@ -624,6 +608,9 @@ class diffusion_decision_model_training:
             for inner_list in data
             for item in inner_list
         ]
+        if not records:
+            print('nothing to average')
+            return
 
         df = pd.DataFrame(records)
         groups = df.groupby(parameter_keys, dropna=False)
@@ -672,101 +659,110 @@ if __name__ == '__main__':
     # training = diffusion_decision_model_training(number_of_evidence = 20)
     # training.train_logistic_regression(from_run_number = 1, to_run_number = 2)
     # training.evaluate(test_datasets = ['gpqa'])
-    # training.evaluate(test_datasets = ['gpqa'], loss_mode = training.LOSS_PER_TOKEN)
     # training.evaluate(test_datasets = ['gpqa'], target = training.TARGET_VOTE)
     # training.evaluate(test_datasets = ['gpqa'], feature_set = training.ROLLOUT_LENGTH)
     # training.ablation(test_datasets = ['gpqa'])
     # -----------------------------------------------------------------------
 
-    # Every output the generation produced: one model and evidence count per row.
-    # Each gets its own folder so the feature set files never mix runs.
-    RUNS = [('qwen-qwen3-8b', 5),
-            ('qwen-qwen3-8b', 10),
-            ('qwen-qwen3-8b', 15),
-            ('qwen-qwen3-8b', 20),
-            ('qwen-qwen3-8b', 25),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 5),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 10),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 15),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 20),
-            ('deepseek-ai-deepseek-r1-distill-qwen-7b', 25)]
+    # Every model the generation has been run on, at every evidence count.  Each pair
+    # gets its own folder so the feature set files never mix runs.
+    MODELS = ['qwen-qwen3-8b',
+              'deepseek-ai-deepseek-r1-distill-qwen-7b',
+              'mistralai-mistral-7b-instruct-v0.3',
+              'meta_llama_llama_3_1_8b_instruct',
+              'deepseek-ai-deepseek-r1-distill-qwen-1.5b',
+              'qwen-qwen3-0.6b',
+              'qwen-qwen2.5-0.5b']
+    EVIDENCE_COUNTS = [5, 10, 15, 20, 25]
 
-    # Everything by default.  Name feature sets and / or models on the command line to
-    # run only those, which is how a new set or a new model's logs are filled in
-    # without rewriting the files the others own.
-    models = {modelname_dir for modelname_dir, _ in RUNS}
+    # Everything by default.  Name feature sets, models and / or evidence counts on the
+    # command line to run only those, which is how a new set or a new model's logs are
+    # filled in without rewriting the files the others own.
     for name in sys.argv[1:]:
-        if name not in diffusion_decision_model_training.FEATURE_SETS and name not in models:
-            raise Exception(f'unknown feature set or model {name}')
+        if name not in diffusion_decision_model_training.FEATURE_SETS and name not in MODELS and not name.isdigit():
+            raise Exception(f'unknown feature set, model or evidence count {name}')
     FEATURE_SETS_TO_RUN = ([name for name in sys.argv[1:] if name in diffusion_decision_model_training.FEATURE_SETS]
                            or diffusion_decision_model_training.FEATURE_SETS)
-    MODELS_TO_RUN = [name for name in sys.argv[1:] if name in models] or sorted(models)
+    MODELS_TO_RUN = [name for name in sys.argv[1:] if name in MODELS] or MODELS
+    EVIDENCE_COUNTS_TO_RUN = [int(name) for name in sys.argv[1:] if name.isdigit()] or EVIDENCE_COUNTS
 
-    for modelname_dir, number_of_evidence in RUNS:
-        if modelname_dir not in MODELS_TO_RUN:
-            continue
-        print(f'\n===== {modelname_dir}, {number_of_evidence} evidence steps =====')
-        training = diffusion_decision_model_training(number_of_evidence = number_of_evidence,
-                                                     modelname_dir = modelname_dir)
+    for modelname_dir in MODELS_TO_RUN:
+        for number_of_evidence in EVIDENCE_COUNTS_TO_RUN:
+            training = diffusion_decision_model_training(number_of_evidence = number_of_evidence,
+                                                         modelname_dir = modelname_dir)
+            if not training.datasets:
+                print(f'no log for {modelname_dir} at {number_of_evidence} evidence steps')
+                continue
 
-        # One file per feature set: the random split, then every dataset held out,
-        # then the two domains held out whole, then the averages.
-        output_directory = f'src/diffusion_decision_model/ablations/{modelname_dir}/nv_{number_of_evidence}'
-        os.makedirs(output_directory, exist_ok=True)
+            print(f'\n===== {modelname_dir}, {number_of_evidence} evidence steps, on {", ".join(training.datasets)} =====')
 
-        for feature_set in FEATURE_SETS_TO_RUN:
-            output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
-            with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
-                # The free bar: the vote share used as the confidence, over every dataset
-                # pooled with nothing held out.  The same numbers in all seven files.
-                print('\nself consistency confidence, every dataset pooled, nothing held out')
-                print('-' * 131)
-                training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
-                training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
-                print('-' * 131)
+            # One file per feature set: the random split, then every dataset held out,
+            # then the domains held out whole, then the averages.  Not in ablations/:
+            # that folder holds the submitted paper's tables, whose CoT-EIG carried the loss.
+            output_directory = f'{OUT_DIRECTORY}/{modelname_dir}/nv_{number_of_evidence}'
+            os.makedirs(output_directory, exist_ok=True)
 
-                training.ablation(feature_set = feature_set)
+            for feature_set in FEATURE_SETS_TO_RUN:
+                output_file_name = f'{output_directory}/ablation_{feature_set}.txt'
+                with open(output_file_name, 'w') as output_file, contextlib.redirect_stdout(output_file):
+                    # The free bar: the vote share used as the confidence, over every dataset
+                    # pooled with nothing held out.  The same numbers in every file.
+                    print('\nself consistency confidence, every dataset pooled, nothing held out')
+                    print('-' * 131)
+                    training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
+                    training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
+                    print('-' * 131)
 
-                per_dataset = [training.ablation(test_datasets = [dataset], feature_set = feature_set)
-                               for dataset in training.datasets]
+                    training.ablation(feature_set = feature_set)
 
-                print('\n\naveraged over every held out dataset:')
-                training.calculate_grouped_averages(per_dataset)
-
-                # math500 and countdown hold 1 and 3 of the rarer class, so their
-                # numbers are noise being folded in with the rest.
-                big_enough = [result for result in per_dataset if result[0]['minority_count'] >= training.MINORITY_FLOOR]
-                big_enough_names = [dataset for dataset, result in zip(training.datasets, per_dataset)
-                                    if result[0]['minority_count'] >= training.MINORITY_FLOOR]
-                print(f"\n\naveraged over the held out datasets carrying at least {training.MINORITY_FLOOR} of the rarer class ({', '.join(big_enough_names)}):")
-                training.calculate_grouped_averages(big_enough)
-
-                # Whole domains held out, so no benchmark can lean on a sibling.
-                by_domain = []
-                for group_name, group in training.DATASET_GROUPS.items():
-                    print(f'\n\nheld out as a domain: {group_name}')
-                    by_domain.append(training.ablation(test_datasets = group, feature_set = feature_set))
-
-                # Every benchmark held out exactly once: the domains together, the rest
-                # alone, and only where the rarer class can carry a ROC.  countdown has 3
-                # and scores 1.000 or 0.000 on nearly every measure, so a fifth of each
-                # average was a coin flip.  math500 has 1 but sits inside the mathematics
-                # group, which has 31 between its three benchmarks and stays.
-                partition = list(by_domain)
-                partition_names = list(training.DATASET_GROUPS)
-                for dataset, result in zip(training.datasets, per_dataset):
-                    if any(dataset in group for group in training.DATASET_GROUPS.values()):
+                    # Holding a benchmark out needs another one to train on.
+                    if len(training.datasets) < 2:
+                        print(f'\n\nonly {training.datasets[0]} has a log for this model, so nothing can be held out')
+                        print(f'wrote {output_file_name}', file = sys.__stdout__)
                         continue
 
-                    if result[0]['minority_count'] < training.MINORITY_FLOOR:
-                        continue
+                    per_dataset = [training.ablation(test_datasets = [dataset], feature_set = feature_set)
+                                   for dataset in training.datasets]
 
-                    partition.append(result)
-                    partition_names.append(dataset)
+                    print('\n\naveraged over every held out dataset:')
+                    training.calculate_grouped_averages(per_dataset)
 
-                print(f"\n\nMAIN AVERAGE, over these four held out groups: {', '.join(partition_names)}")
-                print('every benchmark counted exactly once, the two domains held out together,')
-                print(f'and only groups carrying at least {training.MINORITY_FLOOR} of the rarer class')
-                training.calculate_grouped_averages(partition)
+                    # A benchmark with one or two of the rarer class gives a number that
+                    # is noise, and would be folded in with the rest.
+                    big_enough = [result for result in per_dataset if result[0]['minority_count'] >= training.MINORITY_FLOOR]
+                    big_enough_names = [dataset for dataset, result in zip(training.datasets, per_dataset)
+                                        if result[0]['minority_count'] >= training.MINORITY_FLOOR]
+                    print(f"\n\naveraged over the held out datasets carrying at least {training.MINORITY_FLOOR} of the rarer class ({', '.join(big_enough_names)}):")
+                    training.calculate_grouped_averages(big_enough)
 
-            print(f'wrote {output_file_name}')
+                    # Whole domains held out, so no benchmark can lean on a sibling.  A
+                    # domain that is all the model has leaves nothing to train on.
+                    domains = {name: group for name, group in training.dataset_groups.items()
+                               if len(group) < len(training.datasets)}
+                    by_domain = []
+                    for group_name, group in domains.items():
+                        print(f'\n\nheld out as a domain: {group_name}')
+                        by_domain.append(training.ablation(test_datasets = group, feature_set = feature_set))
+
+                    # Every benchmark held out exactly once: the domains together, the
+                    # rest alone, and only where the rarer class can carry a ROC.  math500
+                    # has one or two of the rarer class but sits inside the mathematics
+                    # group, which has enough between its benchmarks and stays.
+                    partition = list(by_domain)
+                    partition_names = list(domains)
+                    for dataset, result in zip(training.datasets, per_dataset):
+                        if any(dataset in group for group in domains.values()):
+                            continue
+
+                        if result[0]['minority_count'] < training.MINORITY_FLOOR:
+                            continue
+
+                        partition.append(result)
+                        partition_names.append(dataset)
+
+                    print(f"\n\nMAIN AVERAGE, over these {len(partition_names)} held out groups: {', '.join(partition_names)}")
+                    print('every benchmark counted exactly once, the domains held out together,')
+                    print(f'and only groups carrying at least {training.MINORITY_FLOOR} of the rarer class')
+                    training.calculate_grouped_averages(partition)
+
+                print(f'wrote {output_file_name}')

@@ -16,22 +16,14 @@ The tables go to ablations_adhoc/kfold_within_benchmark/, not to ablations/.
 
 import os
 import sys
+import warnings
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 
-from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training, to_float
-from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity import diffusion_decision_model_log_entity
+from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training
 
 OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_adhoc/kfold_within_benchmark'
 FOLDS = 5
-
-# The logger parses every sample's last layer representation as it loads, and stops on
-# a log that was written without one.  Nothing here reads the representation, so an
-# empty one is let through instead of ending the run.
-parse_representation = diffusion_decision_model_log_entity.get_last_layer_representations_numpy
-diffusion_decision_model_log_entity.get_last_layer_representations_numpy = (
-    lambda log: parse_representation(log) if isinstance(log.last_layer_representations, str) else None)
-
 
 def measure(trainer, y, confidence) -> dict:
     """ROC and ECE over the samples that have this confidence at all."""
@@ -64,27 +56,30 @@ def cross_validate(trainer, features: dict, y, baselines, seed: int):
 
 
 def report(trainer, dataset: str) -> str:
+    # CoT-EIG, then its two halves: the agreement alone and the token probability alone.
     features = {}
-    for method, loss_mode in (('CoT-EIG-Mean', trainer.LOSS_PER_TOKEN), ('CoT-EIG-Sum', trainer.LOSS_TOTAL)):
-        features[method], y, baselines = trainer.build_matrix([dataset], 1, 2, loss_mode)
+    for feature_set in (trainer.FULL, trainer.SELF_CONSISTENCY, trainer.EVIDENCE_PROBABILITY):
+        features[feature_set], y, baselines = trainer.build_matrix([dataset], 1, 2, feature_set=feature_set)
 
     seeds = trainer.SEEDS
     runs = [cross_validate(trainer, features, y, baselines, seed) for seed in seeds]
     methods = list(runs[0][0])
 
-    # A generation stopped by the token limit can have its answer cut mid number and so
-    # be graded wrong although the model was right.  Those are trivially told apart, so
-    # a benchmark whose wrong answers are mostly cut off cannot be trusted here.
-    tokens = np.array([to_float(log.token_count) for log in trainer.load_logs(dataset, 1)
-                       if len(log.evidence_list) == trainer.number_of_evidence])
-    cut_off = (tokens == tokens.max()) if np.sum(tokens == tokens.max()) > 1 else np.zeros(len(tokens), dtype=bool)
+    # The trainer leaves out a response stopped by the token limit: its answer was
+    # never finished, so its grade says nothing about the model.
+    logs = [log for log in trainer.load_logs(dataset, 1) if len(log.evidence_list) == trainer.number_of_evidence]
+    cut_off = sum(trainer.is_cut_off(log) for log in logs)
 
     wrong = int(np.sum(y == 0))
     lines = [f'{FOLDS} fold cross validation inside {dataset}, {trainer.modelname_dir}, nv {trainer.number_of_evidence}',
              f'{len(y)} samples, {wrong} answered wrong, so about {wrong / FOLDS:.1f} wrong answers in each fold',
-             f'{int(cut_off.sum())} generations stopped by the token limit, {int(np.sum(cut_off & (y == 0)))} of them graded wrong',
+             f'{cut_off} more were stopped by the token limit and are left out',
+             *([f'FEWER THAN {trainer.MINORITY_FLOOR} WRONG ANSWERS: a fold may hold none, and the ROC below is noise']
+               if wrong < trainer.MINORITY_FLOOR else []),
              'regression: unscaled features, no class weight, as in the paper\'s tables',
-             'pooled: the five folds\' predictions put together and measured once']
+             'pooled: the five folds\' predictions put together and measured once',
+             'CoT-EIG: each evidence\'s agreement, the change in agreement, its mean token probability, and that',
+             'mean over the whole completion\'s.  EIG-SC: the agreement alone.  EIG-Prob: the two probability ones alone.']
 
     # The folds drawn with the first seed, one column per fold.
     per_fold, pooled = runs[0]
@@ -113,10 +108,15 @@ if __name__ == '__main__':
     evidence_counts = [int(argument) for argument in sys.argv[1:] if argument.isdigit()] or [5]
     names = [argument for argument in sys.argv[1:] if not argument.isdigit()]
 
-    reference = diffusion_decision_model_training(evidence_counts[0])
-    dataset = next((name for name in names if name in reference.datasets), 'gsm8k')
-    models = ([name for name in names if name not in reference.datasets]
-              or sorted(os.listdir(f'{reference.log_directory}/{dataset}')))
+    # A name is a benchmark if the generation has a log folder for it, a model if that
+    # benchmark has logs for it, and a mistake otherwise.
+    log_directory = diffusion_decision_model_training(evidence_counts[0]).log_directory
+    dataset = next((name for name in names if name in os.listdir(log_directory)), 'gsm8k')
+    logged_models = sorted(os.listdir(f'{log_directory}/{dataset}'))
+    for name in names:
+        if name != dataset and name not in logged_models:
+            raise Exception(f'{name} is neither a benchmark nor a model with a {dataset} log')
+    models = [name for name in names if name in logged_models] or logged_models
 
     for model in models:
         for evidence_count in evidence_counts:
@@ -125,7 +125,11 @@ if __name__ == '__main__':
                 print(f'no log for {model}, {dataset}, nv {evidence_count}', file=sys.stderr)
                 continue
 
-            table = report(trainer, dataset)
+            # With too few wrong answers a fold can hold none and has no ROC.  The table
+            # says so once; the libraries would say it for every fold and every mean.
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                table = report(trainer, dataset)
             os.makedirs(f'{OUT_DIRECTORY}/{model}/{dataset}', exist_ok=True)
             with open(f'{OUT_DIRECTORY}/{model}/{dataset}/nv_{evidence_count}.txt', 'w') as output:
                 output.write(table)
