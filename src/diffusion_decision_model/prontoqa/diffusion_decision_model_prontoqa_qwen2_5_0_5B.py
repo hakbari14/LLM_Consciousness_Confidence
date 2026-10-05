@@ -4,9 +4,6 @@ from src.datasets.dataset_config import dataset_config
 from src.logger.diffusion_decision_model.diffusion_decision_model_log_entity import diffusion_decision_model_log_entity
 from src.logger.diffusion_decision_model.diffusion_decision_model_logger import diffusion_decision_model_logger
 
-import os 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-
 class diffusion_decision_model_prontoqa_qwen2_5_0_5B(diffusion_decision_model): 
 
     def __init__(self, modelname, number_of_evidence: int) -> None:
@@ -16,7 +13,6 @@ class diffusion_decision_model_prontoqa_qwen2_5_0_5B(diffusion_decision_model):
     def get_dataset(self) -> prontoqa_dataset_qwen2_5_0_5B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(4)
             self.dataset = prontoqa_dataset_qwen2_5_0_5B(config)
         return self.dataset
 

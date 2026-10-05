@@ -13,7 +13,6 @@ class diffusion_decision_model_prontoqa_meta_llama_Llama_3_1_8B_Instruct(diffusi
     def get_dataset(self) -> prontoqa_dataset_meta_llama_Llama_3_1_8B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(250)
             self.dataset = prontoqa_dataset_meta_llama_Llama_3_1_8B_Instruct(config)
         return self.dataset
 
