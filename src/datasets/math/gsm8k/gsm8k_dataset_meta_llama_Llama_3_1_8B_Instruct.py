@@ -57,10 +57,10 @@ class gsm8k_dataset_meta_llama_Llama_3_1_8B_Instruct(gsm8k_dataset):
             solution = solution[-_SOLUTION_CLIP_CHARS:]
 
         patterns = [
-            r'####.*?([0-9]+(?:[.,][0-9]+)?)',            
+            r'####.*?([0-9][0-9,]*(?:\.[0-9]+)?)',            
             r'(?i)\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}',            
-            r'\b(?:The\s+)?final\s+answer\s+is\s*:?\s*([-+]?\d+(?:\.\d+)?)',
-            r'(?i)\*[^*]*?(\d+(?:\.\d+)?)[^*]*?\*',            
+            r'\b(?:The\s+)?final\s+answer\s+is\s*:?\s*\$?\s*([-+]?\d[\d,]*(?:\.\d+)?)',
+            r'(?i)\*\*[^*]*?(\d[\d,]*(?:\.\d+)?)[^*]*?\*\*',            
         ]
 
         for pattern in patterns:

@@ -31,6 +31,11 @@ logging.basicConfig(
 
 class diffusion_decision_model(ABC): 
 
+    # A prompt is chat template text and already carries the model's start and turn tokens.
+    # They are to be read as those tokens (tokenizer_mode 'hf'; vLLM's own Mistral tokenizer
+    # reads "[INST]" as plain characters) and no second start token is to be put in front.
+    TOKENIZATION = {'add_special_tokens': False}
+
     def __init__(self, modelname: str, number_of_evidence: int) -> None:
         self.modelname = modelname
         self.number_of_evidence = number_of_evidence
@@ -45,7 +50,7 @@ class diffusion_decision_model(ABC):
         
 
     def run(self, from_run_number: int , to_run_number: int) -> None:
-        self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
+        self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True, tokenizer_mode='hf')
         self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
         
         print(f"{'*' * 100}  {self.modelname}  {'*' * 100}")
@@ -152,7 +157,7 @@ class diffusion_decision_model(ABC):
             prompt_list = batch_dict['prompt']
             target_list = batch_dict['target']
             try:
-                outputs = self.model.generate(prompt_list, sampling_params)
+                outputs = self.model.generate(prompt_list, sampling_params, tokenization_kwargs=self.TOKENIZATION)
                 for j, output in enumerate(outputs):
                     prompt = prompt_list[j]
                     sample_ID = sample_ID_list[j]
@@ -188,7 +193,7 @@ class diffusion_decision_model(ABC):
                         log.final_answer = final_answer
                         log.compared_final_answer = compared_final_answer
                         log.accuracy = accuracy
-                        log = self.add_evidence_log_list(log, response)
+                        log = self.add_evidence_log_list(log, response, list(output.prompt_token_ids))
                     except Exception as e:
                         logging.exception("An exception occurred")                        
                         print(f"[WARN]: {e}")
@@ -219,26 +224,33 @@ class diffusion_decision_model(ABC):
 
         evidence_log_list: list[diffusion_decision_model_evidence_log_entity] = []
         x_list: list[dict] = []
+        original_prompt_list: list[str] = []
         final_answer_list: list[str] = []
         for log in log_list: 
             for evidence_log in log.evidence_list:
                 evidence_log_list.append(evidence_log)
                 x_list.append(log.x)
+                original_prompt_list.append(log.prompt)
                 final_answer_list.append(log.compared_final_answer)
         
         for i in tqdm(range(0, len(evidence_log_list), batch_size), desc="Processing Batches", unit="step"):
             batch: list[diffusion_decision_model_evidence_log_entity] = evidence_log_list[i : i + batch_size]        
             batch_partial_cot_list = list(map(lambda x: x.partial_cot, batch))
             
-            batch_x_list: list[str] = x_list[i : i + batch_size]        
+            batch_original_prompt_list: list[str] = original_prompt_list[i : i + batch_size]        
             batch_final_answer_list: list[str] = final_answer_list[i : i + batch_size]        
 
             try:
+                # A rollout continues the very tokens of the original prompt and of the response so
+                # far.  Building the prompt again from the question gave the rollouts another
+                # instruction or another chat format than the response they are compared with.
+                # prompt_list is the same prompt as text, for the log.
                 prompt_list : list[str] = []
-                for x, partial_cot in zip(batch_x_list, batch_partial_cot_list):
-                    prompt_list.append(self.get_dataset().generate_model_prompt_chain_of_thought(x, partial_cot))
+                for original_prompt, partial_cot in zip(batch_original_prompt_list, batch_partial_cot_list):
+                    prompt_list.append(original_prompt + partial_cot)
                 
-                outputs = self.model.generate(prompt_list, sampling_params, use_tqdm=False)
+                token_prompt_list = [{'prompt_token_ids': evidence_log.prompt_token_ids} for evidence_log in batch]
+                outputs = self.model.generate(token_prompt_list, sampling_params, use_tqdm=False)
                 for j, output in enumerate(outputs):
                     if output.outputs is None: continue
                     idx = i + j
@@ -308,15 +320,19 @@ class diffusion_decision_model(ABC):
             prompt = df.loc[index, "Prompt"]
             completion = df.loc[index, "Completion"]
             
+            # Named before the try, so the cleanup below can delete them even when the sample fails early.
+            outputs = outputs_last_hidden_state = last_hidden_state = logits = representation = None
+            inputs = input_ids = shift_logits = shift_labels = probs = log_probs = None
+
             with torch.inference_mode():
                 try:
                     device = next(self.model.parameters()).device
                     
-                    inputs = self.tokenizer(prompt + completion, return_tensors='pt')
+                    inputs = self.tokenizer(prompt + completion, return_tensors='pt', **self.TOKENIZATION)
                     inputs = {k: v.to(device) for k, v in inputs.items()}
                     input_ids = inputs["input_ids"]
 
-                    prompt_length = self.tokenizer(prompt, return_tensors='pt')["input_ids"].shape[1]
+                    prompt_length = self.tokenizer(prompt, return_tensors='pt', **self.TOKENIZATION)["input_ids"].shape[1]
 
                     outputs_last_hidden_state = self.model.model(**inputs, labels=inputs["input_ids"], output_hidden_states=False)
                     last_hidden_state = outputs_last_hidden_state.last_hidden_state.float().squeeze(0).detach().cpu().numpy()
@@ -547,7 +563,7 @@ class diffusion_decision_model(ABC):
             
         return log
     
-    def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response) -> diffusion_decision_model_log_entity:
+    def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response, prompt_token_ids: list) -> diffusion_decision_model_log_entity:
         token_count = len(response.logprobs)
         base = token_count // self.number_of_evidence
         remainder = token_count % self.number_of_evidence
@@ -555,6 +571,7 @@ class diffusion_decision_model(ABC):
         token_ids = response.token_ids 
         evidence_accumulation_avg_prob: float = my_utils.get_avg_prob_from_vllm_output(response, token_start = 0, token_end = token_count)
         evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = 0, evidence = '', evidence_token_count= token_count, partial_cot = '', partial_completion = log.completion, partial_cot_loss = log.completion_loss, evidence_accumulation_avg_prob = evidence_accumulation_avg_prob)
+        evidence_log.prompt_token_ids = prompt_token_ids
         log.add_evidence_list(evidence_log)
 
         start = 0
@@ -568,6 +585,7 @@ class diffusion_decision_model(ABC):
             evidence_accumulation_avg_prob: float = my_utils.get_avg_prob_from_vllm_output(response, token_start = start, token_end = start + group_size)
 
             evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = i, evidence = evidence, evidence_token_count = evidence_token_count, partial_cot = partial_cot, partial_completion = partial_completion, partial_cot_loss = partial_cot_loss, evidence_accumulation_avg_prob = evidence_accumulation_avg_prob)
+            evidence_log.prompt_token_ids = prompt_token_ids + list(token_ids[:start + group_size])
             log.add_evidence_list(evidence_log)
 
             start += group_size

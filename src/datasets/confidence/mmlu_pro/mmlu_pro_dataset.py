@@ -39,21 +39,7 @@ class mmlu_pro_dataset(dataset_handler):
 
     
     def final_answer_extraction(self, prompt, solution, target):
-        patterns = [
-            r'(?i)\bthe\s+correct\s+answer\s+is\s*[:\-\(]?\s*([ABCDEFGHIJ])\b', 
-            r'(?i)\\?oxed\s*\{\s*\**\s*\(?\s*([ABCDEFGHIJ])\s*\)?\s*\**\s*\}',            
-            r'(?i)answer[\s:*()\[\]\-_=+\n\r\t]*(?:is[\s:*()\[\]\-_=+\n\r\t]*)?(?:option|choice)?[\s:*()\[\]\-_=+\n\r\t]*([ABCDEFGHIJ])',
-            r'(?i)</think>\s+([ABCDEFGHIJ])',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, solution, re.IGNORECASE)
-            if not match: continue
-            answer = match.group(1).upper()
-            if answer not in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']: continue
-            return answer
-        
-        return None
+        return self.multiple_choice_answer(solution, 'ABCDEFGHIJ')
 
         
     def generate_model_prompt(self, x):
@@ -112,9 +98,8 @@ class mmlu_pro_dataset(dataset_handler):
         prompt += 'Options:\n'
         for idx, choice in enumerate(choices):
             prompt += f'{answer_options[idx]}. {choice}\n'
-        prompt += 'Reason step by step internally and then choose the most truthful answer.\n'
-        prompt += 'Respond with only one letter (A, B, C, or D).\n'
-        prompt += 'Answer:'
+        prompt += 'Reason step by step and then choose the most truthful answer.\n'
+        prompt += f'End your response with "Answer: X", where X is one letter ({answer_options[0]} to {answer_options[len(choices) - 1]}).'
         return prompt, answer_options[answer_index]         
 
     def generate_model_prompt_chain_of_thought(self, x: dict, partial_cot: str) -> str:

@@ -9,6 +9,7 @@ class diffusion_decision_model_evidence_log_entity:
     evidence : Optional[str] = None
     evidence_token_count : Optional[int] = 0
     partial_cot : Optional[str] = None
+    prompt_token_ids : Optional[list] = None    # the original prompt and the response up to this evidence, as tokens; not logged
     partial_completion : Optional[str] = None
     partial_cot_loss : Optional[float] = 0.0
     evidence_accumulation_self_consistency : Optional[float] = 0.0

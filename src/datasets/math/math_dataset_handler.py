@@ -1,6 +1,7 @@
 from src.datasets.dataset_handler import dataset_handler
 from src.datasets.math.utils.evaluate_utils import use_math_verify
 import re
+import math
 import random
 
 
@@ -12,6 +13,10 @@ class math_dataset_handler(dataset_handler):
     def verify_final_answer(self, target, final_answer):
         if target == final_answer: 
             return True, final_answer
+        # Two numbers are compared as numbers.  The text comparison below drops punctuation,
+        # which made -10 equal to 10 and 1.5 equal to 15.
+        elif isinstance(target, (int, float)) and isinstance(final_answer, (int, float)):
+            return math.isclose(target, final_answer, rel_tol=1e-9, abs_tol=1e-9), final_answer
         else: 
             return use_math_verify(target, final_answer), final_answer
 

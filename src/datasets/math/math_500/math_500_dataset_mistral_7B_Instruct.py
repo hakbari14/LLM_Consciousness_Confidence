@@ -12,14 +12,10 @@ class math_500_dataset_mistral_7B_Instruct(math_500_dataset):
         final_answer = x["answer"]
         problem_id = x["unique_id"]
 
-        content = """
-                Solve the following math problem carefully.
-
-                Provide a step-by-step derivation.
-                At the end, put the final answer inside \\boxed{}.
-
-                Problem:\n
-                """
+        content = ("Solve the following math problem carefully.\n\n"
+                   "Provide a step-by-step derivation.\n"
+                   "At the end, put the final answer inside \\boxed{}.\n\n"
+                   "Problem:\n")
         content = content + question
         r1_prefix = [
             {"role": "user",

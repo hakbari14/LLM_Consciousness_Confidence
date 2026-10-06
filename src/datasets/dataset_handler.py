@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from datasets import Dataset
 import configparser
 import random
+import re
 from datasets import disable_caching
 
 class dataset_handler(ABC): 
@@ -68,6 +69,26 @@ class dataset_handler(ABC):
 
     def filter_by_required_criteria(self, x: dict, dataset_type: dataset_element_type_enum) -> bool:
         return True
+
+    def multiple_choice_answer(self, solution: str, letters: str) -> str:
+        """The option letter the response settles on, or None.
+
+        Read from what follows the thinking, where the model names options it then rejects, and
+        the last time it is stated.  Only a capital letter counts, so "the answer because" is not B.
+        """
+        answer = solution.split('</think>')[-1]
+        patterns = [
+            rf'(?i:the\s+correct\s+answer\s+is)[\s:*(\-]*([{letters}])\b',
+            rf'(?i:boxed)\s*\{{[\s*(]*(?:\\text\{{)?[\s*(]*([{letters}])\b',
+            rf'(?i:answer)(?i:\s+is)?[\s:*(\[\-_=]*(?i:option|choice)?[\s:*(\[\-_=]*([{letters}])\b',
+            rf'^\s*\(?([{letters}])\)?(?:[.:)]|\s*(?:\n|$))',   # the response is the letter itself: "C" or "C. thymine"
+        ]
+        for pattern in patterns:
+            matches = re.findall(pattern, answer)
+            if matches:
+                return matches[-1]
+
+        return None
 
     def extract_and_verify_final_answer(self, prompt: str, completion: str, target: str) -> tuple[str, bool, str]:
         final_answer = self.final_answer_extraction(prompt, completion, target)

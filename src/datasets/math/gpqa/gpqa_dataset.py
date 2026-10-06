@@ -25,20 +25,7 @@ class gpqa_dataset(math_dataset_handler):
 
     
     def final_answer_extraction(self, prompt, solution, target):
-        patterns = [
-            r'(?i)\bthe\s+correct\s+answer\s+is\s*[:\-\(]?\s*([ABCD])\b',
-            r'(?i)\\?oxed\s*\{\s*\**\s*\(?\s*([ABCD])\s*\)?\s*\**\s*\}',            
-            r'(?i)answer[\s:*()\[\]\-_=+\n\r\t]*(?:is[\s:*()\[\]\-_=+\n\r\t]*)?(?:option|choice)?[\s:*()\[\]\-_=+\n\r\t]*([ABCD])',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, solution, re.IGNORECASE)
-            if not match: continue
-            answer = match.group(1).upper()
-            if answer not in ['A', 'B', 'C', 'D']: continue
-            return answer
-        
-        return None
+        return self.multiple_choice_answer(solution, 'ABCD')
 
         
     def generate_model_prompt(self, x):
@@ -53,7 +40,7 @@ class gpqa_dataset(math_dataset_handler):
         
         prompt = f"What is the correct answer to this question: {q}"
         prompt += f"\n\nChoices:\n(A) {matches[0][1]}\n(B) {matches[1][1]}\n(C) {matches[2][1]}\n(D) {matches[3][1]}"
-        prompt += f"\n\nFormat your response as follows: \"The correct answer is (insert answer here)\""
+        prompt += f"\n\nReason step by step, then end your response with: \"The correct answer is (insert answer here)\""
         r1_prefix = [
             {"role": "user",
                 "content": prompt

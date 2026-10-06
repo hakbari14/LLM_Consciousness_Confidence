@@ -101,6 +101,17 @@ class countdown_dataset(dataset_handler):
     def extract_another_confidence(self, solution: str) -> float:
         return None
 
+    def extract_and_verify_final_answer(self, prompt, completion, target):
+        equation, correct, value = super().extract_and_verify_final_answer(prompt, completion, target)
+
+        # The task is to use every given number once, so an equation that reaches the
+        # value with other numbers, or with the target alone, is wrong.
+        if correct:
+            given = re.findall(r'\d+', re.search(r'Using the numbers \[(.*?)\]', prompt).group(1))
+            correct = sorted(re.findall(r'\d+', equation)) == sorted(given)
+
+        return equation, correct, value
+
     def verify_final_answer(self, target, equation):
         equation_expr = self.normalize_math_text(equation)
 

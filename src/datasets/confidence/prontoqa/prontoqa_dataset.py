@@ -19,18 +19,10 @@ class prontoqa_dataset(dataset_handler):
 
     
     def final_answer_extraction(self, prompt, solution, target):
-        patterns = [
-            r'(?i)final\s+answer\s*:?\s*([ab])\b',
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, solution, re.IGNORECASE)
-            if not match: continue
-            answer = match.group(1).upper()
-            if answer not in ['A', 'B']: continue
-            return answer
-        
-        return None
+        # The last one the model wrote: an earlier one may only repeat the instruction.
+        # A capital letter, so "final answer: a contradiction" is not read as A.
+        matches = re.findall(r'(?i:final\s+answer)[\s:*]*\(?([AB])\b', solution)
+        return matches[-1] if matches else None
 
         
     def generate_model_prompt(self, x):

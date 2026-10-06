@@ -72,9 +72,10 @@ class gsm8k_dataset(math_dataset_handler):
             solution = solution[-_SOLUTION_CLIP_CHARS:]
 
         patterns = [
-            r'####.*?([0-9]+(?:[.,][0-9]+)?)',            
+            r'####.*?([0-9][0-9,]*(?:\.[0-9]+)?)',            
+            r'([0-9][0-9,]*(?:\.[0-9]+)?)[^0-9]*####\s*$',            
             r'(?i)\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}',            
-            r'(?i)\*[^*]*?(\d+(?:\.\d+)?)[^*]*?\*',            
+            r'(?i)\*\*[^*]*?(\d[\d,]*(?:\.\d+)?)[^*]*?\*\*',            
         ]
 
         for pattern in patterns:
