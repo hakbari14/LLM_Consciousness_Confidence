@@ -13,7 +13,6 @@ class diffusion_decision_model_math500_qwen3_8B(diffusion_decision_model):
     def get_dataset(self) -> math_500_dataset_qwen3_8B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
             self.dataset = math_500_dataset_qwen3_8B(config)
         return self.dataset
 

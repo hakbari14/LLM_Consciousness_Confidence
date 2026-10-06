@@ -549,16 +549,15 @@ class diffusion_decision_model(ABC):
     
     def add_evidence_log_list(self, log: diffusion_decision_model_log_entity, response) -> diffusion_decision_model_log_entity:
         token_count = len(response.logprobs)
-        base = token_count // (self.number_of_evidence + 1)
-        remainder = token_count % (self.number_of_evidence + 1)
+        base = token_count // self.number_of_evidence
+        remainder = token_count % self.number_of_evidence
         
         token_ids = response.token_ids 
-        start = 0
-
         evidence_accumulation_avg_prob: float = my_utils.get_avg_prob_from_vllm_output(response, token_start = 0, token_end = token_count)
         evidence_log: diffusion_decision_model_evidence_log_entity = self.create_evidence_log(index = 0, evidence = '', evidence_token_count= token_count, partial_cot = '', partial_completion = log.completion, partial_cot_loss = log.completion_loss, evidence_accumulation_avg_prob = evidence_accumulation_avg_prob)
         log.add_evidence_list(evidence_log)
 
+        start = 0
         for i in range(1, self.number_of_evidence):
             group_size = base + (1 if i < remainder else 0)
             evidence = self.tokenizer.decode(token_ids[start:start + group_size], skip_special_tokens=True)
@@ -587,9 +586,6 @@ class diffusion_decision_model(ABC):
         evidence_log.evidence_accumulation_avg_prob = evidence_accumulation_avg_prob
         return evidence_log
 
-    def get_max_new_tokens(self) -> int:
-        return 15000
-    
     def released_gpu_memory(self) -> None:
         del self.model
         del self.tokenizer
@@ -613,3 +609,7 @@ class diffusion_decision_model(ABC):
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
         pass
 
+    @abstractmethod
+    def get_max_new_tokens(self) -> int:
+        pass
+    

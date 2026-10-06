@@ -13,7 +13,6 @@ class diffusion_decision_model_math500_mistral_7B_Instruct(diffusion_decision_mo
     def get_dataset(self) -> math_500_dataset_mistral_7B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
             self.dataset = math_500_dataset_mistral_7B_Instruct(config)
         return self.dataset
 

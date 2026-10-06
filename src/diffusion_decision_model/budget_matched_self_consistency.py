@@ -122,9 +122,6 @@ class budget_matched_self_consistency(ABC):
                 
         return None, None, None
 
-    def get_max_new_tokens(self) -> int:
-        return 15000
-
     def get_modelname_dir(self) -> str:
         return self.modelname.replace('/', '-').lower()
 
@@ -134,4 +131,8 @@ class budget_matched_self_consistency(ABC):
 
     @abstractmethod
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
+        pass
+    
+    @abstractmethod
+    def get_max_new_tokens(self) -> int:
         pass

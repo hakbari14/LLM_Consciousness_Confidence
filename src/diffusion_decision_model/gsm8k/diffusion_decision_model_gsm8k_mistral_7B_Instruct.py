@@ -13,7 +13,6 @@ class diffusion_decision_model_gsm8k_mistral_7B_Instruct(diffusion_decision_mode
     def get_dataset(self) -> gsm8k_dataset_mistral_7B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(200)
             self.dataset = gsm8k_dataset_mistral_7B_Instruct(config)
         return self.dataset
 
