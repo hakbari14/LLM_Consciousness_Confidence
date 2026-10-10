@@ -13,7 +13,6 @@ class budget_matched_self_consistency_math500_mistral_7B_Instruct(budget_matched
     def get_dataset(self) -> math_500_dataset_mistral_7B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
             self.dataset = math_500_dataset_mistral_7B_Instruct(config)
         return self.dataset
 
@@ -24,5 +23,5 @@ class budget_matched_self_consistency_math500_mistral_7B_Instruct(budget_matched
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_math500.csv')
 
 t = budget_matched_self_consistency_math500_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 

@@ -13,7 +13,7 @@ class budget_matched_self_consistency_mmlu_pro_qwen3_8B(budget_matched_self_cons
     def get_dataset(self) -> mmlu_pro_dataset_qwen3_8B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size_per_category(20)
+            config.set_max_test_dataset_size_per_category(50)
             self.dataset = mmlu_pro_dataset_qwen3_8B(config)
         return self.dataset
 
@@ -24,5 +24,5 @@ class budget_matched_self_consistency_mmlu_pro_qwen3_8B(budget_matched_self_cons
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/mmlu_pro/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_mmlu_pro.csv')
 
 t = budget_matched_self_consistency_mmlu_pro_qwen3_8B(modelname='Qwen/Qwen3-8B')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 

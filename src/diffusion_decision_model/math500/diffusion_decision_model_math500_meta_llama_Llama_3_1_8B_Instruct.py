@@ -26,8 +26,8 @@ class diffusion_decision_model_math500_meta_llama_Llama_3_1_8B_Instruct(diffusio
 for nv in [5, 10, 15, 20, 25]:
     print(f"{'*' * 100}  Number Of Evidence {nv}  {'*' * 100}")
     t = diffusion_decision_model_math500_meta_llama_Llama_3_1_8B_Instruct(modelname='/home/hr_akbari/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659', number_of_evidence=nv)
-    t.run(from_run_number=1, to_run_number=2)
-    t.baseline_features_extractor(from_run_number=1, to_run_number=2)
+    t.run(from_run_number=2, to_run_number=3)
+    t.baseline_features_extractor(from_run_number=2, to_run_number=3)
     print(f"{'*' * 210}")
 
 for nv in [5, 10, 15, 20, 25]:

@@ -13,7 +13,7 @@ class diffusion_decision_model_mmlu_deepSeek_r1_distill_qwen_7B(diffusion_decisi
     def get_dataset(self) -> mmlu_dataset_deepSeek_r1_distill_qwen_7B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size_per_category(5)
+            config.set_max_test_dataset_size_per_category(10)
             self.dataset = mmlu_dataset_deepSeek_r1_distill_qwen_7B(config)
         return self.dataset
 
@@ -27,7 +27,10 @@ class diffusion_decision_model_mmlu_deepSeek_r1_distill_qwen_7B(diffusion_decisi
 for nv in [5, 10, 15, 20, 25]:
     print(f"{'*' * 100}  Number Of Evidence {nv}  {'*' * 100}")
     t = diffusion_decision_model_mmlu_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=nv)
-    t.run(from_run_number=1, to_run_number=2)
-    t.baseline_features_extractor(from_run_number=1, to_run_number=2)
+    t.run(from_run_number=2, to_run_number=3)
+    t.baseline_features_extractor(from_run_number=2, to_run_number=3)
     print(f"{'*' * 210}")
 
+for nv in [5, 10, 15, 20, 25]:
+    t = diffusion_decision_model_mmlu_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', number_of_evidence=nv)
+    t.calculate_accracy(run_number=2)

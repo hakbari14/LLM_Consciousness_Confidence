@@ -13,7 +13,7 @@ class diffusion_decision_model_truthfulqa_mistral_7B_Instruct(diffusion_decision
     def get_dataset(self) -> truthfulqa_dataset_mistral_7B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(300)
+            config.set_max_test_dataset_size(500)
             self.dataset = truthfulqa_dataset_mistral_7B_Instruct(config)
         return self.dataset
 
@@ -27,11 +27,11 @@ class diffusion_decision_model_truthfulqa_mistral_7B_Instruct(diffusion_decision
 for nv in [5, 10, 15, 20, 25]:
     print(f"{'*' * 100}  Number Of Evidence {nv}  {'*' * 100}")
     t = diffusion_decision_model_truthfulqa_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3', number_of_evidence=nv)
-    t.run(from_run_number=1, to_run_number=2)
-    t.baseline_features_extractor(from_run_number=1, to_run_number=2)
+    t.run(from_run_number=2, to_run_number=3)
+    t.baseline_features_extractor(from_run_number=2, to_run_number=3)
     print(f"{'*' * 210}")
 
 for nv in [5, 10, 15, 20, 25]:
     t = diffusion_decision_model_truthfulqa_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3', number_of_evidence=nv)
-    t.calculate_accracy(run_number=1)
+    t.calculate_accracy(run_number=2)
 
