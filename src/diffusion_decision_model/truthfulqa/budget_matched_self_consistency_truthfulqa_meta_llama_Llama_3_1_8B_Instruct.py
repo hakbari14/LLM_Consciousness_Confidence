@@ -13,7 +13,6 @@ class budget_matched_self_consistency_truthfulqa_meta_llama_Llama_3_1_8B_Instruc
     def get_dataset(self) -> truthfulqa_dataset_meta_llama_Llama_3_1_8B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
             self.dataset = truthfulqa_dataset_meta_llama_Llama_3_1_8B_Instruct(config)
         return self.dataset
 

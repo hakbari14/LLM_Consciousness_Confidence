@@ -13,7 +13,6 @@ class budget_matched_self_consistency_truthfulqa_qwen3_8B(budget_matched_self_co
     def get_dataset(self) -> truthfulqa_dataset_qwen3_8B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
             self.dataset = truthfulqa_dataset_qwen3_8B(config)
         return self.dataset
 

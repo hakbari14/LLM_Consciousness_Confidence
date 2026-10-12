@@ -13,7 +13,6 @@ class budget_matched_self_consistency_truthfulqa_deepSeek_r1_distill_qwen_7B(bud
     def get_dataset(self) -> truthfulqa_dataset_deepSeek_r1_distill_qwen_7B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
             self.dataset = truthfulqa_dataset_deepSeek_r1_distill_qwen_7B(config)
         return self.dataset
 
