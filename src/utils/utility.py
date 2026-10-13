@@ -128,10 +128,10 @@ class my_utils(object):
         return loss
 
     @staticmethod
-    def get_avg_prob_from_vllm_output(response, token_start, token_end):
+    def get_avg_prob_from_vllm_output(response, token_start, token_end) -> float:
 
         if response.logprobs is None:
-            return None
+            return 0.0
 
         response_logprobs = response.logprobs[token_start:token_end]
         probs = []
@@ -144,7 +144,7 @@ class my_utils(object):
             probs.append(math.exp(logprob))
 
         if not probs:
-            return None
+            return 0.0
 
         avg_probs = sum(probs) / len(probs) 
         return avg_probs
