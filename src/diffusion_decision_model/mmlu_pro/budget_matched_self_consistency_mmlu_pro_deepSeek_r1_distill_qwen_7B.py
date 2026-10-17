@@ -13,12 +13,12 @@ class budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_7B(budge
     def get_dataset(self) -> mmlu_pro_dataset_deepSeek_r1_distill_qwen_7B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size_per_category(50)
+            config.set_max_test_dataset_size_per_category(40)
             self.dataset = mmlu_pro_dataset_deepSeek_r1_distill_qwen_7B(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 5000
 
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/mmlu_pro/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_mmlu_pro.csv')

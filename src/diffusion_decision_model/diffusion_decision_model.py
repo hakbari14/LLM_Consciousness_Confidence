@@ -124,7 +124,11 @@ class diffusion_decision_model(ABC):
         df = pd.read_csv(logger.get_log_file_name())
         percentage_true = df["Accuracy"].mean() * 100
         token_count = df["Token_Count"].mean()
-        print(f"Records = {len(df)}, Accuracy = {percentage_true}, token count = {token_count}")        
+
+        quartile = df["Token_Count"].quantile(0.95)
+        mask = (df["Token_Count"] > quartile) & (df["Accuracy"] == True)
+        print(f"Records = {len(df)}, Accuracy = {percentage_true}, token count = {token_count}, q_95 = {int(mask.sum())}, {quartile}") 
+               
 
     @torch.inference_mode()
     def generate_response(self, batch_size = 128) -> list[diffusion_decision_model_log_entity]: 

@@ -13,12 +13,12 @@ class diffusion_decision_model_mmlu_pro_deepSeek_r1_distill_qwen_1_5B(diffusion_
     def get_dataset(self) -> mmlu_pro_dataset_deepSeek_r1_distill_qwen_1_5B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size_per_category(50)
+            config.set_max_test_dataset_size_per_category(40)
             self.dataset = mmlu_pro_dataset_deepSeek_r1_distill_qwen_1_5B(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 5000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/mmlu_pro/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_mmlu_pro{self.get_number_of_evidence_dir()}.csv')
@@ -32,5 +32,5 @@ for nv in [5, 10, 15, 20, 25]:
     print(f"{'*' * 210}")
 
 for nv in [5, 10, 15, 20, 25]:
-    t = diffusion_decision_model_mmlu_deepSeek_r1_distill_qwen_1_5B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', number_of_evidence=nv)
+    t = diffusion_decision_model_mmlu_pro_deepSeek_r1_distill_qwen_1_5B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', number_of_evidence=nv)
     t.calculate_accracy(run_number=2)
