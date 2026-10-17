@@ -13,16 +13,16 @@ class budget_matched_self_consistency_aime_qwen3_8B(budget_matched_self_consiste
     def get_dataset(self) -> aime_dataset_qwen3_8B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
+            config.set_max_test_dataset_size(500)
             self.dataset = aime_dataset_qwen3_8B(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 10000
 
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_aime.csv')
 
 t = budget_matched_self_consistency_aime_qwen3_8B(modelname='Qwen/Qwen3-8B')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 

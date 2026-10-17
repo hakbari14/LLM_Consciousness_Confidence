@@ -13,7 +13,7 @@ class budget_matched_self_consistency_aime_meta_llama_Llama_3_1_8B_Instruct(budg
     def get_dataset(self) -> aime_dataset_meta_llama_Llama_3_1_8B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
+            config.set_max_test_dataset_size(500)
             self.dataset = aime_dataset_meta_llama_Llama_3_1_8B_Instruct(config)
         return self.dataset
 
@@ -24,5 +24,5 @@ class budget_matched_self_consistency_aime_meta_llama_Llama_3_1_8B_Instruct(budg
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_aime.csv')
 
 t = budget_matched_self_consistency_aime_meta_llama_Llama_3_1_8B_Instruct(modelname='/home/hr_akbari/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 

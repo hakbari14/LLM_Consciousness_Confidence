@@ -13,7 +13,7 @@ class budget_matched_self_consistency_aime_mistral_7B_Instruct(budget_matched_se
     def get_dataset(self) -> aime_dataset_mistral_7B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(150)
+            config.set_max_test_dataset_size(500)
             self.dataset = aime_dataset_mistral_7B_Instruct(config)
         return self.dataset
 
@@ -24,5 +24,5 @@ class budget_matched_self_consistency_aime_mistral_7B_Instruct(budget_matched_se
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_aime.csv')
 
 t = budget_matched_self_consistency_aime_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 
