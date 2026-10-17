@@ -17,7 +17,7 @@ class diffusion_decision_model_math500_deepSeek_r1_distill_qwen_7B(diffusion_dec
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 4000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_math500{self.get_number_of_evidence_dir()}.csv')

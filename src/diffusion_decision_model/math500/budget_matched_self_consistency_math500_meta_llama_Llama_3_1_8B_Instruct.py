@@ -17,7 +17,7 @@ class budget_matched_self_consistency_math500_meta_llama_Llama_3_1_8B_Instruct(b
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 5000
 
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/math500/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_math500.csv')

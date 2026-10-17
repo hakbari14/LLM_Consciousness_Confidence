@@ -119,15 +119,16 @@ class diffusion_decision_model(ABC):
             
         self.released_gpu_memory()
 
-    def calculate_accracy(self, run_number: int) -> None:
+    def calculate_accracy(self, run_number: int, quartile_param = 0.9) -> None:
         logger = self.create_logger(run_number)
         df = pd.read_csv(logger.get_log_file_name())
-        percentage_true = df["Accuracy"].mean() * 100
-        token_count = df["Token_Count"].mean()
+        accuracy = round(df["Accuracy"].mean() * 100, 2)
+        token_count = round(df["Token_Count"].mean(), 2)
 
-        quartile = df["Token_Count"].quantile(0.95)
-        mask = (df["Token_Count"] > quartile) & (df["Accuracy"] == True)
-        print(f"Records = {len(df)}, Accuracy = {percentage_true}, token count = {token_count}, q_95 = {int(mask.sum())}, {quartile}") 
+        quartile_token_Count = round(df["Token_Count"].quantile(quartile_param),2)
+        mask = (df["Token_Count"] > quartile_token_Count) & (df["Accuracy"] == True)
+        new_accuracy = round((0.01 * len(df) * accuracy - int(mask.sum())) / len(df),2)
+        print(f"Records = {len(df)}, Accuracy = {accuracy}, token count = {token_count}, quartile_param = {quartile_param}, quartile_token_Count = {quartile_token_Count}, new_accuracy = {new_accuracy}") 
                
 
     @torch.inference_mode()
