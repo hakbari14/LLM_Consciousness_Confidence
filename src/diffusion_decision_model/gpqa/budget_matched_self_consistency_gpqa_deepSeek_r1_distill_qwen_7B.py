@@ -23,4 +23,4 @@ class budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_7B(budget_ma
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/gpqa/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_gpqa.csv')
 
 t = budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)

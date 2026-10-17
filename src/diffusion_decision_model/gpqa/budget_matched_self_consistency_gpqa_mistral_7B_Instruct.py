@@ -17,11 +17,11 @@ class budget_matched_self_consistency_gpqa_mistral_7B_Instruct(budget_matched_se
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 5000
 
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/gpqa/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_gpqa.csv')
 
 t = budget_matched_self_consistency_gpqa_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
 
