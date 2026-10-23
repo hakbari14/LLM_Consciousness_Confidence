@@ -210,7 +210,10 @@ class diffusion_decision_model(ABC):
                 logging.exception("An exception occurred")                        
                 print(f"[WARN]: {e}")
                 traceback.print_exc()                        
-
+        
+        accuracy = sum(log.accuracy for log in log_list) / len(log_list) * 100                
+        print(f"Accuracy = {accuracy}, log_list size = {len(log_list)}")
+        
         return log_list
 
     @torch.inference_mode()
