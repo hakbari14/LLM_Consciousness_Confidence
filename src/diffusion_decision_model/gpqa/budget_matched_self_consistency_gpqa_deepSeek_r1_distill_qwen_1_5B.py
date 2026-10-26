@@ -17,7 +17,7 @@ class budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_1_5B(budget_
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 9000
+        return 15000
 
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/gpqa/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_gpqa.csv')

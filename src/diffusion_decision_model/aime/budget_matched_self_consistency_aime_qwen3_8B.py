@@ -13,7 +13,7 @@ class budget_matched_self_consistency_aime_qwen3_8B(budget_matched_self_consiste
     def get_dataset(self) -> aime_dataset_qwen3_8B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
+            config.set_max_test_dataset_size(300)
             self.dataset = aime_dataset_qwen3_8B(config)
         return self.dataset
 

@@ -13,12 +13,12 @@ class diffusion_decision_model_aime_meta_llama_Llama_3_1_8B_Instruct(diffusion_d
     def get_dataset(self) -> aime_dataset_meta_llama_Llama_3_1_8B_Instruct:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
+            config.set_max_test_dataset_size(300)
             self.dataset = aime_dataset_meta_llama_Llama_3_1_8B_Instruct(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
-        return 15000
+        return 10000
 
     def create_logger(self, run_number) -> diffusion_decision_model_logger:
         return diffusion_decision_model_logger(log_file_name = f'logs/diffusion_decision_model/aime/{self.get_modelname_dir()}/run_{run_number}/diffusion_decision_model_aime{self.get_number_of_evidence_dir()}.csv')

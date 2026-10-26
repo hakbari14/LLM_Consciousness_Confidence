@@ -13,7 +13,7 @@ class diffusion_decision_model_aime_deepSeek_r1_distill_qwen_1_5B(diffusion_deci
     def get_dataset(self) -> aime_dataset_deepSeek_r1_distill_qwen_1_5B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(500)
+            config.set_max_test_dataset_size(300)
             self.dataset = aime_dataset_deepSeek_r1_distill_qwen_1_5B(config)
         return self.dataset
 
