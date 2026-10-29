@@ -13,7 +13,6 @@ class budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B(budget_m
     def get_dataset(self) -> gsm8k_dataset_deepSeek_r1_distill_qwen_7B:
         if self.dataset is None:
             config = dataset_config(self.modelname)
-            config.set_max_test_dataset_size(200)
             self.dataset = gsm8k_dataset_deepSeek_r1_distill_qwen_7B(config)
         return self.dataset
 
@@ -24,4 +23,4 @@ class budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B(budget_m
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/gsm8k/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_gsm8k.csv')
 
 t = budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
-t.run(from_run_number=1, to_run_number=2)
+t.run(from_run_number=2, to_run_number=3)
