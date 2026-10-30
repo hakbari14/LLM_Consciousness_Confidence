@@ -25,3 +25,4 @@ class budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_1_5B(bud
 
 t = budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_1_5B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B')
 t.run(from_run_number=2, to_run_number=3)
+t.calculate_accracy(run_number=2)

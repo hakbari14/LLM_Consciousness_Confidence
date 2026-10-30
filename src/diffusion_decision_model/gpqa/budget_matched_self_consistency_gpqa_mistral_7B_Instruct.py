@@ -24,4 +24,5 @@ class budget_matched_self_consistency_gpqa_mistral_7B_Instruct(budget_matched_se
 
 t = budget_matched_self_consistency_gpqa_mistral_7B_Instruct(modelname='mistralai/Mistral-7B-Instruct-v0.3')
 t.run(from_run_number=2, to_run_number=3)
+t.calculate_accracy(run_number=2)
 

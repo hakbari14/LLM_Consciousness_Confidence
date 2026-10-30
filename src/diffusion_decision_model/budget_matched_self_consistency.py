@@ -7,6 +7,7 @@ from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_entity import budget_matched_self_consistency_log_entity
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_detail_entity import budget_matched_self_consistency_log_detail_entity
 from src.datasets.dataset_handler import dataset_handler
+import pandas as pd
 import torch
 import traceback
 import logging
@@ -100,6 +101,17 @@ class budget_matched_self_consistency(ABC):
             logger.write_to_log_file()
             
             print(f"{'*' * 210}")
+
+    def calculate_accracy(self, run_number: int) -> None:
+        logger = self.create_logger(run_number)
+        df = pd.read_csv(logger.get_log_file_name())
+        accuracy_nv5 = round(df["Accuracy_nv5"].mean() * 100, 2)
+        accuracy_nv10 = round(df["Accuracy_nv10"].mean() * 100, 2)
+        accuracy_nv15 = round(df["Accuracy_nv15"].mean() * 100, 2)
+        accuracy_nv20 = round(df["Accuracy_nv20"].mean() * 100, 2)
+        accuracy_nv25 = round(df["Accuracy_nv25"].mean() * 100, 2)
+
+        print(f"Records = {len(df)}, Accuracy_nv5 = {accuracy_nv5}, Accuracy_nv10 = {accuracy_nv10}, Accuracy_nv15 = {accuracy_nv15}, Accuracy_nv20 = {accuracy_nv20}, Accuracy_nv25 = {accuracy_nv25}") 
 
     def calculate_mjority_vote(self, consistency_list: list[budget_matched_self_consistency_log_detail_entity]) -> tuple[str, bool, float]: 
         vote_count = {}

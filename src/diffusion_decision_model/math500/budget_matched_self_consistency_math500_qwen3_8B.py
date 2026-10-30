@@ -24,4 +24,5 @@ class budget_matched_self_consistency_math500_qwen3_8B(budget_matched_self_consi
 
 t = budget_matched_self_consistency_math500_qwen3_8B(modelname='Qwen/Qwen3-8B')
 t.run(from_run_number=2, to_run_number=3)
+t.calculate_accracy(run_number=2)
 

@@ -24,4 +24,5 @@ class budget_matched_self_consistency_math500_meta_llama_Llama_3_1_8B_Instruct(b
 
 t = budget_matched_self_consistency_math500_meta_llama_Llama_3_1_8B_Instruct(modelname='/home/hr_akbari/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659')
 t.run(from_run_number=2, to_run_number=3)
+t.calculate_accracy(run_number=2)
 
