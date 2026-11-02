@@ -39,9 +39,6 @@ class budget_matched_self_consistency_log_entity(log_entity):
         if self.x is None:
             raise Exception('data x is required')
         
-        if self.final_answer is None:
-            raise Exception('final answer is required')
-
         if self.consistency_list is None or len(self.consistency_list) == 0:
             raise Exception('self consistency list empty')
         
