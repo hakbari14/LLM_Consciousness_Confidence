@@ -44,7 +44,10 @@ def mean_or_nan(values) -> float:
 
 
 # Where the sweep writes its tables.
-OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_token_probability'
+OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_run_2'
+
+# The logs written after the rollout prompt fix live in run_2.
+RUN_NUMBER = 2
 
 
 class diffusion_decision_model_training:
@@ -125,7 +128,7 @@ class diffusion_decision_model_training:
         self.number_of_evidence = number_of_evidence
         self.modelname_dir = modelname_dir
         self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence/logs/diffusion_decision_model'
-        self.datasets = [dataset for dataset in self.BENCHMARKS if os.path.exists(self.log_file_name(dataset, 1))]
+        self.datasets = [dataset for dataset in self.BENCHMARKS if os.path.exists(self.log_file_name(dataset, RUN_NUMBER))]
         self.dataset_groups = {name: [dataset for dataset in group if dataset in self.datasets]
                                for name, group in self.DATASET_GROUPS.items()}
         self.dataset_groups = {name: group for name, group in self.dataset_groups.items() if group}
@@ -408,7 +411,7 @@ class diffusion_decision_model_training:
 
     # --------------------------------------------------------------- experiment
 
-    def evaluate(self, test_datasets: list = None, from_run_number: int = 1, to_run_number: int = 2,
+    def evaluate(self, test_datasets: list = None, from_run_number: int = RUN_NUMBER, to_run_number: int = RUN_NUMBER + 1,
                  standardize: bool = True, class_weight = None,
                  target: str = TARGET_RUN, feature_set: str = FULL, seeds = SEEDS) -> dict:
         """Train on everything except the held out datasets, and score only on those.
@@ -480,7 +483,7 @@ class diffusion_decision_model_training:
 
     # ------------------------------------------------------------------- sweeps
 
-    def ablation(self, test_datasets: list = None, from_run_number: int = 1, to_run_number: int = 2,
+    def ablation(self, test_datasets: list = None, from_run_number: int = RUN_NUMBER, to_run_number: int = RUN_NUMBER + 1,
                  feature_set: str = FULL, seeds = SEEDS) -> list:
         """Every switch combination on one held out set, for both graded answers."""
         results = []
@@ -709,8 +712,8 @@ if __name__ == '__main__':
                     # pooled with nothing held out.  The same numbers in every file.
                     print('\nself consistency confidence, every dataset pooled, nothing held out')
                     print('-' * 131)
-                    training.self_consistency_confidence(from_run_number = 1, to_run_number = 2)
-                    training.self_consistency_confidence_completion(from_run_number = 1, to_run_number = 2)
+                    training.self_consistency_confidence(from_run_number = RUN_NUMBER, to_run_number = RUN_NUMBER + 1)
+                    training.self_consistency_confidence_completion(from_run_number = RUN_NUMBER, to_run_number = RUN_NUMBER + 1)
                     print('-' * 131)
 
                     training.ablation(feature_set = feature_set)
