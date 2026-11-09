@@ -14,9 +14,9 @@ ECE Completion : 0.2965
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-random split           run EIG-SC                      False      none   ok   3115   779      367   0.874   0.009     0.038   0.006
-random split           run EIG-SC                      False  balanced   ok   3115   779      367   0.874   0.009     0.037   0.006
-random split           run EIG-SC                       True      none   ok   3115   779      367   0.874   0.009     0.036   0.007
+random split           run EIG-SC                      False      none   ok   3115   779      367   0.874   0.009     0.037   0.007
+random split           run EIG-SC                      False  balanced   ok   3115   779      367   0.874   0.009     0.036   0.006
+random split           run EIG-SC                       True      none   ok   3115   779      367   0.874   0.009     0.036   0.006
 random split           run EIG-SC                       True  balanced   ok   3115   779      367   0.874   0.009     0.036   0.006
 random split           run SC-10                           -         -   ok      0   779      367   0.802   0.017     0.121   0.014
 random split           run SC-10-Last                      -         -   ok      0   474      174   0.664   0.022     0.351   0.032
@@ -26,10 +26,10 @@ random split           run Sum-Ent                         -         -   ok     
 random split           run Mean-Ent                        -         -   ok      0   779      367   0.533   0.023     0.238   0.018
 random split           run Mean-Prob                       -         -   ok      0   779      367   0.535   0.023     0.384   0.017
 random split           run SC-Budget                       -         -   ok      0   779      367   0.798   0.017     0.107   0.014
-random split          vote EIG-SC                      False      none   ok   3115   779      357   0.786   0.014     0.060   0.011
-random split          vote EIG-SC                      False  balanced   ok   3115   779      357   0.786   0.014     0.062   0.009
-random split          vote EIG-SC                       True      none   ok   3115   779      357   0.786   0.014     0.060   0.012
-random split          vote EIG-SC                       True  balanced   ok   3115   779      357   0.786   0.014     0.061   0.010
+random split          vote EIG-SC                      False      none   ok   3115   779      357   0.786   0.014     0.059   0.012
+random split          vote EIG-SC                      False  balanced   ok   3115   779      357   0.786   0.014     0.061   0.010
+random split          vote EIG-SC                       True      none   ok   3115   779      357   0.786   0.014     0.059   0.012
+random split          vote EIG-SC                       True  balanced   ok   3115   779      357   0.786   0.014     0.062   0.010
 random split          vote SC-10                           -         -   ok      0   779      357   0.798   0.016     0.097   0.019
 random split          vote SC-10-Last                      -         -   ok      0   481      223   0.676   0.025     0.264   0.032
 random split          vote Sum-Loss                        -         -   ok      0   779      357   0.763   0.019     0.304   0.018
@@ -45,9 +45,9 @@ random split          vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-gpqa                   run EIG-SC                      False      none   ok   3733   161       48   0.504   0.049     0.226   0.034
-gpqa                   run EIG-SC                      False  balanced   ok   3733   161       48   0.504   0.049     0.238   0.035
-gpqa                   run EIG-SC                       True      none   ok   3733   161       48   0.504   0.049     0.227   0.036
+gpqa                   run EIG-SC                      False      none   ok   3733   161       48   0.505   0.049     0.227   0.036
+gpqa                   run EIG-SC                      False  balanced   ok   3733   161       48   0.505   0.049     0.233   0.036
+gpqa                   run EIG-SC                       True      none   ok   3733   161       48   0.504   0.050     0.227   0.036
 gpqa                   run EIG-SC                       True  balanced   ok   3733   161       48   0.505   0.049     0.234   0.036
 gpqa                   run SC-10                           -         -   ok      0   161       48   0.446   0.048     0.366   0.038
 gpqa                   run SC-10-Last                      -         -   ok      0   119       39   0.587   0.048     0.288   0.055
@@ -57,10 +57,10 @@ gpqa                   run Sum-Ent                         -         -   ok     
 gpqa                   run Mean-Ent                        -         -   ok      0   161       48   0.549   0.050     0.297   0.036
 gpqa                   run Mean-Prob                       -         -   ok      0   161       48   0.533   0.049     0.554   0.033
 gpqa                   run SC-Budget                       -         -   ok      0   161       48   0.513   0.047     0.265   0.034
-gpqa                  vote EIG-SC                      False      none   ok   3733   161       45   0.530   0.058     0.188   0.033
-gpqa                  vote EIG-SC                      False  balanced   ok   3733   161       45   0.531   0.058     0.175   0.028
+gpqa                  vote EIG-SC                      False      none   ok   3733   161       45   0.530   0.058     0.187   0.033
+gpqa                  vote EIG-SC                      False  balanced   ok   3733   161       45   0.530   0.058     0.176   0.032
 gpqa                  vote EIG-SC                       True      none   ok   3733   161       45   0.528   0.058     0.188   0.033
-gpqa                  vote EIG-SC                       True  balanced   ok   3733   161       45   0.529   0.058     0.176   0.032
+gpqa                  vote EIG-SC                       True  balanced   ok   3733   161       45   0.529   0.058     0.177   0.032
 gpqa                  vote SC-10                           -         -   ok      0   161       45   0.548   0.051     0.322   0.040
 gpqa                  vote SC-10-Last                      -         -   ok      0   119       31   0.558   0.051     0.343   0.050
 gpqa                  vote Sum-Loss                        -         -   ok      0   161       45   0.559   0.047     0.378   0.039
@@ -76,8 +76,8 @@ gpqa                  vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-math500                run EIG-SC                      False      none   ok   3436   458       74   0.912   0.017     0.059   0.008
-math500                run EIG-SC                      False  balanced   ok   3436   458       74   0.912   0.017     0.059   0.009
+math500                run EIG-SC                      False      none   ok   3436   458       74   0.911   0.017     0.058   0.009
+math500                run EIG-SC                      False  balanced   ok   3436   458       74   0.911   0.017     0.059   0.009
 math500                run EIG-SC                       True      none   ok   3436   458       74   0.911   0.017     0.058   0.009
 math500                run EIG-SC                       True  balanced   ok   3436   458       74   0.911   0.017     0.058   0.009
 math500                run SC-10                           -         -   ok      0   458       74   0.773   0.030     0.089   0.027
@@ -88,10 +88,10 @@ math500                run Sum-Ent                         -         -   ok     
 math500                run Mean-Ent                        -         -   ok      0   458       74   0.616   0.033     0.493   0.056
 math500                run Mean-Prob                       -         -   ok      0   458       74   0.601   0.035     0.713   0.013
 math500                run SC-Budget                       -         -   ok      0   458       74   0.781   0.032     0.028   0.013
-math500               vote EIG-SC                      False      none   ok   3436   458      112   0.745   0.025     0.075   0.018
-math500               vote EIG-SC                      False  balanced   ok   3436   458      112   0.745   0.025     0.063   0.017
+math500               vote EIG-SC                      False      none   ok   3436   458      112   0.745   0.025     0.074   0.017
+math500               vote EIG-SC                      False  balanced   ok   3436   458      112   0.745   0.025     0.055   0.017
 math500               vote EIG-SC                       True      none   ok   3436   458      112   0.745   0.025     0.073   0.017
-math500               vote EIG-SC                       True  balanced   ok   3436   458      112   0.744   0.025     0.050   0.016
+math500               vote EIG-SC                       True  balanced   ok   3436   458      112   0.744   0.025     0.050   0.015
 math500               vote SC-10                           -         -   ok      0   458      112   0.826   0.022     0.097   0.028
 math500               vote SC-10-Last                      -         -   ok      0   406       93   0.695   0.030     0.396   0.025
 math500               vote Sum-Loss                        -         -   ok      0   458      112   0.754   0.024     0.525   0.025
@@ -107,10 +107,10 @@ math500               vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-gsm8k                  run EIG-SC                      False      none   ok   2631  1263      515   0.937   0.007     0.175   0.010
-gsm8k                  run EIG-SC                      False  balanced   ok   2631  1263      515   0.937   0.007     0.136   0.010
-gsm8k                  run EIG-SC                       True      none   ok   2631  1263      515   0.936   0.007     0.173   0.010
-gsm8k                  run EIG-SC                       True  balanced   ok   2631  1263      515   0.936   0.007     0.135   0.009
+gsm8k                  run EIG-SC                      False      none   ok   2631  1263      515   0.936   0.007     0.175   0.010
+gsm8k                  run EIG-SC                      False  balanced   ok   2631  1263      515   0.936   0.007     0.136   0.009
+gsm8k                  run EIG-SC                       True      none   ok   2631  1263      515   0.936   0.007     0.175   0.010
+gsm8k                  run EIG-SC                       True  balanced   ok   2631  1263      515   0.936   0.007     0.135   0.010
 gsm8k                  run SC-10                           -         -   ok      0  1263      515   0.823   0.013     0.034   0.010
 gsm8k                  run SC-10-Last                      -         -   ok      0   543      262   0.621   0.021     0.384   0.031
 gsm8k                  run Sum-Loss                        -         -   ok      0  1263      515   0.783   0.013     0.222   0.015
@@ -119,8 +119,8 @@ gsm8k                  run Sum-Ent                         -         -   ok     
 gsm8k                  run Mean-Ent                        -         -   ok      0  1263      515   0.704   0.014     0.145   0.034
 gsm8k                  run Mean-Prob                       -         -   ok      0  1263      515   0.711   0.014     0.307   0.014
 gsm8k                  run SC-Budget                       -         -   ok      0  1263      515   0.829   0.012     0.040   0.011
-gsm8k                 vote EIG-SC                      False      none   ok   2631  1263      326   0.783   0.013     0.279   0.012
-gsm8k                 vote EIG-SC                      False  balanced   ok   2631  1263      326   0.783   0.013     0.238   0.012
+gsm8k                 vote EIG-SC                      False      none   ok   2631  1263      326   0.782   0.013     0.280   0.012
+gsm8k                 vote EIG-SC                      False  balanced   ok   2631  1263      326   0.783   0.013     0.239   0.012
 gsm8k                 vote EIG-SC                       True      none   ok   2631  1263      326   0.782   0.013     0.281   0.012
 gsm8k                 vote EIG-SC                       True  balanced   ok   2631  1263      326   0.782   0.013     0.240   0.012
 gsm8k                 vote SC-10                           -         -   ok      0  1263      326   0.852   0.010     0.155   0.011
@@ -138,9 +138,9 @@ gsm8k                 vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-mmlu                   run EIG-SC                      False      none   ok   3343   551      201   0.802   0.018     0.111   0.021
-mmlu                   run EIG-SC                      False  balanced   ok   3343   551      201   0.802   0.018     0.120   0.021
-mmlu                   run EIG-SC                       True      none   ok   3343   551      201   0.802   0.018     0.113   0.021
+mmlu                   run EIG-SC                      False      none   ok   3343   551      201   0.802   0.018     0.112   0.021
+mmlu                   run EIG-SC                      False  balanced   ok   3343   551      201   0.802   0.018     0.125   0.020
+mmlu                   run EIG-SC                       True      none   ok   3343   551      201   0.802   0.018     0.113   0.020
 mmlu                   run EIG-SC                       True  balanced   ok   3343   551      201   0.802   0.019     0.125   0.020
 mmlu                   run SC-10                           -         -   ok      0   551      201   0.779   0.019     0.185   0.021
 mmlu                   run SC-10-Last                      -         -   ok      0   387      145   0.596   0.023     0.250   0.043
@@ -150,10 +150,10 @@ mmlu                   run Sum-Ent                         -         -   ok     
 mmlu                   run Mean-Ent                        -         -   ok      0   551      201   0.498   0.025     0.138   0.019
 mmlu                   run Mean-Prob                       -         -   ok      0   551      201   0.491   0.026     0.185   0.022
 mmlu                   run SC-Budget                       -         -   ok      0   551      201   0.776   0.017     0.164   0.023
-mmlu                  vote EIG-SC                      False      none   ok   3343   551      186   0.752   0.020     0.118   0.015
-mmlu                  vote EIG-SC                      False  balanced   ok   3343   551      186   0.752   0.020     0.112   0.015
-mmlu                  vote EIG-SC                       True      none   ok   3343   551      186   0.752   0.020     0.118   0.017
-mmlu                  vote EIG-SC                       True  balanced   ok   3343   551      186   0.752   0.020     0.113   0.018
+mmlu                  vote EIG-SC                      False      none   ok   3343   551      186   0.751   0.020     0.122   0.018
+mmlu                  vote EIG-SC                      False  balanced   ok   3343   551      186   0.751   0.020     0.117   0.017
+mmlu                  vote EIG-SC                       True      none   ok   3343   551      186   0.752   0.020     0.122   0.017
+mmlu                  vote EIG-SC                       True  balanced   ok   3343   551      186   0.752   0.020     0.115   0.017
 mmlu                  vote SC-10                           -         -   ok      0   551      186   0.783   0.020     0.121   0.024
 mmlu                  vote SC-10-Last                      -         -   ok      0   387      129   0.555   0.026     0.226   0.039
 mmlu                  vote Sum-Loss                        -         -   ok      0   551      186   0.657   0.026     0.069   0.016
@@ -169,10 +169,10 @@ mmlu                  vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-truthfulqa             run EIG-SC                      False      none   ok   3215   679      248   0.729   0.019     0.116   0.017
-truthfulqa             run EIG-SC                      False  balanced   ok   3215   679      248   0.729   0.019     0.129   0.017
-truthfulqa             run EIG-SC                       True      none   ok   3215   679      248   0.731   0.019     0.115   0.016
-truthfulqa             run EIG-SC                       True  balanced   ok   3215   679      248   0.731   0.019     0.126   0.018
+truthfulqa             run EIG-SC                      False      none   ok   3215   679      248   0.731   0.019     0.115   0.017
+truthfulqa             run EIG-SC                      False  balanced   ok   3215   679      248   0.731   0.019     0.126   0.017
+truthfulqa             run EIG-SC                       True      none   ok   3215   679      248   0.731   0.019     0.115   0.017
+truthfulqa             run EIG-SC                       True  balanced   ok   3215   679      248   0.731   0.019     0.127   0.018
 truthfulqa             run SC-10                           -         -   ok      0   679      248   0.740   0.015     0.209   0.020
 truthfulqa             run SC-10-Last                      -         -   ok      0   278      114   0.564   0.026     0.270   0.043
 truthfulqa             run Sum-Loss                        -         -   ok      0   679      248   0.594   0.021     0.115   0.016
@@ -181,9 +181,9 @@ truthfulqa             run Sum-Ent                         -         -   ok     
 truthfulqa             run Mean-Ent                        -         -   ok      0   679      248   0.537   0.024     0.142   0.020
 truthfulqa             run Mean-Prob                       -         -   ok      0   679      248   0.538   0.023     0.157   0.016
 truthfulqa             run SC-Budget                       -         -   ok      0   679      248   0.752   0.018     0.182   0.017
-truthfulqa            vote EIG-SC                      False      none   ok   3215   679      232   0.656   0.021     0.120   0.018
-truthfulqa            vote EIG-SC                      False  balanced   ok   3215   679      232   0.657   0.021     0.118   0.019
-truthfulqa            vote EIG-SC                       True      none   ok   3215   679      232   0.659   0.021     0.118   0.016
+truthfulqa            vote EIG-SC                      False      none   ok   3215   679      232   0.657   0.021     0.118   0.018
+truthfulqa            vote EIG-SC                      False  balanced   ok   3215   679      232   0.657   0.021     0.114   0.017
+truthfulqa            vote EIG-SC                       True      none   ok   3215   679      232   0.659   0.021     0.115   0.016
 truthfulqa            vote EIG-SC                       True  balanced   ok   3215   679      232   0.659   0.021     0.113   0.016
 truthfulqa            vote SC-10                           -         -   ok      0   679      232   0.739   0.016     0.179   0.024
 truthfulqa            vote SC-10-Last                      -         -   ok      0   278      105   0.537   0.028     0.267   0.033
@@ -200,10 +200,10 @@ truthfulqa            vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-mmlu_pro               run EIG-SC                      False      none   ok   3379   515      185   0.743   0.022     0.157   0.018
+mmlu_pro               run EIG-SC                      False      none   ok   3379   515      185   0.742   0.022     0.157   0.017
 mmlu_pro               run EIG-SC                      False  balanced   ok   3379   515      185   0.743   0.022     0.161   0.018
-mmlu_pro               run EIG-SC                       True      none   ok   3379   515      185   0.742   0.022     0.157   0.018
-mmlu_pro               run EIG-SC                       True  balanced   ok   3379   515      185   0.742   0.022     0.163   0.018
+mmlu_pro               run EIG-SC                       True      none   ok   3379   515      185   0.742   0.022     0.158   0.018
+mmlu_pro               run EIG-SC                       True  balanced   ok   3379   515      185   0.742   0.022     0.162   0.017
 mmlu_pro               run SC-10                           -         -   ok      0   515      185   0.717   0.026     0.256   0.019
 mmlu_pro               run SC-10-Last                      -         -   ok      0   386      138   0.572   0.025     0.342   0.026
 mmlu_pro               run Sum-Loss                        -         -   ok      0   515      185   0.624   0.026     0.326   0.025
@@ -212,9 +212,9 @@ mmlu_pro               run Sum-Ent                         -         -   ok     
 mmlu_pro               run Mean-Ent                        -         -   ok      0   515      185   0.502   0.023     0.219   0.025
 mmlu_pro               run Mean-Prob                       -         -   ok      0   515      185   0.501   0.025     0.475   0.021
 mmlu_pro               run SC-Budget                       -         -   ok      0   515      185   0.670   0.019     0.250   0.018
-mmlu_pro              vote EIG-SC                      False      none   ok   3379   515      203   0.670   0.023     0.197   0.016
+mmlu_pro              vote EIG-SC                      False      none   ok   3379   515      203   0.670   0.023     0.199   0.016
 mmlu_pro              vote EIG-SC                      False  balanced   ok   3379   515      203   0.670   0.023     0.164   0.016
-mmlu_pro              vote EIG-SC                       True      none   ok   3379   515      203   0.670   0.023     0.199   0.016
+mmlu_pro              vote EIG-SC                       True      none   ok   3379   515      203   0.671   0.023     0.199   0.016
 mmlu_pro              vote EIG-SC                       True  balanced   ok   3379   515      203   0.671   0.023     0.164   0.016
 mmlu_pro              vote SC-10                           -         -   ok      0   515      203   0.707   0.026     0.219   0.018
 mmlu_pro              vote SC-10-Last                      -         -   ok      0   386      148   0.536   0.025     0.337   0.024
@@ -231,8 +231,8 @@ mmlu_pro              vote SC-Budget                       -         -   ok     
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-aime                   run EIG-SC                      False      none   ok   3627   267        0     nan     nan     0.078   0.003
-aime                   run EIG-SC                      False  balanced   ok   3627   267        0     nan     nan     0.076   0.003
+aime                   run EIG-SC                      False      none   ok   3627   267        0     nan     nan     0.077   0.003
+aime                   run EIG-SC                      False  balanced   ok   3627   267        0     nan     nan     0.075   0.003
 aime                   run EIG-SC                       True      none   ok   3627   267        0     nan     nan     0.076   0.003
 aime                   run EIG-SC                       True  balanced   ok   3627   267        0     nan     nan     0.074   0.003
 aime                   run SC-10                           -         -   ok      0   267        0     nan     nan     0.219   0.010
@@ -243,8 +243,8 @@ aime                   run Sum-Ent                         -         -   ok     
 aime                   run Mean-Ent                        -         -   ok      0   267        0     nan     nan     0.444   0.031
 aime                   run Mean-Prob                       -         -   ok      0   267        0     nan     nan     0.865   0.002
 aime                   run SC-Budget                       -         -   ok      0   267        0     nan     nan     0.097   0.004
-aime                  vote EIG-SC                      False      none   ok   3627   267        1   0.256   0.026     0.231   0.006
-aime                  vote EIG-SC                      False  balanced   ok   3627   267        1   0.263   0.027     0.176   0.005
+aime                  vote EIG-SC                      False      none   ok   3627   267        1   0.263   0.027     0.230   0.006
+aime                  vote EIG-SC                      False  balanced   ok   3627   267        1   0.263   0.027     0.175   0.005
 aime                  vote EIG-SC                       True      none   ok   3627   267        1   0.263   0.027     0.229   0.006
 aime                  vote EIG-SC                       True  balanced   ok   3627   267        1   0.263   0.027     0.174   0.005
 aime                  vote SC-10                           -         -   ok      0   267        1   0.350   0.016     0.217   0.010
@@ -262,7 +262,7 @@ averaged over every held out dataset:
 
 target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
    run     EIG-SC       False     balanced    0.771       0.010 0.131   0.007
-   run     EIG-SC       False         none    0.771       0.010 0.132   0.007
+   run     EIG-SC       False         none    0.771       0.011 0.131   0.007
    run     EIG-SC        True     balanced    0.771       0.011 0.131   0.007
    run     EIG-SC        True         none    0.771       0.011 0.131   0.007
    run   Mean-Ent           -            -    0.568       0.012 0.268   0.013
@@ -273,9 +273,9 @@ target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
    run  SC-Budget           -            -    0.720       0.011 0.146   0.007
    run    Sum-Ent           -            -    0.650       0.012 0.352   0.010
    run   Sum-Loss           -            -    0.649       0.012 0.341   0.009
-  vote     EIG-SC       False     balanced    0.629       0.011 0.149   0.007
-  vote     EIG-SC       False         none    0.627       0.011 0.172   0.007
-  vote     EIG-SC        True     balanced    0.628       0.011 0.147   0.007
+  vote     EIG-SC       False     balanced    0.628       0.011 0.148   0.007
+  vote     EIG-SC       False         none    0.628       0.011 0.173   0.007
+  vote     EIG-SC        True     balanced    0.628       0.011 0.148   0.007
   vote     EIG-SC        True         none    0.628       0.011 0.172   0.007
   vote   Mean-Ent           -            -    0.549       0.011 0.241   0.012
   vote  Mean-Loss           -            -    0.548       0.011 0.262   0.015
@@ -290,10 +290,10 @@ target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
 averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, math500, gsm8k, mmlu, truthfulqa, mmlu_pro):
 
 target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
-   run     EIG-SC       False     balanced    0.771       0.010 0.141   0.008
-   run     EIG-SC       False         none    0.771       0.010 0.141   0.008
+   run     EIG-SC       False     balanced    0.771       0.010 0.140   0.008
+   run     EIG-SC       False         none    0.771       0.011 0.140   0.008
    run     EIG-SC        True     balanced    0.771       0.011 0.140   0.008
-   run     EIG-SC        True         none    0.771       0.011 0.140   0.008
+   run     EIG-SC        True         none    0.771       0.011 0.141   0.008
    run   Mean-Ent           -            -    0.568       0.012 0.239   0.014
    run  Mean-Loss           -            -    0.564       0.013 0.250   0.016
    run  Mean-Prob           -            -    0.563       0.012 0.398   0.009
@@ -302,7 +302,7 @@ target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
    run  SC-Budget           -            -    0.720       0.011 0.155   0.008
    run    Sum-Ent           -            -    0.650       0.012 0.299   0.010
    run   Sum-Loss           -            -    0.649       0.012 0.289   0.009
-  vote     EIG-SC       False     balanced    0.690       0.012 0.145   0.008
+  vote     EIG-SC       False     balanced    0.689       0.012 0.144   0.008
   vote     EIG-SC       False         none    0.689       0.012 0.163   0.008
   vote     EIG-SC        True     balanced    0.689       0.012 0.143   0.008
   vote     EIG-SC        True         none    0.689       0.012 0.163   0.008
@@ -323,10 +323,10 @@ held out as a domain: multiple choice knowledge
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-mmlu,mmlu_pro          run EIG-SC                      False      none   ok   2828  1066      531   0.796   0.012     0.137   0.012
-mmlu,mmlu_pro          run EIG-SC                      False  balanced   ok   2828  1066      531   0.796   0.012     0.152   0.013
-mmlu,mmlu_pro          run EIG-SC                       True      none   ok   2828  1066      531   0.796   0.012     0.140   0.012
-mmlu,mmlu_pro          run EIG-SC                       True  balanced   ok   2828  1066      531   0.796   0.012     0.154   0.012
+mmlu,mmlu_pro          run EIG-SC                      False      none   ok   2828  1066      531   0.796   0.012     0.139   0.012
+mmlu,mmlu_pro          run EIG-SC                      False  balanced   ok   2828  1066      531   0.796   0.012     0.154   0.013
+mmlu,mmlu_pro          run EIG-SC                       True      none   ok   2828  1066      531   0.795   0.012     0.140   0.011
+mmlu,mmlu_pro          run EIG-SC                       True  balanced   ok   2828  1066      531   0.796   0.012     0.156   0.012
 mmlu,mmlu_pro          run SC-10                           -         -   ok      0  1066      531   0.773   0.011     0.208   0.014
 mmlu,mmlu_pro          run SC-10-Last                      -         -   ok      0   773      380   0.616   0.016     0.292   0.024
 mmlu,mmlu_pro          run Sum-Loss                        -         -   ok      0  1066      531   0.661   0.019     0.221   0.017
@@ -336,9 +336,9 @@ mmlu,mmlu_pro          run Mean-Ent                        -         -   ok     
 mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0  1066      531   0.474   0.016     0.325   0.015
 mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0  1066      531   0.750   0.014     0.209   0.012
 mmlu,mmlu_pro         vote EIG-SC                      False      none   ok   2828  1066      498   0.742   0.017     0.166   0.014
-mmlu,mmlu_pro         vote EIG-SC                      False  balanced   ok   2828  1066      498   0.742   0.017     0.142   0.014
+mmlu,mmlu_pro         vote EIG-SC                      False  balanced   ok   2828  1066      498   0.742   0.017     0.146   0.013
 mmlu,mmlu_pro         vote EIG-SC                       True      none   ok   2828  1066      498   0.742   0.017     0.167   0.014
-mmlu,mmlu_pro         vote EIG-SC                       True  balanced   ok   2828  1066      498   0.742   0.017     0.145   0.013
+mmlu,mmlu_pro         vote EIG-SC                       True  balanced   ok   2828  1066      498   0.742   0.017     0.146   0.013
 mmlu,mmlu_pro         vote SC-10                           -         -   ok      0  1066      498   0.772   0.015     0.171   0.012
 mmlu,mmlu_pro         vote SC-10-Last                      -         -   ok      0   773      367   0.582   0.015     0.301   0.027
 mmlu,mmlu_pro         vote Sum-Loss                        -         -   ok      0  1066      498   0.648   0.016     0.190   0.015
@@ -357,10 +357,10 @@ held out as a domain: mathematics
 ===================================================================================================================================
 held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
 -----------------------------------------------------------------------------------------------------------------------------------
-gsm8k,math500,aime     run EIG-SC                      False      none   ok   1906  1988      822   0.947   0.006     0.150   0.006
+gsm8k,math500,aime     run EIG-SC                      False      none   ok   1906  1988      822   0.947   0.006     0.151   0.006
 gsm8k,math500,aime     run EIG-SC                      False  balanced   ok   1906  1988      822   0.947   0.006     0.157   0.005
 gsm8k,math500,aime     run EIG-SC                       True      none   ok   1906  1988      822   0.946   0.006     0.150   0.006
-gsm8k,math500,aime     run EIG-SC                       True  balanced   ok   1906  1988      822   0.946   0.006     0.156   0.005
+gsm8k,math500,aime     run EIG-SC                       True  balanced   ok   1906  1988      822   0.946   0.006     0.155   0.005
 gsm8k,math500,aime     run SC-10                           -         -   ok      0  1988      822   0.883   0.008     0.044   0.006
 gsm8k,math500,aime     run SC-10-Last                      -         -   ok      0  1205      343   0.759   0.013     0.378   0.019
 gsm8k,math500,aime     run Sum-Loss                        -         -   ok      0  1988      822   0.871   0.008     0.431   0.009
@@ -369,10 +369,10 @@ gsm8k,math500,aime     run Sum-Ent                         -         -   ok     
 gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0  1988      822   0.763   0.010     0.284   0.031
 gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0  1988      822   0.759   0.010     0.475   0.009
 gsm8k,math500,aime     run SC-Budget                       -         -   ok      0  1988      822   0.890   0.008     0.032   0.006
-gsm8k,math500,aime    vote EIG-SC                      False      none   ok   1906  1988      938   0.804   0.011     0.171   0.008
-gsm8k,math500,aime    vote EIG-SC                      False  balanced   ok   1906  1988      938   0.805   0.011     0.199   0.008
-gsm8k,math500,aime    vote EIG-SC                       True      none   ok   1906  1988      938   0.803   0.011     0.173   0.008
-gsm8k,math500,aime    vote EIG-SC                       True  balanced   ok   1906  1988      938   0.804   0.011     0.199   0.008
+gsm8k,math500,aime    vote EIG-SC                      False      none   ok   1906  1988      938   0.804   0.011     0.173   0.008
+gsm8k,math500,aime    vote EIG-SC                      False  balanced   ok   1906  1988      938   0.805   0.011     0.201   0.008
+gsm8k,math500,aime    vote EIG-SC                       True      none   ok   1906  1988      938   0.803   0.011     0.171   0.008
+gsm8k,math500,aime    vote EIG-SC                       True  balanced   ok   1906  1988      938   0.804   0.011     0.198   0.008
 gsm8k,math500,aime    vote SC-10                           -         -   ok      0  1988      938   0.914   0.006     0.132   0.008
 gsm8k,math500,aime    vote SC-10-Last                      -         -   ok      0  1205      470   0.761   0.013     0.282   0.015
 gsm8k,math500,aime    vote Sum-Loss                        -         -   ok      0  1988      938   0.857   0.009     0.316   0.011
@@ -389,9 +389,9 @@ every benchmark counted exactly once, the domains held out together,
 and only groups carrying at least 30 of the rarer class
 
 target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
-   run     EIG-SC       False     balanced    0.744       0.014 0.169   0.010
-   run     EIG-SC       False         none    0.744       0.014 0.157   0.010
-   run     EIG-SC        True     balanced    0.744       0.014 0.167   0.010
+   run     EIG-SC       False     balanced    0.744       0.014 0.168   0.011
+   run     EIG-SC       False         none    0.745       0.014 0.158   0.010
+   run     EIG-SC        True     balanced    0.744       0.014 0.168   0.011
    run     EIG-SC        True         none    0.744       0.014 0.158   0.010
    run   Mean-Ent           -            -    0.581       0.015 0.220   0.013
    run  Mean-Loss           -            -    0.577       0.014 0.241   0.017
@@ -401,10 +401,10 @@ target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
    run  SC-Budget           -            -    0.726       0.013 0.172   0.010
    run    Sum-Ent           -            -    0.648       0.015 0.292   0.010
    run   Sum-Loss           -            -    0.647       0.016 0.285   0.010
-  vote     EIG-SC       False     balanced    0.684       0.016 0.158   0.009
+  vote     EIG-SC       False     balanced    0.684       0.016 0.159   0.010
   vote     EIG-SC       False         none    0.683       0.016 0.161   0.010
-  vote     EIG-SC        True     balanced    0.684       0.016 0.159   0.010
-  vote     EIG-SC        True         none    0.683       0.016 0.162   0.010
+  vote     EIG-SC        True     balanced    0.683       0.016 0.158   0.010
+  vote     EIG-SC        True         none    0.683       0.016 0.160   0.010
   vote   Mean-Ent           -            -    0.561       0.015 0.192   0.013
   vote  Mean-Loss           -            -    0.551       0.015 0.216   0.015
   vote  Mean-Prob           -            -    0.558       0.015 0.340   0.011

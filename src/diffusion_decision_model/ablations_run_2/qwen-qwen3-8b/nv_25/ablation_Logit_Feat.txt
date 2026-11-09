@@ -1,0 +1,415 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+-----------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.8816
+ROC : 0.7388
+ECE : 0.0728
+Accuracy Completion : 0.8791
+ROC Completion : 0.5428
+ECE Completion : 0.1160
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: random split
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+random split           run Logit_Feat                  False      none   ok   2898   725       88   0.854   0.004     0.027   0.009
+random split           run Logit_Feat                  False  balanced   ok   2898   725       88   0.855   0.004     0.239   0.007
+random split           run Logit_Feat                   True      none   ok   2898   725       88   0.855   0.004     0.025   0.010
+random split           run Logit_Feat                   True  balanced   ok   2898   725       88   0.856   0.004     0.233   0.008
+random split           run SC-10                           -         -   ok      0   725       88   0.709   0.029     0.074   0.022
+random split           run SC-10-Last                      -         -   ok      0   725       88   0.533   0.015     0.117   0.010
+random split           run Sum-Loss                        -         -   ok      0   725       88   0.823   0.022     0.035   0.008
+random split           run Mean-Loss                       -         -   ok      0   725       88   0.839   0.021     0.294   0.014
+random split           run Sum-Ent                         -         -   ok      0   725       88   0.825   0.021     0.044   0.008
+random split           run Mean-Ent                        -         -   ok      0   725       88   0.842   0.020     0.286   0.012
+random split           run Mean-Prob                       -         -   ok      0   725       88   0.824   0.021     0.058   0.009
+random split           run SC-Budget                       -         -   ok      0   725       88   0.817   0.023     0.142   0.018
+random split          vote Logit_Feat                  False      none   ok   2898   725       86   0.855   0.013     0.029   0.008
+random split          vote Logit_Feat                  False  balanced   ok   2898   725       86   0.855   0.013     0.239   0.006
+random split          vote Logit_Feat                   True      none   ok   2898   725       86   0.855   0.014     0.027   0.007
+random split          vote Logit_Feat                   True  balanced   ok   2898   725       86   0.855   0.014     0.233   0.007
+random split          vote SC-10                           -         -   ok      0   725       86   0.763   0.024     0.105   0.022
+random split          vote SC-10-Last                      -         -   ok      0   725       86   0.526   0.012     0.114   0.010
+random split          vote Sum-Loss                        -         -   ok      0   725       86   0.796   0.025     0.039   0.012
+random split          vote Mean-Loss                       -         -   ok      0   725       86   0.839   0.020     0.283   0.014
+random split          vote Sum-Ent                         -         -   ok      0   725       86   0.796   0.025     0.037   0.010
+random split          vote Mean-Ent                        -         -   ok      0   725       86   0.843   0.020     0.271   0.014
+random split          vote Mean-Prob                       -         -   ok      0   725       86   0.825   0.020     0.070   0.009
+random split          vote SC-Budget                       -         -   ok      0   725       86   0.821   0.023     0.129   0.017
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: gpqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run Logit_Feat                  False      none   ok   3458   165       63   0.753   0.042     0.101   0.024
+gpqa                   run Logit_Feat                  False  balanced   ok   3458   165       63   0.765   0.042     0.396   0.028
+gpqa                   run Logit_Feat                   True      none   ok   3458   165       63   0.754   0.042     0.133   0.023
+gpqa                   run Logit_Feat                   True  balanced   ok   3458   165       63   0.760   0.043     0.366   0.029
+gpqa                   run SC-10                           -         -   ok      0   165       63   0.701   0.037     0.192   0.040
+gpqa                   run SC-10-Last                      -         -   ok      0   165       63   0.536   0.024     0.364   0.032
+gpqa                   run Sum-Loss                        -         -   ok      0   165       63   0.722   0.043     0.133   0.032
+gpqa                   run Mean-Loss                       -         -   ok      0   165       63   0.678   0.044     0.215   0.036
+gpqa                   run Sum-Ent                         -         -   ok      0   165       63   0.727   0.043     0.133   0.036
+gpqa                   run Mean-Ent                        -         -   ok      0   165       63   0.693   0.043     0.220   0.036
+gpqa                   run Mean-Prob                       -         -   ok      0   165       63   0.650   0.046     0.250   0.030
+gpqa                   run SC-Budget                       -         -   ok      0   165       63   0.780   0.033     0.273   0.039
+gpqa                  vote Logit_Feat                  False      none   ok   3458   165       60   0.705   0.047     0.100   0.030
+gpqa                  vote Logit_Feat                  False  balanced   ok   3458   165       60   0.742   0.045     0.394   0.023
+gpqa                  vote Logit_Feat                   True      none   ok   3458   165       60   0.734   0.047     0.116   0.025
+gpqa                  vote Logit_Feat                   True  balanced   ok   3458   165       60   0.737   0.047     0.360   0.022
+gpqa                  vote SC-10                           -         -   ok      0   165       60   0.714   0.035     0.180   0.037
+gpqa                  vote SC-10-Last                      -         -   ok      0   165       60   0.539   0.024     0.346   0.025
+gpqa                  vote Sum-Loss                        -         -   ok      0   165       60   0.729   0.035     0.139   0.026
+gpqa                  vote Mean-Loss                       -         -   ok      0   165       60   0.647   0.041     0.235   0.036
+gpqa                  vote Sum-Ent                         -         -   ok      0   165       60   0.733   0.035     0.140   0.029
+gpqa                  vote Mean-Ent                        -         -   ok      0   165       60   0.664   0.042     0.238   0.037
+gpqa                  vote Mean-Prob                       -         -   ok      0   165       60   0.619   0.042     0.219   0.027
+gpqa                  vote SC-Budget                       -         -   ok      0   165       60   0.779   0.036     0.246   0.029
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: math500
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+math500                run Logit_Feat                  False      none   ok   3270   353        6   0.355   0.147     0.034   0.006
+math500                run Logit_Feat                  False  balanced   ok   3270   353        6   0.366   0.143     0.159   0.009
+math500                run Logit_Feat                   True      none   ok   3270   353        6   0.405   0.125     0.024   0.004
+math500                run Logit_Feat                   True  balanced   ok   3270   353        6   0.406   0.122     0.165   0.010
+math500                run SC-10                           -         -   ok      0   353        6   0.529   0.117     0.105   0.025
+math500                run SC-10-Last                      -         -   ok      0   353        6   0.497   0.002     0.016   0.009
+math500                run Sum-Loss                        -         -   ok      0   353        6   0.479   0.126     0.243   0.030
+math500                run Mean-Loss                       -         -   ok      0   353        6   0.329   0.139     0.309   0.028
+math500                run Sum-Ent                         -         -   ok      0   353        6   0.489   0.118     0.253   0.026
+math500                run Mean-Ent                        -         -   ok      0   353        6   0.350   0.135     0.295   0.031
+math500                run Mean-Prob                       -         -   ok      0   353        6   0.330   0.145     0.075   0.005
+math500                run SC-Budget                       -         -   ok      0   353        6   0.738   0.127     0.011   0.007
+math500               vote Logit_Feat                  False      none   ok   3270   353        5   0.313   0.168     0.031   0.005
+math500               vote Logit_Feat                  False  balanced   ok   3270   353        5   0.315   0.166     0.151   0.008
+math500               vote Logit_Feat                   True      none   ok   3270   353        5   0.367   0.138     0.026   0.004
+math500               vote Logit_Feat                   True  balanced   ok   3270   353        5   0.361   0.139     0.156   0.008
+math500               vote SC-10                           -         -   ok      0   353        5   0.435   0.009     0.116   0.024
+math500               vote SC-10-Last                      -         -   ok      0   353        5   0.497   0.002     0.013   0.008
+math500               vote Sum-Loss                        -         -   ok      0   353        5   0.429   0.131     0.246   0.031
+math500               vote Mean-Loss                       -         -   ok      0   353        5   0.274   0.147     0.311   0.029
+math500               vote Sum-Ent                         -         -   ok      0   353        5   0.446   0.131     0.256   0.027
+math500               vote Mean-Ent                        -         -   ok      0   353        5   0.310   0.155     0.298   0.031
+math500               vote Mean-Prob                       -         -   ok      0   353        5   0.293   0.170     0.078   0.005
+math500               vote SC-Budget                       -         -   ok      0   353        5   0.683   0.131     0.008   0.006
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: gsm8k
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run Logit_Feat                  False      none   ok   2384  1239       43   0.835   0.027     0.021   0.004
+gsm8k                  run Logit_Feat                  False  balanced   ok   2384  1239       43   0.844   0.026     0.055   0.004
+gsm8k                  run Logit_Feat                   True      none   ok   2384  1239       43   0.861   0.025     0.025   0.005
+gsm8k                  run Logit_Feat                   True  balanced   ok   2384  1239       43   0.861   0.025     0.022   0.003
+gsm8k                  run SC-10                           -         -   ok      0  1239       43   0.757   0.038     0.045   0.009
+gsm8k                  run SC-10-Last                      -         -   ok      0  1239       43   0.564   0.022     0.032   0.005
+gsm8k                  run Sum-Loss                        -         -   ok      0  1239       43   0.862   0.026     0.088   0.007
+gsm8k                  run Mean-Loss                       -         -   ok      0  1239       43   0.845   0.026     0.225   0.012
+gsm8k                  run Sum-Ent                         -         -   ok      0  1239       43   0.864   0.026     0.085   0.007
+gsm8k                  run Mean-Ent                        -         -   ok      0  1239       43   0.852   0.025     0.231   0.009
+gsm8k                  run Mean-Prob                       -         -   ok      0  1239       43   0.832   0.026     0.047   0.004
+gsm8k                  run SC-Budget                       -         -   ok      0  1239       43   0.898   0.025     0.019   0.007
+gsm8k                 vote Logit_Feat                  False      none   ok   2384  1239       39   0.842   0.027     0.019   0.004
+gsm8k                 vote Logit_Feat                  False  balanced   ok   2384  1239       39   0.849   0.026     0.050   0.004
+gsm8k                 vote Logit_Feat                   True      none   ok   2384  1239       39   0.862   0.025     0.022   0.004
+gsm8k                 vote Logit_Feat                   True  balanced   ok   2384  1239       39   0.861   0.025     0.018   0.003
+gsm8k                 vote SC-10                           -         -   ok      0  1239       39   0.733   0.044     0.056   0.010
+gsm8k                 vote SC-10-Last                      -         -   ok      0  1239       39   0.558   0.021     0.028   0.005
+gsm8k                 vote Sum-Loss                        -         -   ok      0  1239       39   0.861   0.027     0.091   0.006
+gsm8k                 vote Mean-Loss                       -         -   ok      0  1239       39   0.848   0.026     0.229   0.012
+gsm8k                 vote Sum-Ent                         -         -   ok      0  1239       39   0.863   0.027     0.088   0.007
+gsm8k                 vote Mean-Ent                        -         -   ok      0  1239       39   0.854   0.025     0.234   0.009
+gsm8k                 vote Mean-Prob                       -         -   ok      0  1239       39   0.836   0.026     0.048   0.004
+gsm8k                 vote SC-Budget                       -         -   ok      0  1239       39   0.885   0.026     0.013   0.007
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: mmlu
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run Logit_Feat                  False      none   ok   3080   543       80   0.824   0.025     0.039   0.011
+mmlu                   run Logit_Feat                  False  balanced   ok   3080   543       80   0.824   0.025     0.328   0.013
+mmlu                   run Logit_Feat                   True      none   ok   3080   543       80   0.828   0.024     0.037   0.011
+mmlu                   run Logit_Feat                   True  balanced   ok   3080   543       80   0.829   0.024     0.321   0.013
+mmlu                   run SC-10                           -         -   ok      0   543       80   0.725   0.027     0.151   0.032
+mmlu                   run SC-10-Last                      -         -   ok      0   543       80   0.523   0.011     0.146   0.015
+mmlu                   run Sum-Loss                        -         -   ok      0   543       80   0.765   0.026     0.054   0.010
+mmlu                   run Mean-Loss                       -         -   ok      0   543       80   0.827   0.024     0.340   0.016
+mmlu                   run Sum-Ent                         -         -   ok      0   543       80   0.766   0.026     0.050   0.011
+mmlu                   run Mean-Ent                        -         -   ok      0   543       80   0.831   0.023     0.303   0.017
+mmlu                   run Mean-Prob                       -         -   ok      0   543       80   0.818   0.023     0.101   0.011
+mmlu                   run SC-Budget                       -         -   ok      0   543       80   0.814   0.026     0.238   0.034
+mmlu                  vote Logit_Feat                  False      none   ok   3080   543       77   0.813   0.025     0.047   0.013
+mmlu                  vote Logit_Feat                  False  balanced   ok   3080   543       77   0.813   0.025     0.329   0.013
+mmlu                  vote Logit_Feat                   True      none   ok   3080   543       77   0.818   0.024     0.045   0.014
+mmlu                  vote Logit_Feat                   True  balanced   ok   3080   543       77   0.818   0.024     0.321   0.013
+mmlu                  vote SC-10                           -         -   ok      0   543       77   0.722   0.026     0.141   0.027
+mmlu                  vote SC-10-Last                      -         -   ok      0   543       77   0.516   0.009     0.140   0.013
+mmlu                  vote Sum-Loss                        -         -   ok      0   543       77   0.755   0.025     0.060   0.010
+mmlu                  vote Mean-Loss                       -         -   ok      0   543       77   0.814   0.024     0.345   0.016
+mmlu                  vote Sum-Ent                         -         -   ok      0   543       77   0.757   0.024     0.057   0.013
+mmlu                  vote Mean-Ent                        -         -   ok      0   543       77   0.821   0.024     0.308   0.017
+mmlu                  vote Mean-Prob                       -         -   ok      0   543       77   0.806   0.025     0.096   0.012
+mmlu                  vote SC-Budget                       -         -   ok      0   543       77   0.804   0.025     0.220   0.029
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: truthfulqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run Logit_Feat                  False      none   ok   2943   680      132   0.736   0.020     0.053   0.014
+truthfulqa             run Logit_Feat                  False  balanced   ok   2943   680      132   0.734   0.020     0.423   0.013
+truthfulqa             run Logit_Feat                   True      none   ok   2943   680      132   0.734   0.021     0.055   0.013
+truthfulqa             run Logit_Feat                   True  balanced   ok   2943   680      132   0.734   0.020     0.435   0.013
+truthfulqa             run SC-10                           -         -   ok      0   680      132   0.718   0.027     0.166   0.025
+truthfulqa             run SC-10-Last                      -         -   ok      0   680      132   0.558   0.016     0.186   0.014
+truthfulqa             run Sum-Loss                        -         -   ok      0   680      132   0.772   0.017     0.048   0.013
+truthfulqa             run Mean-Loss                       -         -   ok      0   680      132   0.723   0.021     0.365   0.022
+truthfulqa             run Sum-Ent                         -         -   ok      0   680      132   0.771   0.017     0.049   0.015
+truthfulqa             run Mean-Ent                        -         -   ok      0   680      132   0.717   0.021     0.367   0.020
+truthfulqa             run Mean-Prob                       -         -   ok      0   680      132   0.689   0.021     0.077   0.014
+truthfulqa             run SC-Budget                       -         -   ok      0   680      132   0.802   0.021     0.188   0.023
+truthfulqa            vote Logit_Feat                  False      none   ok   2943   680      132   0.748   0.019     0.048   0.014
+truthfulqa            vote Logit_Feat                  False  balanced   ok   2943   680      132   0.746   0.019     0.424   0.015
+truthfulqa            vote Logit_Feat                   True      none   ok   2943   680      132   0.746   0.020     0.049   0.013
+truthfulqa            vote Logit_Feat                   True  balanced   ok   2943   680      132   0.746   0.020     0.439   0.015
+truthfulqa            vote SC-10                           -         -   ok      0   680      132   0.741   0.026     0.178   0.029
+truthfulqa            vote SC-10-Last                      -         -   ok      0   680      132   0.544   0.011     0.186   0.017
+truthfulqa            vote Sum-Loss                        -         -   ok      0   680      132   0.779   0.019     0.048   0.013
+truthfulqa            vote Mean-Loss                       -         -   ok      0   680      132   0.740   0.019     0.365   0.023
+truthfulqa            vote Sum-Ent                         -         -   ok      0   680      132   0.778   0.019     0.049   0.014
+truthfulqa            vote Mean-Ent                        -         -   ok      0   680      132   0.731   0.020     0.367   0.021
+truthfulqa            vote Mean-Prob                       -         -   ok      0   680      132   0.704   0.020     0.083   0.013
+truthfulqa            vote SC-Budget                       -         -   ok      0   680      132   0.813   0.021     0.187   0.027
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run Logit_Feat                  False      none   ok   3104   519      110   0.806   0.019     0.058   0.017
+mmlu_pro               run Logit_Feat                  False  balanced   ok   3104   519      110   0.803   0.019     0.374   0.020
+mmlu_pro               run Logit_Feat                   True      none   ok   3104   519      110   0.807   0.019     0.041   0.015
+mmlu_pro               run Logit_Feat                   True  balanced   ok   3104   519      110   0.807   0.018     0.379   0.020
+mmlu_pro               run SC-10                           -         -   ok      0   519      110   0.717   0.021     0.132   0.039
+mmlu_pro               run SC-10-Last                      -         -   ok      0   519      110   0.529   0.013     0.205   0.023
+mmlu_pro               run Sum-Loss                        -         -   ok      0   519      110   0.678   0.028     0.079   0.019
+mmlu_pro               run Mean-Loss                       -         -   ok      0   519      110   0.819   0.016     0.318   0.021
+mmlu_pro               run Sum-Ent                         -         -   ok      0   519      110   0.677   0.028     0.082   0.018
+mmlu_pro               run Mean-Ent                        -         -   ok      0   519      110   0.820   0.016     0.312   0.022
+mmlu_pro               run Mean-Prob                       -         -   ok      0   519      110   0.807   0.017     0.128   0.018
+mmlu_pro               run SC-Budget                       -         -   ok      0   519      110   0.800   0.020     0.202   0.035
+mmlu_pro              vote Logit_Feat                  False      none   ok   3104   519      113   0.813   0.021     0.058   0.016
+mmlu_pro              vote Logit_Feat                  False  balanced   ok   3104   519      113   0.811   0.021     0.364   0.020
+mmlu_pro              vote Logit_Feat                   True      none   ok   3104   519      113   0.815   0.021     0.044   0.014
+mmlu_pro              vote Logit_Feat                   True  balanced   ok   3104   519      113   0.816   0.021     0.369   0.020
+mmlu_pro              vote SC-10                           -         -   ok      0   519      113   0.718   0.026     0.142   0.042
+mmlu_pro              vote SC-10-Last                      -         -   ok      0   519      113   0.528   0.014     0.210   0.023
+mmlu_pro              vote Sum-Loss                        -         -   ok      0   519      113   0.685   0.028     0.085   0.019
+mmlu_pro              vote Mean-Loss                       -         -   ok      0   519      113   0.828   0.017     0.312   0.022
+mmlu_pro              vote Sum-Ent                         -         -   ok      0   519      113   0.685   0.029     0.088   0.020
+mmlu_pro              vote Mean-Ent                        -         -   ok      0   519      113   0.826   0.018     0.306   0.023
+mmlu_pro              vote Mean-Prob                       -         -   ok      0   519      113   0.812   0.018     0.138   0.018
+mmlu_pro              vote SC-Budget                       -         -   ok      0   519      113   0.801   0.023     0.216   0.037
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+aime                   run Logit_Feat                  False      none   ok   3499   124        4   0.894   0.061     0.042   0.016
+aime                   run Logit_Feat                  False  balanced   ok   3499   124        4   0.910   0.050     0.144   0.011
+aime                   run Logit_Feat                   True      none   ok   3499   124        4   0.854   0.083     0.037   0.013
+aime                   run Logit_Feat                   True  balanced   ok   3499   124        4   0.850   0.083     0.220   0.014
+aime                   run SC-10                           -         -   ok      0   124        4   0.802   0.154     0.180   0.031
+aime                   run SC-10-Last                      -         -   ok      0   124        4   0.496   0.004     0.031   0.014
+aime                   run Sum-Loss                        -         -   ok      0   124        4   0.863   0.081     0.385   0.027
+aime                   run Mean-Loss                       -         -   ok      0   124        4   0.942   0.039     0.322   0.050
+aime                   run Sum-Ent                         -         -   ok      0   124        4   0.844   0.080     0.394   0.026
+aime                   run Mean-Ent                        -         -   ok      0   124        4   0.921   0.051     0.341   0.056
+aime                   run Mean-Prob                       -         -   ok      0   124        4   0.923   0.048     0.059   0.013
+aime                   run SC-Budget                       -         -   ok      0   124        4   0.828   0.172     0.038   0.022
+aime                  vote Logit_Feat                  False      none   ok   3499   124        3   0.942   0.052     0.033   0.011
+aime                  vote Logit_Feat                  False  balanced   ok   3499   124        3   0.937   0.053     0.155   0.009
+aime                  vote Logit_Feat                   True      none   ok   3499   124        3   0.871   0.108     0.043   0.010
+aime                  vote Logit_Feat                   True  balanced   ok   3499   124        3   0.873   0.103     0.226   0.012
+aime                  vote SC-10                           -         -   ok      0   124        3   0.760   0.191     0.198   0.031
+aime                  vote SC-10-Last                      -         -   ok      0   124        3   0.496   0.004     0.023   0.011
+aime                  vote Sum-Loss                        -         -   ok      0   124        3   0.887   0.099     0.393   0.027
+aime                  vote Mean-Loss                       -         -   ok      0   124        3   0.959   0.044     0.330   0.051
+aime                  vote Sum-Ent                         -         -   ok      0   124        3   0.865   0.101     0.402   0.026
+aime                  vote Mean-Ent                        -         -   ok      0   124        3   0.948   0.053     0.350   0.056
+aime                  vote Mean-Prob                       -         -   ok      0   124        3   0.961   0.038     0.067   0.009
+aime                  vote SC-Budget                       -         -   ok      0   124        3   0.767   0.204     0.019   0.012
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+averaged over every held out dataset:
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run Logit_Feat       False     balanced    0.749       0.023 0.268   0.006
+   run Logit_Feat       False         none    0.743       0.024 0.050   0.005
+   run Logit_Feat        True     balanced    0.750       0.023 0.273   0.006
+   run Logit_Feat        True         none    0.749       0.023 0.050   0.005
+   run   Mean-Ent           -            -    0.740       0.022 0.295   0.012
+   run  Mean-Loss           -            -    0.738       0.022 0.299   0.011
+   run  Mean-Prob           -            -    0.721       0.024 0.105   0.006
+   run      SC-10           -            -    0.707       0.029 0.139   0.011
+   run SC-10-Last           -            -    0.529       0.006 0.140   0.007
+   run  SC-Budget           -            -    0.808       0.032 0.138   0.010
+   run    Sum-Ent           -            -    0.734       0.022 0.149   0.008
+   run   Sum-Loss           -            -    0.734       0.023 0.147   0.008
+  vote Logit_Feat       False     balanced    0.745       0.027 0.267   0.005
+  vote Logit_Feat       False         none    0.739       0.027 0.048   0.006
+  vote Logit_Feat        True     balanced    0.745       0.026 0.270   0.006
+  vote Logit_Feat        True         none    0.745       0.027 0.049   0.005
+  vote   Mean-Ent           -            -    0.736       0.025 0.300   0.012
+  vote  Mean-Loss           -            -    0.730       0.024 0.304   0.011
+  vote  Mean-Prob           -            -    0.719       0.026 0.104   0.005
+  vote      SC-10           -            -    0.689       0.029 0.144   0.011
+  vote SC-10-Last           -            -    0.525       0.005 0.135   0.006
+  vote  SC-Budget           -            -    0.790       0.036 0.130   0.009
+  vote    Sum-Ent           -            -    0.732       0.025 0.154   0.008
+  vote   Sum-Loss           -            -    0.732       0.025 0.152   0.008
+
+
+averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, gsm8k, mmlu, truthfulqa, mmlu_pro):
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run Logit_Feat       False     balanced    0.794       0.012 0.315   0.008
+   run Logit_Feat       False         none    0.791       0.012 0.054   0.007
+   run Logit_Feat        True     balanced    0.798       0.012 0.305   0.008
+   run Logit_Feat        True         none    0.797       0.012 0.058   0.006
+   run   Mean-Ent           -            -    0.782       0.012 0.286   0.010
+   run  Mean-Loss           -            -    0.778       0.012 0.293   0.010
+   run  Mean-Prob           -            -    0.759       0.013 0.121   0.008
+   run      SC-10           -            -    0.723       0.014 0.138   0.014
+   run SC-10-Last           -            -    0.542       0.008 0.186   0.009
+   run  SC-Budget           -            -    0.819       0.011 0.184   0.013
+   run    Sum-Ent           -            -    0.761       0.013 0.080   0.009
+   run   Sum-Loss           -            -    0.760       0.013 0.080   0.008
+  vote Logit_Feat       False     balanced    0.792       0.013 0.312   0.007
+  vote Logit_Feat       False         none    0.784       0.013 0.054   0.008
+  vote Logit_Feat        True     balanced    0.796       0.013 0.302   0.007
+  vote Logit_Feat        True         none    0.795       0.013 0.055   0.007
+  vote   Mean-Ent           -            -    0.779       0.012 0.291   0.010
+  vote  Mean-Loss           -            -    0.776       0.012 0.297   0.010
+  vote  Mean-Prob           -            -    0.756       0.012 0.117   0.007
+  vote      SC-10           -            -    0.726       0.014 0.139   0.014
+  vote SC-10-Last           -            -    0.537       0.008 0.182   0.008
+  vote  SC-Budget           -            -    0.816       0.012 0.177   0.012
+  vote    Sum-Ent           -            -    0.763       0.012 0.084   0.008
+  vote   Sum-Loss           -            -    0.762       0.012 0.085   0.007
+
+
+held out as a domain: multiple choice knowledge
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: mmlu,mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run Logit_Feat                  False      none   ok   2561  1062      190   0.817   0.017     0.046   0.012
+mmlu,mmlu_pro          run Logit_Feat                  False  balanced   ok   2561  1062      190   0.816   0.017     0.377   0.011
+mmlu,mmlu_pro          run Logit_Feat                   True      none   ok   2561  1062      190   0.821   0.018     0.028   0.011
+mmlu,mmlu_pro          run Logit_Feat                   True  balanced   ok   2561  1062      190   0.820   0.017     0.378   0.011
+mmlu,mmlu_pro          run SC-10                           -         -   ok      0  1062      190   0.725   0.019     0.153   0.023
+mmlu,mmlu_pro          run SC-10-Last                      -         -   ok      0  1062      190   0.527   0.010     0.174   0.012
+mmlu,mmlu_pro          run Sum-Loss                        -         -   ok      0  1062      190   0.726   0.019     0.068   0.011
+mmlu,mmlu_pro          run Mean-Loss                       -         -   ok      0  1062      190   0.827   0.017     0.330   0.012
+mmlu,mmlu_pro          run Sum-Ent                         -         -   ok      0  1062      190   0.726   0.019     0.062   0.011
+mmlu,mmlu_pro          run Mean-Ent                        -         -   ok      0  1062      190   0.830   0.017     0.311   0.017
+mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0  1062      190   0.816   0.017     0.106   0.011
+mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0  1062      190   0.811   0.019     0.218   0.021
+mmlu,mmlu_pro         vote Logit_Feat                  False      none   ok   2561  1062      190   0.819   0.015     0.045   0.011
+mmlu,mmlu_pro         vote Logit_Feat                  False  balanced   ok   2561  1062      190   0.817   0.015     0.374   0.012
+mmlu,mmlu_pro         vote Logit_Feat                   True      none   ok   2561  1062      190   0.821   0.016     0.027   0.009
+mmlu,mmlu_pro         vote Logit_Feat                   True  balanced   ok   2561  1062      190   0.822   0.016     0.375   0.012
+mmlu,mmlu_pro         vote SC-10                           -         -   ok      0  1062      190   0.726   0.018     0.155   0.029
+mmlu,mmlu_pro         vote SC-10-Last                      -         -   ok      0  1062      190   0.524   0.009     0.174   0.014
+mmlu,mmlu_pro         vote Sum-Loss                        -         -   ok      0  1062      190   0.729   0.017     0.068   0.011
+mmlu,mmlu_pro         vote Mean-Loss                       -         -   ok      0  1062      190   0.827   0.016     0.330   0.013
+mmlu,mmlu_pro         vote Sum-Ent                         -         -   ok      0  1062      190   0.729   0.017     0.065   0.010
+mmlu,mmlu_pro         vote Mean-Ent                        -         -   ok      0  1062      190   0.829   0.016     0.311   0.018
+mmlu,mmlu_pro         vote Mean-Prob                       -         -   ok      0  1062      190   0.815   0.017     0.112   0.011
+mmlu,mmlu_pro         vote SC-Budget                       -         -   ok      0  1062      190   0.808   0.018     0.218   0.025
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+held out as a domain: mathematics
+
+===================================================================================================================================
+== ablation, features: Logit_Feat, held out: gsm8k,math500,aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run Logit_Feat                  False      none   ok   1907  1716       53   0.757   0.034     0.012   0.003
+gsm8k,math500,aime     run Logit_Feat                  False  balanced   ok   1907  1716       53   0.761   0.034     0.045   0.004
+gsm8k,math500,aime     run Logit_Feat                   True      none   ok   1907  1716       53   0.793   0.024     0.015   0.004
+gsm8k,math500,aime     run Logit_Feat                   True  balanced   ok   1907  1716       53   0.797   0.024     0.025   0.004
+gsm8k,math500,aime     run SC-10                           -         -   ok      0  1716       53   0.732   0.031     0.068   0.009
+gsm8k,math500,aime     run SC-10-Last                      -         -   ok      0  1716       53   0.551   0.021     0.028   0.004
+gsm8k,math500,aime     run Sum-Loss                        -         -   ok      0  1716       53   0.767   0.022     0.112   0.008
+gsm8k,math500,aime     run Mean-Loss                       -         -   ok      0  1716       53   0.789   0.028     0.260   0.009
+gsm8k,math500,aime     run Sum-Ent                         -         -   ok      0  1716       53   0.770   0.022     0.118   0.008
+gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0  1716       53   0.796   0.027     0.268   0.007
+gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0  1716       53   0.779   0.031     0.049   0.003
+gsm8k,math500,aime     run SC-Budget                       -         -   ok      0  1716       53   0.878   0.031     0.020   0.008
+gsm8k,math500,aime    vote Logit_Feat                  False      none   ok   1907  1716       47   0.790   0.034     0.014   0.003
+gsm8k,math500,aime    vote Logit_Feat                  False  balanced   ok   1907  1716       47   0.793   0.033     0.050   0.004
+gsm8k,math500,aime    vote Logit_Feat                   True      none   ok   1907  1716       47   0.782   0.026     0.011   0.003
+gsm8k,math500,aime    vote Logit_Feat                   True  balanced   ok   1907  1716       47   0.787   0.027     0.028   0.004
+gsm8k,math500,aime    vote SC-10                           -         -   ok      0  1716       47   0.699   0.036     0.079   0.009
+gsm8k,math500,aime    vote SC-10-Last                      -         -   ok      0  1716       47   0.548   0.024     0.025   0.004
+gsm8k,math500,aime    vote Sum-Loss                        -         -   ok      0  1716       47   0.760   0.025     0.116   0.007
+gsm8k,math500,aime    vote Mean-Loss                       -         -   ok      0  1716       47   0.790   0.032     0.264   0.009
+gsm8k,math500,aime    vote Sum-Ent                         -         -   ok      0  1716       47   0.764   0.025     0.121   0.007
+gsm8k,math500,aime    vote Mean-Ent                        -         -   ok      0  1716       47   0.797   0.030     0.272   0.007
+gsm8k,math500,aime    vote Mean-Prob                       -         -   ok      0  1716       47   0.783   0.034     0.051   0.003
+gsm8k,math500,aime    vote SC-Budget                       -         -   ok      0  1716       47   0.860   0.034     0.012   0.006
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+MAIN AVERAGE, over these 4 held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the domains held out together,
+and only groups carrying at least 30 of the rarer class
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run Logit_Feat       False     balanced    0.769       0.015 0.310   0.008
+   run Logit_Feat       False         none    0.766       0.015 0.053   0.008
+   run Logit_Feat        True     balanced    0.778       0.014 0.301   0.009
+   run Logit_Feat        True         none    0.775       0.014 0.058   0.007
+   run   Mean-Ent           -            -    0.759       0.014 0.292   0.011
+   run  Mean-Loss           -            -    0.754       0.015 0.293   0.011
+   run  Mean-Prob           -            -    0.733       0.016 0.120   0.009
+   run      SC-10           -            -    0.719       0.015 0.145   0.013
+   run SC-10-Last           -            -    0.543       0.009 0.188   0.009
+   run  SC-Budget           -            -    0.818       0.013 0.175   0.013
+   run    Sum-Ent           -            -    0.749       0.014 0.090   0.010
+   run   Sum-Loss           -            -    0.747       0.014 0.090   0.009
+  vote Logit_Feat       False     balanced    0.775       0.015 0.310   0.008
+  vote Logit_Feat       False         none    0.765       0.016 0.052   0.009
+  vote Logit_Feat        True     balanced    0.773       0.015 0.300   0.007
+  vote Logit_Feat        True         none    0.771       0.015 0.051   0.007
+  vote   Mean-Ent           -            -    0.755       0.014 0.297   0.012
+  vote  Mean-Loss           -            -    0.751       0.014 0.298   0.011
+  vote  Mean-Prob           -            -    0.730       0.015 0.116   0.008
+  vote      SC-10           -            -    0.720       0.015 0.148   0.014
+  vote SC-10-Last           -            -    0.539       0.009 0.183   0.008
+  vote  SC-Budget           -            -    0.815       0.014 0.166   0.012
+  vote    Sum-Ent           -            -    0.751       0.013 0.094   0.009
+  vote   Sum-Loss           -            -    0.749       0.012 0.093   0.008

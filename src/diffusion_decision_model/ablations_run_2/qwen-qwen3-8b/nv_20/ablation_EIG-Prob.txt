@@ -1,0 +1,415 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+-----------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.8864
+ROC : 0.7299
+ECE : 0.0638
+Accuracy Completion : 0.8772
+ROC Completion : 0.5422
+ECE Completion : 0.1181
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: random split
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+random split           run EIG-Prob                    False      none   ok   2904   727       90   0.850   0.019     0.024   0.005
+random split           run EIG-Prob                    False  balanced   ok   2904   727       90   0.850   0.018     0.236   0.011
+random split           run EIG-Prob                     True      none   ok   2904   727       90   0.850   0.018     0.024   0.005
+random split           run EIG-Prob                     True  balanced   ok   2904   727       90   0.850   0.018     0.227   0.012
+random split           run SC-10                           -         -   ok      0   727       90   0.775   0.027     0.114   0.024
+random split           run SC-10-Last                      -         -   ok      0   727       90   0.557   0.019     0.118   0.010
+random split           run Sum-Loss                        -         -   ok      0   727       90   0.804   0.021     0.039   0.008
+random split           run Mean-Loss                       -         -   ok      0   727       90   0.848   0.021     0.259   0.017
+random split           run Sum-Ent                         -         -   ok      0   727       90   0.807   0.020     0.043   0.008
+random split           run Mean-Ent                        -         -   ok      0   727       90   0.855   0.021     0.266   0.015
+random split           run Mean-Prob                       -         -   ok      0   727       90   0.844   0.021     0.083   0.010
+random split           run SC-Budget                       -         -   ok      0   727       90   0.832   0.029     0.148   0.017
+random split          vote EIG-Prob                    False      none   ok   2901   726       82   0.848   0.016     0.027   0.007
+random split          vote EIG-Prob                    False  balanced   ok   2901   726       82   0.847   0.016     0.252   0.005
+random split          vote EIG-Prob                     True      none   ok   2901   726       82   0.848   0.015     0.019   0.007
+random split          vote EIG-Prob                     True  balanced   ok   2901   726       82   0.846   0.016     0.243   0.006
+random split          vote SC-10                           -         -   ok      0   726       82   0.735   0.034     0.064   0.021
+random split          vote SC-10-Last                      -         -   ok      0   726       82   0.556   0.017     0.108   0.011
+random split          vote Sum-Loss                        -         -   ok      0   726       82   0.822   0.021     0.022   0.010
+random split          vote Mean-Loss                       -         -   ok      0   726       82   0.855   0.019     0.302   0.011
+random split          vote Sum-Ent                         -         -   ok      0   726       82   0.824   0.021     0.023   0.009
+random split          vote Mean-Ent                        -         -   ok      0   726       82   0.861   0.018     0.288   0.012
+random split          vote Mean-Prob                       -         -   ok      0   726       82   0.846   0.019     0.082   0.009
+random split          vote SC-Budget                       -         -   ok      0   726       82   0.832   0.029     0.113   0.018
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: gpqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run EIG-Prob                    False      none   ok   3467   164       61   0.711   0.038     0.218   0.031
+gpqa                   run EIG-Prob                    False  balanced   ok   3467   164       61   0.709   0.038     0.201   0.027
+gpqa                   run EIG-Prob                     True      none   ok   3467   164       61   0.739   0.040     0.210   0.031
+gpqa                   run EIG-Prob                     True  balanced   ok   3467   164       61   0.721   0.039     0.191   0.029
+gpqa                   run SC-10                           -         -   ok      0   164       61   0.730   0.038     0.247   0.045
+gpqa                   run SC-10-Last                      -         -   ok      0   164       61   0.527   0.020     0.362   0.034
+gpqa                   run Sum-Loss                        -         -   ok      0   164       61   0.719   0.038     0.070   0.032
+gpqa                   run Mean-Loss                       -         -   ok      0   164       61   0.686   0.039     0.175   0.029
+gpqa                   run Sum-Ent                         -         -   ok      0   164       61   0.726   0.037     0.079   0.028
+gpqa                   run Mean-Ent                        -         -   ok      0   164       61   0.715   0.037     0.153   0.031
+gpqa                   run Mean-Prob                       -         -   ok      0   164       61   0.663   0.040     0.240   0.034
+gpqa                   run SC-Budget                       -         -   ok      0   164       61   0.776   0.035     0.260   0.038
+gpqa                  vote EIG-Prob                    False      none   ok   3463   164       54   0.650   0.043     0.183   0.034
+gpqa                  vote EIG-Prob                    False  balanced   ok   3463   164       54   0.647   0.043     0.213   0.032
+gpqa                  vote EIG-Prob                     True      none   ok   3463   164       54   0.660   0.045     0.178   0.033
+gpqa                  vote EIG-Prob                     True  balanced   ok   3463   164       54   0.643   0.046     0.196   0.037
+gpqa                  vote SC-10                           -         -   ok      0   164       54   0.706   0.046     0.198   0.042
+gpqa                  vote SC-10-Last                      -         -   ok      0   164       54   0.506   0.020     0.319   0.038
+gpqa                  vote Sum-Loss                        -         -   ok      0   164       54   0.719   0.039     0.106   0.032
+gpqa                  vote Mean-Loss                       -         -   ok      0   164       54   0.643   0.045     0.211   0.029
+gpqa                  vote Sum-Ent                         -         -   ok      0   164       54   0.725   0.040     0.102   0.030
+gpqa                  vote Mean-Ent                        -         -   ok      0   164       54   0.674   0.044     0.206   0.038
+gpqa                  vote Mean-Prob                       -         -   ok      0   164       54   0.623   0.045     0.197   0.035
+gpqa                  vote SC-Budget                       -         -   ok      0   164       54   0.742   0.045     0.193   0.042
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: math500
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+math500                run EIG-Prob                    False      none   ok   3272   359        7   0.448   0.133     0.027   0.005
+math500                run EIG-Prob                    False  balanced   ok   3272   359        7   0.456   0.132     0.146   0.007
+math500                run EIG-Prob                     True      none   ok   3272   359        7   0.533   0.115     0.023   0.005
+math500                run EIG-Prob                     True  balanced   ok   3272   359        7   0.532   0.121     0.138   0.007
+math500                run SC-10                           -         -   ok      0   358        7   0.664   0.096     0.079   0.021
+math500                run SC-10-Last                      -         -   ok      0   359        7   0.497   0.002     0.018   0.006
+math500                run Sum-Loss                        -         -   ok      0   359        7   0.568   0.105     0.258   0.014
+math500                run Mean-Loss                       -         -   ok      0   359        7   0.414   0.123     0.315   0.026
+math500                run Sum-Ent                         -         -   ok      0   359        7   0.582   0.103     0.248   0.021
+math500                run Mean-Ent                        -         -   ok      0   359        7   0.429   0.131     0.302   0.026
+math500                run Mean-Prob                       -         -   ok      0   359        7   0.427   0.136     0.068   0.005
+math500                run SC-Budget                       -         -   ok      0   359        7   0.698   0.098     0.014   0.006
+math500               vote EIG-Prob                    False      none   ok   3269   358        6   0.347   0.120     0.028   0.005
+math500               vote EIG-Prob                    False  balanced   ok   3269   358        6   0.351   0.124     0.146   0.006
+math500               vote EIG-Prob                     True      none   ok   3269   358        6   0.431   0.109     0.021   0.005
+math500               vote EIG-Prob                     True  balanced   ok   3269   358        6   0.416   0.126     0.137   0.006
+math500               vote SC-10                           -         -   ok      0   358        6   0.616   0.117     0.089   0.021
+math500               vote SC-10-Last                      -         -   ok      0   358        6   0.497   0.002     0.015   0.007
+math500               vote Sum-Loss                        -         -   ok      0   358        6   0.544   0.128     0.260   0.013
+math500               vote Mean-Loss                       -         -   ok      0   358        6   0.328   0.114     0.317   0.023
+math500               vote Sum-Ent                         -         -   ok      0   358        6   0.556   0.126     0.249   0.020
+math500               vote Mean-Ent                        -         -   ok      0   358        6   0.341   0.118     0.304   0.029
+math500               vote Mean-Prob                       -         -   ok      0   358        6   0.335   0.117     0.071   0.005
+math500               vote SC-Budget                       -         -   ok      0   358        6   0.648   0.091     0.011   0.007
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: gsm8k
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run EIG-Prob                    False      none   ok   2399  1232       39   0.842   0.034     0.021   0.005
+gsm8k                  run EIG-Prob                    False  balanced   ok   2399  1232       39   0.842   0.035     0.042   0.005
+gsm8k                  run EIG-Prob                     True      none   ok   2399  1232       39   0.838   0.035     0.021   0.005
+gsm8k                  run EIG-Prob                     True  balanced   ok   2399  1232       39   0.837   0.036     0.018   0.003
+gsm8k                  run SC-10                           -         -   ok      0  1232       39   0.776   0.047     0.044   0.013
+gsm8k                  run SC-10-Last                      -         -   ok      0  1232       39   0.572   0.030     0.028   0.005
+gsm8k                  run Sum-Loss                        -         -   ok      0  1232       39   0.858   0.031     0.097   0.007
+gsm8k                  run Mean-Loss                       -         -   ok      0  1232       39   0.834   0.036     0.221   0.024
+gsm8k                  run Sum-Ent                         -         -   ok      0  1232       39   0.862   0.031     0.092   0.008
+gsm8k                  run Mean-Ent                        -         -   ok      0  1232       39   0.842   0.035     0.217   0.021
+gsm8k                  run Mean-Prob                       -         -   ok      0  1232       39   0.831   0.040     0.048   0.004
+gsm8k                  run SC-Budget                       -         -   ok      0  1232       39   0.891   0.024     0.020   0.008
+gsm8k                 vote EIG-Prob                    False      none   ok   2395  1232       36   0.858   0.036     0.021   0.004
+gsm8k                 vote EIG-Prob                    False  balanced   ok   2395  1232       36   0.859   0.037     0.046   0.004
+gsm8k                 vote EIG-Prob                     True      none   ok   2395  1232       36   0.853   0.039     0.020   0.004
+gsm8k                 vote EIG-Prob                     True  balanced   ok   2395  1232       36   0.852   0.040     0.020   0.003
+gsm8k                 vote SC-10                           -         -   ok      0  1232       36   0.776   0.046     0.049   0.012
+gsm8k                 vote SC-10-Last                      -         -   ok      0  1232       36   0.521   0.016     0.026   0.005
+gsm8k                 vote Sum-Loss                        -         -   ok      0  1232       36   0.878   0.031     0.099   0.007
+gsm8k                 vote Mean-Loss                       -         -   ok      0  1232       36   0.857   0.035     0.223   0.025
+gsm8k                 vote Sum-Ent                         -         -   ok      0  1232       36   0.883   0.031     0.094   0.008
+gsm8k                 vote Mean-Ent                        -         -   ok      0  1232       36   0.867   0.033     0.220   0.021
+gsm8k                 vote Mean-Prob                       -         -   ok      0  1232       36   0.854   0.040     0.052   0.004
+gsm8k                 vote SC-Budget                       -         -   ok      0  1232       36   0.882   0.024     0.014   0.007
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: mmlu
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run EIG-Prob                    False      none   ok   3089   542       80   0.839   0.023     0.042   0.009
+mmlu                   run EIG-Prob                    False  balanced   ok   3089   542       80   0.840   0.023     0.359   0.012
+mmlu                   run EIG-Prob                     True      none   ok   3089   542       80   0.825   0.026     0.030   0.008
+mmlu                   run EIG-Prob                     True  balanced   ok   3089   542       80   0.827   0.026     0.350   0.013
+mmlu                   run SC-10                           -         -   ok      0   542       80   0.729   0.025     0.141   0.028
+mmlu                   run SC-10-Last                      -         -   ok      0   542       80   0.534   0.016     0.145   0.013
+mmlu                   run Sum-Loss                        -         -   ok      0   542       80   0.773   0.025     0.067   0.016
+mmlu                   run Mean-Loss                       -         -   ok      0   542       80   0.843   0.022     0.335   0.022
+mmlu                   run Sum-Ent                         -         -   ok      0   542       80   0.774   0.026     0.071   0.013
+mmlu                   run Mean-Ent                        -         -   ok      0   542       80   0.846   0.022     0.331   0.018
+mmlu                   run Mean-Prob                       -         -   ok      0   542       80   0.835   0.024     0.113   0.013
+mmlu                   run SC-Budget                       -         -   ok      0   542       80   0.808   0.024     0.211   0.030
+mmlu                  vote EIG-Prob                    False      none   ok   3085   542       73   0.822   0.022     0.036   0.010
+mmlu                  vote EIG-Prob                    False  balanced   ok   3085   542       73   0.822   0.022     0.373   0.012
+mmlu                  vote EIG-Prob                     True      none   ok   3085   542       73   0.810   0.024     0.031   0.009
+mmlu                  vote EIG-Prob                     True  balanced   ok   3085   542       73   0.811   0.024     0.369   0.013
+mmlu                  vote SC-10                           -         -   ok      0   542       73   0.706   0.027     0.090   0.027
+mmlu                  vote SC-10-Last                      -         -   ok      0   542       73   0.522   0.017     0.132   0.012
+mmlu                  vote Sum-Loss                        -         -   ok      0   542       73   0.760   0.027     0.076   0.015
+mmlu                  vote Mean-Loss                       -         -   ok      0   542       73   0.822   0.023     0.347   0.022
+mmlu                  vote Sum-Ent                         -         -   ok      0   542       73   0.761   0.027     0.080   0.011
+mmlu                  vote Mean-Ent                        -         -   ok      0   542       73   0.825   0.024     0.344   0.019
+mmlu                  vote Mean-Prob                       -         -   ok      0   542       73   0.814   0.025     0.100   0.012
+mmlu                  vote SC-Budget                       -         -   ok      0   542       73   0.796   0.025     0.176   0.028
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: truthfulqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run EIG-Prob                    False      none   ok   2950   681      135   0.724   0.028     0.087   0.013
+truthfulqa             run EIG-Prob                    False  balanced   ok   2950   681      135   0.721   0.028     0.483   0.015
+truthfulqa             run EIG-Prob                     True      none   ok   2950   681      135   0.703   0.027     0.079   0.014
+truthfulqa             run EIG-Prob                     True  balanced   ok   2950   681      135   0.698   0.027     0.478   0.015
+truthfulqa             run SC-10                           -         -   ok      0   681      135   0.729   0.025     0.178   0.025
+truthfulqa             run SC-10-Last                      -         -   ok      0   681      135   0.559   0.013     0.191   0.016
+truthfulqa             run Sum-Loss                        -         -   ok      0   681      135   0.777   0.021     0.039   0.010
+truthfulqa             run Mean-Loss                       -         -   ok      0   681      135   0.731   0.026     0.355   0.021
+truthfulqa             run Sum-Ent                         -         -   ok      0   681      135   0.776   0.021     0.038   0.011
+truthfulqa             run Mean-Ent                        -         -   ok      0   681      135   0.731   0.026     0.356   0.019
+truthfulqa             run Mean-Prob                       -         -   ok      0   681      135   0.706   0.026     0.104   0.014
+truthfulqa             run SC-Budget                       -         -   ok      0   681      135   0.800   0.022     0.207   0.024
+truthfulqa            vote EIG-Prob                    False      none   ok   2946   681      123   0.708   0.030     0.073   0.011
+truthfulqa            vote EIG-Prob                    False  balanced   ok   2946   681      123   0.704   0.030     0.500   0.015
+truthfulqa            vote EIG-Prob                     True      none   ok   2946   681      123   0.682   0.030     0.077   0.012
+truthfulqa            vote EIG-Prob                     True  balanced   ok   2946   681      123   0.678   0.030     0.496   0.015
+truthfulqa            vote SC-10                           -         -   ok      0   681      123   0.711   0.027     0.141   0.025
+truthfulqa            vote SC-10-Last                      -         -   ok      0   681      123   0.541   0.013     0.174   0.016
+truthfulqa            vote Sum-Loss                        -         -   ok      0   681      123   0.763   0.022     0.043   0.010
+truthfulqa            vote Mean-Loss                       -         -   ok      0   681      123   0.719   0.026     0.373   0.022
+truthfulqa            vote Sum-Ent                         -         -   ok      0   681      123   0.762   0.022     0.041   0.011
+truthfulqa            vote Mean-Ent                        -         -   ok      0   681      123   0.724   0.027     0.374   0.018
+truthfulqa            vote Mean-Prob                       -         -   ok      0   681      123   0.700   0.027     0.090   0.014
+truthfulqa            vote SC-Budget                       -         -   ok      0   681      123   0.780   0.023     0.165   0.025
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run EIG-Prob                    False      none   ok   3119   512      123   0.815   0.020     0.075   0.013
+mmlu_pro               run EIG-Prob                    False  balanced   ok   3119   512      123   0.811   0.021     0.335   0.016
+mmlu_pro               run EIG-Prob                     True      none   ok   3119   512      123   0.800   0.022     0.056   0.017
+mmlu_pro               run EIG-Prob                     True  balanced   ok   3119   512      123   0.797   0.021     0.337   0.017
+mmlu_pro               run SC-10                           -         -   ok      0   512      123   0.735   0.026     0.195   0.034
+mmlu_pro               run SC-10-Last                      -         -   ok      0   512      123   0.545   0.015     0.233   0.019
+mmlu_pro               run Sum-Loss                        -         -   ok      0   512      123   0.667   0.027     0.093   0.014
+mmlu_pro               run Mean-Loss                       -         -   ok      0   512      123   0.824   0.018     0.314   0.018
+mmlu_pro               run Sum-Ent                         -         -   ok      0   512      123   0.666   0.027     0.104   0.017
+mmlu_pro               run Mean-Ent                        -         -   ok      0   512      123   0.822   0.019     0.309   0.020
+mmlu_pro               run Mean-Prob                       -         -   ok      0   512      123   0.815   0.018     0.149   0.015
+mmlu_pro               run SC-Budget                       -         -   ok      0   512      123   0.819   0.025     0.261   0.031
+mmlu_pro              vote EIG-Prob                    False      none   ok   3115   512      117   0.807   0.020     0.074   0.015
+mmlu_pro              vote EIG-Prob                    False  balanced   ok   3115   512      117   0.806   0.020     0.343   0.017
+mmlu_pro              vote EIG-Prob                     True      none   ok   3115   512      117   0.802   0.021     0.066   0.016
+mmlu_pro              vote EIG-Prob                     True  balanced   ok   3115   512      117   0.798   0.021     0.344   0.017
+mmlu_pro              vote SC-10                           -         -   ok      0   512      117   0.726   0.025     0.170   0.029
+mmlu_pro              vote SC-10-Last                      -         -   ok      0   512      117   0.548   0.013     0.222   0.019
+mmlu_pro              vote Sum-Loss                        -         -   ok      0   512      117   0.689   0.025     0.091   0.016
+mmlu_pro              vote Mean-Loss                       -         -   ok      0   512      117   0.807   0.018     0.325   0.018
+mmlu_pro              vote Sum-Ent                         -         -   ok      0   512      117   0.689   0.025     0.101   0.015
+mmlu_pro              vote Mean-Ent                        -         -   ok      0   512      117   0.808   0.018     0.321   0.020
+mmlu_pro              vote Mean-Prob                       -         -   ok      0   512      117   0.790   0.018     0.133   0.015
+mmlu_pro              vote SC-Budget                       -         -   ok      0   512      117   0.807   0.023     0.238   0.029
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+aime                   run EIG-Prob                    False      none   ok   3490   141        7   0.849   0.045     0.051   0.017
+aime                   run EIG-Prob                    False  balanced   ok   3490   141        7   0.860   0.044     0.116   0.014
+aime                   run EIG-Prob                     True      none   ok   3490   141        7   0.834   0.051     0.047   0.017
+aime                   run EIG-Prob                     True  balanced   ok   3490   141        7   0.865   0.044     0.108   0.013
+aime                   run SC-10                           -         -   ok      0   138        6   0.794   0.105     0.198   0.034
+aime                   run SC-10-Last                      -         -   ok      0   141        7   0.555   0.069     0.043   0.019
+aime                   run Sum-Loss                        -         -   ok      0   141        7   0.762   0.094     0.321   0.048
+aime                   run Mean-Loss                       -         -   ok      0   141        7   0.834   0.050     0.355   0.037
+aime                   run Sum-Ent                         -         -   ok      0   141        7   0.749   0.094     0.304   0.055
+aime                   run Mean-Ent                        -         -   ok      0   141        7   0.816   0.056     0.330   0.044
+aime                   run Mean-Prob                       -         -   ok      0   141        7   0.802   0.057     0.059   0.012
+aime                   run SC-Budget                       -         -   ok      0   141        7   0.680   0.147     0.021   0.023
+aime                  vote EIG-Prob                    False      none   ok   3489   138        3   0.896   0.044     0.032   0.009
+aime                  vote EIG-Prob                    False  balanced   ok   3489   138        3   0.889   0.043     0.147   0.011
+aime                  vote EIG-Prob                     True      none   ok   3489   138        3   0.847   0.059     0.020   0.009
+aime                  vote EIG-Prob                     True  balanced   ok   3489   138        3   0.857   0.056     0.134   0.012
+aime                  vote SC-10                           -         -   ok      0   138        3   0.700   0.186     0.238   0.036
+aime                  vote SC-10-Last                      -         -   ok      0   138        3   0.481   0.008     0.017   0.012
+aime                  vote Sum-Loss                        -         -   ok      0   138        3   0.731   0.126     0.343   0.046
+aime                  vote Mean-Loss                       -         -   ok      0   138        3   0.867   0.057     0.381   0.037
+aime                  vote Sum-Ent                         -         -   ok      0   138        3   0.726   0.133     0.327   0.052
+aime                  vote Mean-Ent                        -         -   ok      0   138        3   0.879   0.056     0.357   0.044
+aime                  vote Mean-Prob                       -         -   ok      0   138        3   0.867   0.057     0.067   0.008
+aime                  vote SC-Budget                       -         -   ok      0   138        3   0.528   0.180     0.033   0.014
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+averaged over every held out dataset:
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run   EIG-Prob       False     balanced    0.749       0.022 0.240   0.006
+   run   EIG-Prob       False         none    0.747       0.022 0.074   0.006
+   run   EIG-Prob        True     balanced    0.754       0.021 0.231   0.006
+   run   EIG-Prob        True         none    0.753       0.020 0.067   0.006
+   run   Mean-Ent           -            -    0.743       0.022 0.285   0.010
+   run  Mean-Loss           -            -    0.738       0.021 0.296   0.010
+   run  Mean-Prob           -            -    0.725       0.023 0.111   0.006
+   run      SC-10           -            -    0.737       0.023 0.155   0.011
+   run SC-10-Last           -            -    0.542       0.012 0.146   0.007
+   run  SC-Budget           -            -    0.782       0.027 0.142   0.010
+   run    Sum-Ent           -            -    0.734       0.022 0.134   0.010
+   run   Sum-Loss           -            -    0.732       0.022 0.135   0.009
+  vote   EIG-Prob       False     balanced    0.725       0.021 0.253   0.006
+  vote   EIG-Prob       False         none    0.727       0.021 0.064   0.006
+  vote   EIG-Prob        True     balanced    0.722       0.022 0.242   0.007
+  vote   EIG-Prob        True         none    0.726       0.021 0.059   0.006
+  vote   Mean-Ent           -            -    0.731       0.021 0.304   0.011
+  vote  Mean-Loss           -            -    0.721       0.021 0.311   0.010
+  vote  Mean-Prob           -            -    0.712       0.021 0.101   0.006
+  vote      SC-10           -            -    0.706       0.033 0.139   0.011
+  vote SC-10-Last           -            -    0.517       0.005 0.129   0.007
+  vote  SC-Budget           -            -    0.740       0.030 0.119   0.009
+  vote    Sum-Ent           -            -    0.729       0.028 0.142   0.010
+  vote   Sum-Loss           -            -    0.726       0.027 0.145   0.009
+
+
+averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, gsm8k, mmlu, truthfulqa, mmlu_pro):
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run   EIG-Prob       False     balanced    0.785       0.013 0.284   0.007
+   run   EIG-Prob       False         none    0.786       0.013 0.089   0.008
+   run   EIG-Prob        True     balanced    0.776       0.014 0.275   0.008
+   run   EIG-Prob        True         none    0.781       0.014 0.079   0.008
+   run   Mean-Ent           -            -    0.791       0.013 0.273   0.010
+   run  Mean-Loss           -            -    0.784       0.013 0.280   0.010
+   run  Mean-Prob           -            -    0.770       0.014 0.131   0.008
+   run      SC-10           -            -    0.740       0.015 0.161   0.014
+   run SC-10-Last           -            -    0.548       0.009 0.192   0.009
+   run  SC-Budget           -            -    0.819       0.012 0.192   0.013
+   run    Sum-Ent           -            -    0.761       0.013 0.077   0.007
+   run   Sum-Loss           -            -    0.759       0.013 0.073   0.008
+  vote   EIG-Prob       False     balanced    0.768       0.014 0.295   0.008
+  vote   EIG-Prob       False         none    0.769       0.014 0.077   0.008
+  vote   EIG-Prob        True     balanced    0.757       0.015 0.285   0.009
+  vote   EIG-Prob        True         none    0.762       0.015 0.074   0.008
+  vote   Mean-Ent           -            -    0.780       0.014 0.293   0.011
+  vote  Mean-Loss           -            -    0.770       0.014 0.296   0.011
+  vote  Mean-Prob           -            -    0.756       0.015 0.114   0.008
+  vote      SC-10           -            -    0.725       0.016 0.130   0.013
+  vote SC-10-Last           -            -    0.528       0.007 0.174   0.009
+  vote  SC-Budget           -            -    0.801       0.013 0.157   0.013
+  vote    Sum-Ent           -            -    0.764       0.013 0.084   0.007
+  vote   Sum-Loss           -            -    0.762       0.013 0.083   0.008
+
+
+held out as a domain: multiple choice knowledge
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: mmlu,mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run EIG-Prob                    False      none   ok   2577  1054      203   0.829   0.013     0.055   0.010
+mmlu,mmlu_pro          run EIG-Prob                    False  balanced   ok   2577  1054      203   0.827   0.013     0.379   0.011
+mmlu,mmlu_pro          run EIG-Prob                     True      none   ok   2577  1054      203   0.810   0.013     0.020   0.008
+mmlu,mmlu_pro          run EIG-Prob                     True  balanced   ok   2577  1054      203   0.807   0.014     0.375   0.011
+mmlu,mmlu_pro          run SC-10                           -         -   ok      0  1054      203   0.738   0.018     0.195   0.022
+mmlu,mmlu_pro          run SC-10-Last                      -         -   ok      0  1054      203   0.542   0.010     0.188   0.012
+mmlu,mmlu_pro          run Sum-Loss                        -         -   ok      0  1054      203   0.729   0.015     0.068   0.012
+mmlu,mmlu_pro          run Mean-Loss                       -         -   ok      0  1054      203   0.837   0.014     0.340   0.013
+mmlu,mmlu_pro          run Sum-Ent                         -         -   ok      0  1054      203   0.729   0.015     0.065   0.012
+mmlu,mmlu_pro          run Mean-Ent                        -         -   ok      0  1054      203   0.837   0.014     0.333   0.015
+mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0  1054      203   0.827   0.014     0.120   0.011
+mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0  1054      203   0.820   0.015     0.248   0.023
+mmlu,mmlu_pro         vote EIG-Prob                    False      none   ok   2573  1054      190   0.816   0.013     0.049   0.010
+mmlu,mmlu_pro         vote EIG-Prob                    False  balanced   ok   2573  1054      190   0.816   0.014     0.394   0.010
+mmlu,mmlu_pro         vote EIG-Prob                     True      none   ok   2573  1054      190   0.805   0.013     0.029   0.009
+mmlu,mmlu_pro         vote EIG-Prob                     True  balanced   ok   2573  1054      190   0.802   0.014     0.392   0.010
+mmlu,mmlu_pro         vote SC-10                           -         -   ok      0  1054      190   0.723   0.020     0.163   0.021
+mmlu,mmlu_pro         vote SC-10-Last                      -         -   ok      0  1054      190   0.538   0.008     0.176   0.010
+mmlu,mmlu_pro         vote Sum-Loss                        -         -   ok      0  1054      190   0.734   0.016     0.057   0.012
+mmlu,mmlu_pro         vote Mean-Loss                       -         -   ok      0  1054      190   0.818   0.015     0.353   0.013
+mmlu,mmlu_pro         vote Sum-Ent                         -         -   ok      0  1054      190   0.734   0.016     0.058   0.011
+mmlu,mmlu_pro         vote Mean-Ent                        -         -   ok      0  1054      190   0.820   0.015     0.346   0.014
+mmlu,mmlu_pro         vote Mean-Prob                       -         -   ok      0  1054      190   0.804   0.016     0.103   0.009
+mmlu,mmlu_pro         vote SC-Budget                       -         -   ok      0  1054      190   0.809   0.017     0.221   0.019
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+held out as a domain: mathematics
+
+===================================================================================================================================
+== ablation, features: EIG-Prob, held out: gsm8k,math500,aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run EIG-Prob                    False      none   ok   1899  1732       53   0.795   0.038     0.017   0.004
+gsm8k,math500,aime     run EIG-Prob                    False  balanced   ok   1899  1732       53   0.795   0.038     0.036   0.004
+gsm8k,math500,aime     run EIG-Prob                     True      none   ok   1899  1732       53   0.794   0.038     0.019   0.004
+gsm8k,math500,aime     run EIG-Prob                     True  balanced   ok   1899  1732       53   0.793   0.038     0.010   0.003
+gsm8k,math500,aime     run SC-10                           -         -   ok      0  1728       52   0.763   0.047     0.071   0.009
+gsm8k,math500,aime     run SC-10-Last                      -         -   ok      0  1732       53   0.561   0.021     0.027   0.005
+gsm8k,math500,aime     run Sum-Loss                        -         -   ok      0  1732       53   0.782   0.034     0.108   0.014
+gsm8k,math500,aime     run Mean-Loss                       -         -   ok      0  1732       53   0.784   0.039     0.255   0.025
+gsm8k,math500,aime     run Sum-Ent                         -         -   ok      0  1732       53   0.786   0.034     0.106   0.016
+gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0  1732       53   0.791   0.038     0.253   0.016
+gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0  1732       53   0.778   0.039     0.048   0.004
+gsm8k,math500,aime     run SC-Budget                       -         -   ok      0  1732       53   0.840   0.033     0.019   0.007
+gsm8k,math500,aime    vote EIG-Prob                    False      none   ok   1899  1728       45   0.799   0.032     0.016   0.003
+gsm8k,math500,aime    vote EIG-Prob                    False  balanced   ok   1899  1728       45   0.798   0.032     0.053   0.003
+gsm8k,math500,aime    vote EIG-Prob                     True      none   ok   1899  1728       45   0.793   0.035     0.014   0.003
+gsm8k,math500,aime    vote EIG-Prob                     True  balanced   ok   1899  1728       45   0.793   0.035     0.018   0.003
+gsm8k,math500,aime    vote SC-10                           -         -   ok      0  1728       45   0.745   0.050     0.081   0.008
+gsm8k,math500,aime    vote SC-10-Last                      -         -   ok      0  1728       45   0.516   0.014     0.023   0.004
+gsm8k,math500,aime    vote Sum-Loss                        -         -   ok      0  1728       45   0.782   0.027     0.111   0.013
+gsm8k,math500,aime    vote Mean-Loss                       -         -   ok      0  1728       45   0.796   0.032     0.259   0.024
+gsm8k,math500,aime    vote Sum-Ent                         -         -   ok      0  1728       45   0.787   0.026     0.109   0.015
+gsm8k,math500,aime    vote Mean-Ent                        -         -   ok      0  1728       45   0.807   0.031     0.257   0.017
+gsm8k,math500,aime    vote Mean-Prob                       -         -   ok      0  1728       45   0.795   0.034     0.053   0.003
+gsm8k,math500,aime    vote SC-Budget                       -         -   ok      0  1728       45   0.828   0.038     0.011   0.006
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+MAIN AVERAGE, over these 4 held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the domains held out together,
+and only groups carrying at least 30 of the rarer class
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run   EIG-Prob       False     balanced    0.763       0.015 0.275   0.008
+   run   EIG-Prob       False         none    0.765       0.015 0.094   0.009
+   run   EIG-Prob        True     balanced    0.755       0.016 0.264   0.009
+   run   EIG-Prob        True         none    0.762       0.016 0.082   0.009
+   run   Mean-Ent           -            -    0.768       0.015 0.274   0.011
+   run  Mean-Loss           -            -    0.759       0.016 0.281   0.011
+   run  Mean-Prob           -            -    0.743       0.016 0.128   0.010
+   run      SC-10           -            -    0.740       0.017 0.173   0.014
+   run SC-10-Last           -            -    0.547       0.008 0.192   0.010
+   run  SC-Budget           -            -    0.809       0.014 0.184   0.013
+   run    Sum-Ent           -            -    0.754       0.014 0.072   0.009
+   run   Sum-Loss           -            -    0.752       0.014 0.071   0.009
+  vote   EIG-Prob       False     balanced    0.741       0.016 0.290   0.009
+  vote   EIG-Prob       False         none    0.743       0.016 0.080   0.009
+  vote   EIG-Prob        True     balanced    0.729       0.017 0.276   0.010
+  vote   EIG-Prob        True         none    0.735       0.016 0.074   0.009
+  vote   Mean-Ent           -            -    0.756       0.015 0.296   0.012
+  vote  Mean-Loss           -            -    0.744       0.016 0.299   0.011
+  vote  Mean-Prob           -            -    0.731       0.016 0.111   0.010
+  vote      SC-10           -            -    0.721       0.019 0.145   0.014
+  vote SC-10-Last           -            -    0.525       0.007 0.173   0.011
+  vote  SC-Budget           -            -    0.789       0.016 0.147   0.013
+  vote    Sum-Ent           -            -    0.752       0.014 0.078   0.009
+  vote   Sum-Loss           -            -    0.750       0.014 0.079   0.009

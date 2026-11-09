@@ -59,7 +59,7 @@ class diffusion_decision_model_training:
 
     # Which numbers describe a sample, named as in the paper.  Widths with twenty
     # evidence steps:
-    #   CoT-EIG 80 (all of ours), EIG-SC 20 (agreement only), EIG-Prob 40 (token
+    #   CoT-EIG 80 (all of ours), EIG-SC 40 (agreement and its change), EIG-Prob 40 (token
     #   probability only), CoT_Len 20 (rollout length), Logit_Feat 5 (the published
     #   logit scores), LastRep 4096 (the last layer's representation)
     #
@@ -235,7 +235,7 @@ class diffusion_decision_model_training:
             self.FULL: ['self_consistency', 'delta_self_consistency', 'probability', 'probability_ratio'],
             self.ROLLOUT_LENGTH: ['length'],
             self.EVIDENCE_PROBABILITY: ['probability', 'probability_ratio'],
-            self.SELF_CONSISTENCY: ['self_consistency'],
+            self.SELF_CONSISTENCY: ['self_consistency', 'delta_self_consistency'],
             }
         if feature_set not in wanted:
             raise Exception(f'unknown feature set {feature_set}')

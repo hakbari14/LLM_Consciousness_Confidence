@@ -20,7 +20,7 @@ import warnings
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 
-from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training
+from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training, RUN_NUMBER
 
 OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_adhoc/kfold_within_benchmark'
 FOLDS = 5
@@ -56,10 +56,10 @@ def cross_validate(trainer, features: dict, y, baselines, seed: int):
 
 
 def report(trainer, dataset: str) -> str:
-    # CoT-EIG, then its two halves: the agreement alone and the token probability alone.
+    # CoT-EIG, then its two halves: the agreement and its change, and the token probability alone.
     features = {}
     for feature_set in (trainer.FULL, trainer.SELF_CONSISTENCY, trainer.EVIDENCE_PROBABILITY):
-        features[feature_set], y, baselines = trainer.build_matrix([dataset], 1, 2, feature_set=feature_set)
+        features[feature_set], y, baselines = trainer.build_matrix([dataset], RUN_NUMBER, RUN_NUMBER + 1, feature_set=feature_set)
 
     seeds = trainer.SEEDS
     runs = [cross_validate(trainer, features, y, baselines, seed) for seed in seeds]
@@ -67,7 +67,7 @@ def report(trainer, dataset: str) -> str:
 
     # The trainer leaves out a response stopped by the token limit: its answer was
     # never finished, so its grade says nothing about the model.
-    logs = [log for log in trainer.load_logs(dataset, 1) if len(log.evidence_list) == trainer.number_of_evidence]
+    logs = [log for log in trainer.load_logs(dataset, RUN_NUMBER) if len(log.evidence_list) == trainer.number_of_evidence]
     cut_off = sum(trainer.is_cut_off(log) for log in logs)
 
     wrong = int(np.sum(y == 0))
@@ -79,7 +79,7 @@ def report(trainer, dataset: str) -> str:
              'regression: unscaled features, no class weight, as in the paper\'s tables',
              'pooled: the five folds\' predictions put together and measured once',
              'CoT-EIG: each evidence\'s agreement, the change in agreement, its mean token probability, and that',
-             'mean over the whole completion\'s.  EIG-SC: the agreement alone.  EIG-Prob: the two probability ones alone.']
+             'mean over the whole completion\'s.  EIG-SC: the agreement and its change.  EIG-Prob: the two probability ones alone.']
 
     # The folds drawn with the first seed, one column per fold.
     per_fold, pooled = runs[0]
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     for model in models:
         for evidence_count in evidence_counts:
             trainer = diffusion_decision_model_training(evidence_count, model)
-            if not os.path.exists(trainer.log_file_name(dataset, 1)):
+            if not os.path.exists(trainer.log_file_name(dataset, RUN_NUMBER)):
                 print(f'no log for {model}, {dataset}, nv {evidence_count}', file=sys.stderr)
                 continue
 

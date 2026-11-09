@@ -1,0 +1,415 @@
+
+self consistency confidence, every dataset pooled, nothing held out
+-----------------------------------------------------------------------------------------------------------------------------------
+Accuracy : 0.8836
+ROC : 0.7361
+ECE : 0.0706
+Accuracy Completion : 0.8735
+ROC Completion : 0.5943
+ECE Completion : 0.1115
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: random split
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+random split           run CoT_Len                     False      none   ok   2895   724       92   0.690   0.025     0.058   0.006
+random split           run CoT_Len                     False  balanced   ok   2895   724       92   0.693   0.025     0.354   0.004
+random split           run CoT_Len                      True      none   ok   2895   724       92   0.690   0.025     0.058   0.007
+random split           run CoT_Len                      True  balanced   ok   2895   724       92   0.693   0.025     0.354   0.004
+random split           run SC-10                           -         -   ok      0   723       92   0.788   0.028     0.117   0.029
+random split           run SC-10-Last                      -         -   ok      0   724       92   0.616   0.024     0.114   0.012
+random split           run Sum-Loss                        -         -   ok      0   724       92   0.866   0.018     0.036   0.010
+random split           run Mean-Loss                       -         -   ok      0   724       92   0.863   0.018     0.285   0.017
+random split           run Sum-Ent                         -         -   ok      0   724       92   0.866   0.018     0.039   0.010
+random split           run Mean-Ent                        -         -   ok      0   724       92   0.868   0.018     0.276   0.015
+random split           run Mean-Prob                       -         -   ok      0   724       92   0.840   0.020     0.073   0.009
+random split           run SC-Budget                       -         -   ok      0   724       92   0.830   0.028     0.163   0.020
+random split          vote CoT_Len                     False      none   ok   2893   724       84   0.674   0.016     0.051   0.010
+random split          vote CoT_Len                     False  balanced   ok   2893   724       84   0.677   0.015     0.367   0.003
+random split          vote CoT_Len                      True      none   ok   2893   724       84   0.675   0.015     0.052   0.010
+random split          vote CoT_Len                      True  balanced   ok   2893   724       84   0.678   0.015     0.367   0.003
+random split          vote SC-10                           -         -   ok      0   724       84   0.718   0.033     0.068   0.027
+random split          vote SC-10-Last                      -         -   ok      0   724       84   0.572   0.022     0.099   0.012
+random split          vote Sum-Loss                        -         -   ok      0   724       84   0.802   0.024     0.038   0.008
+random split          vote Mean-Loss                       -         -   ok      0   724       84   0.838   0.020     0.300   0.014
+random split          vote Sum-Ent                         -         -   ok      0   724       84   0.803   0.024     0.039   0.009
+random split          vote Mean-Ent                        -         -   ok      0   724       84   0.843   0.019     0.287   0.016
+random split          vote Mean-Prob                       -         -   ok      0   724       84   0.823   0.020     0.066   0.010
+random split          vote SC-Budget                       -         -   ok      0   724       84   0.766   0.030     0.099   0.022
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: gpqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gpqa                   run CoT_Len                     False      none   ok   3450   169       63   0.647   0.045     0.162   0.029
+gpqa                   run CoT_Len                     False  balanced   ok   3450   169       63   0.650   0.045     0.338   0.034
+gpqa                   run CoT_Len                      True      none   ok   3450   169       63   0.647   0.045     0.162   0.032
+gpqa                   run CoT_Len                      True  balanced   ok   3450   169       63   0.651   0.045     0.337   0.034
+gpqa                   run SC-10                           -         -   ok      0   169       63   0.756   0.038     0.249   0.038
+gpqa                   run SC-10-Last                      -         -   ok      0   169       63   0.626   0.034     0.402   0.076
+gpqa                   run Sum-Loss                        -         -   ok      0   169       63   0.740   0.039     0.087   0.030
+gpqa                   run Mean-Loss                       -         -   ok      0   169       63   0.684   0.041     0.165   0.033
+gpqa                   run Sum-Ent                         -         -   ok      0   169       63   0.746   0.039     0.080   0.031
+gpqa                   run Mean-Ent                        -         -   ok      0   169       63   0.704   0.043     0.186   0.034
+gpqa                   run Mean-Prob                       -         -   ok      0   169       63   0.649   0.042     0.240   0.031
+gpqa                   run SC-Budget                       -         -   ok      0   169       63   0.766   0.031     0.250   0.040
+gpqa                  vote CoT_Len                     False      none   ok   3448   169       55   0.638   0.041     0.131   0.025
+gpqa                  vote CoT_Len                     False  balanced   ok   3448   169       55   0.636   0.041     0.383   0.028
+gpqa                  vote CoT_Len                      True      none   ok   3448   169       55   0.638   0.041     0.131   0.025
+gpqa                  vote CoT_Len                      True  balanced   ok   3448   169       55   0.636   0.041     0.382   0.028
+gpqa                  vote SC-10                           -         -   ok      0   169       55   0.688   0.045     0.173   0.034
+gpqa                  vote SC-10-Last                      -         -   ok      0   169       55   0.565   0.037     0.246   0.051
+gpqa                  vote Sum-Loss                        -         -   ok      0   169       55   0.712   0.038     0.134   0.029
+gpqa                  vote Mean-Loss                       -         -   ok      0   169       55   0.668   0.045     0.212   0.030
+gpqa                  vote Sum-Ent                         -         -   ok      0   169       55   0.717   0.037     0.128   0.029
+gpqa                  vote Mean-Ent                        -         -   ok      0   169       55   0.689   0.045     0.219   0.031
+gpqa                  vote Mean-Prob                       -         -   ok      0   169       55   0.639   0.044     0.193   0.028
+gpqa                  vote SC-Budget                       -         -   ok      0   169       55   0.730   0.041     0.183   0.038
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: math500
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+math500                run CoT_Len                     False      none   ok   3262   357        5   0.555   0.111     0.148   0.006
+math500                run CoT_Len                     False  balanced   ok   3262   357        5   0.552   0.107     0.532   0.007
+math500                run CoT_Len                      True      none   ok   3262   357        5   0.556   0.111     0.148   0.006
+math500                run CoT_Len                      True  balanced   ok   3262   357        5   0.552   0.107     0.532   0.007
+math500                run SC-10                           -         -   ok      0   357        5   0.626   0.114     0.118   0.034
+math500                run SC-10-Last                      -         -   ok      0   357        5   0.496   0.002     0.011   0.006
+math500                run Sum-Loss                        -         -   ok      0   357        5   0.443   0.156     0.247   0.024
+math500                run Mean-Loss                       -         -   ok      0   357        5   0.279   0.157     0.315   0.038
+math500                run Sum-Ent                         -         -   ok      0   357        5   0.455   0.156     0.255   0.025
+math500                run Mean-Ent                        -         -   ok      0   357        5   0.304   0.160     0.321   0.034
+math500                run Mean-Prob                       -         -   ok      0   357        5   0.299   0.160     0.073   0.005
+math500                run SC-Budget                       -         -   ok      0   357        5   0.686   0.111     0.006   0.006
+math500               vote CoT_Len                     False      none   ok   3260   357        5   0.570   0.111     0.134   0.006
+math500               vote CoT_Len                     False  balanced   ok   3260   357        5   0.554   0.110     0.530   0.007
+math500               vote CoT_Len                      True      none   ok   3260   357        5   0.569   0.112     0.134   0.006
+math500               vote CoT_Len                      True  balanced   ok   3260   357        5   0.555   0.110     0.530   0.007
+math500               vote SC-10                           -         -   ok      0   357        5   0.626   0.114     0.118   0.034
+math500               vote SC-10-Last                      -         -   ok      0   357        5   0.496   0.002     0.011   0.006
+math500               vote Sum-Loss                        -         -   ok      0   357        5   0.443   0.156     0.247   0.024
+math500               vote Mean-Loss                       -         -   ok      0   357        5   0.279   0.157     0.315   0.038
+math500               vote Sum-Ent                         -         -   ok      0   357        5   0.455   0.156     0.255   0.025
+math500               vote Mean-Ent                        -         -   ok      0   357        5   0.304   0.160     0.321   0.034
+math500               vote Mean-Prob                       -         -   ok      0   357        5   0.299   0.160     0.073   0.005
+math500               vote SC-Budget                       -         -   ok      0   357        5   0.686   0.111     0.006   0.006
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: gsm8k
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k                  run CoT_Len                     False      none   ok   2394  1225       42   0.858   0.029     0.124   0.004
+gsm8k                  run CoT_Len                     False  balanced   ok   2394  1225       42   0.851   0.029     0.434   0.005
+gsm8k                  run CoT_Len                      True      none   ok   2394  1225       42   0.859   0.029     0.124   0.004
+gsm8k                  run CoT_Len                      True  balanced   ok   2394  1225       42   0.852   0.029     0.434   0.005
+gsm8k                  run SC-10                           -         -   ok      0  1225       42   0.746   0.044     0.038   0.011
+gsm8k                  run SC-10-Last                      -         -   ok      0  1225       42   0.583   0.031     0.023   0.005
+gsm8k                  run Sum-Loss                        -         -   ok      0  1225       42   0.875   0.020     0.093   0.006
+gsm8k                  run Mean-Loss                       -         -   ok      0  1225       42   0.861   0.020     0.255   0.008
+gsm8k                  run Sum-Ent                         -         -   ok      0  1225       42   0.878   0.020     0.089   0.006
+gsm8k                  run Mean-Ent                        -         -   ok      0  1225       42   0.871   0.019     0.254   0.006
+gsm8k                  run Mean-Prob                       -         -   ok      0  1225       42   0.861   0.021     0.051   0.004
+gsm8k                  run SC-Budget                       -         -   ok      0  1225       42   0.808   0.039     0.026   0.011
+gsm8k                 vote CoT_Len                     False      none   ok   2392  1225       36   0.871   0.029     0.118   0.004
+gsm8k                 vote CoT_Len                     False  balanced   ok   2392  1225       36   0.849   0.031     0.443   0.004
+gsm8k                 vote CoT_Len                      True      none   ok   2392  1225       36   0.875   0.029     0.118   0.004
+gsm8k                 vote CoT_Len                      True  balanced   ok   2392  1225       36   0.852   0.030     0.443   0.004
+gsm8k                 vote SC-10                           -         -   ok      0  1225       36   0.727   0.047     0.051   0.010
+gsm8k                 vote SC-10-Last                      -         -   ok      0  1225       36   0.588   0.033     0.018   0.005
+gsm8k                 vote Sum-Loss                        -         -   ok      0  1225       36   0.867   0.024     0.098   0.006
+gsm8k                 vote Mean-Loss                       -         -   ok      0  1225       36   0.861   0.020     0.260   0.008
+gsm8k                 vote Sum-Ent                         -         -   ok      0  1225       36   0.871   0.024     0.093   0.006
+gsm8k                 vote Mean-Ent                        -         -   ok      0  1225       36   0.873   0.020     0.259   0.006
+gsm8k                 vote Mean-Prob                       -         -   ok      0  1225       36   0.868   0.021     0.054   0.004
+gsm8k                 vote SC-Budget                       -         -   ok      0  1225       36   0.797   0.043     0.017   0.008
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: mmlu
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu                   run CoT_Len                     False      none   ok   3074   545       81   0.689   0.027     0.078   0.012
+mmlu                   run CoT_Len                     False  balanced   ok   3074   545       81   0.692   0.027     0.278   0.015
+mmlu                   run CoT_Len                      True      none   ok   3074   545       81   0.696   0.026     0.085   0.013
+mmlu                   run CoT_Len                      True  balanced   ok   3074   545       81   0.695   0.026     0.279   0.015
+mmlu                   run SC-10                           -         -   ok      0   545       81   0.752   0.032     0.135   0.034
+mmlu                   run SC-10-Last                      -         -   ok      0   545       81   0.541   0.015     0.139   0.015
+mmlu                   run Sum-Loss                        -         -   ok      0   545       81   0.762   0.024     0.069   0.014
+mmlu                   run Mean-Loss                       -         -   ok      0   545       81   0.810   0.022     0.307   0.022
+mmlu                   run Sum-Ent                         -         -   ok      0   545       81   0.762   0.024     0.069   0.016
+mmlu                   run Mean-Ent                        -         -   ok      0   545       81   0.813   0.021     0.297   0.021
+mmlu                   run Mean-Prob                       -         -   ok      0   545       81   0.795   0.022     0.087   0.011
+mmlu                   run SC-Budget                       -         -   ok      0   545       81   0.780   0.030     0.175   0.039
+mmlu                  vote CoT_Len                     False      none   ok   3072   545       78   0.687   0.032     0.081   0.012
+mmlu                  vote CoT_Len                     False  balanced   ok   3072   545       78   0.687   0.032     0.288   0.014
+mmlu                  vote CoT_Len                      True      none   ok   3072   545       78   0.697   0.030     0.080   0.011
+mmlu                  vote CoT_Len                      True  balanced   ok   3072   545       78   0.693   0.031     0.289   0.013
+mmlu                  vote SC-10                           -         -   ok      0   545       78   0.729   0.035     0.107   0.031
+mmlu                  vote SC-10-Last                      -         -   ok      0   545       78   0.536   0.020     0.134   0.013
+mmlu                  vote Sum-Loss                        -         -   ok      0   545       78   0.762   0.028     0.067   0.015
+mmlu                  vote Mean-Loss                       -         -   ok      0   545       78   0.808   0.023     0.313   0.021
+mmlu                  vote Sum-Ent                         -         -   ok      0   545       78   0.762   0.027     0.069   0.017
+mmlu                  vote Mean-Ent                        -         -   ok      0   545       78   0.810   0.022     0.303   0.020
+mmlu                  vote Mean-Prob                       -         -   ok      0   545       78   0.792   0.023     0.082   0.010
+mmlu                  vote SC-Budget                       -         -   ok      0   545       78   0.769   0.033     0.172   0.034
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: truthfulqa
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+truthfulqa             run CoT_Len                     False      none   ok   2935   684      138   0.827   0.015     0.156   0.013
+truthfulqa             run CoT_Len                     False  balanced   ok   2935   684      138   0.824   0.016     0.218   0.014
+truthfulqa             run CoT_Len                      True      none   ok   2935   684      138   0.828   0.015     0.156   0.013
+truthfulqa             run CoT_Len                      True  balanced   ok   2935   684      138   0.824   0.016     0.221   0.015
+truthfulqa             run SC-10                           -         -   ok      0   684      138   0.764   0.022     0.207   0.025
+truthfulqa             run SC-10-Last                      -         -   ok      0   684      138   0.605   0.020     0.181   0.036
+truthfulqa             run Sum-Loss                        -         -   ok      0   684      138   0.808   0.017     0.038   0.011
+truthfulqa             run Mean-Loss                       -         -   ok      0   684      138   0.774   0.020     0.364   0.019
+truthfulqa             run Sum-Ent                         -         -   ok      0   684      138   0.807   0.017     0.046   0.011
+truthfulqa             run Mean-Ent                        -         -   ok      0   684      138   0.774   0.019     0.357   0.016
+truthfulqa             run Mean-Prob                       -         -   ok      0   684      138   0.753   0.021     0.099   0.012
+truthfulqa             run SC-Budget                       -         -   ok      0   684      138   0.767   0.023     0.207   0.022
+truthfulqa            vote CoT_Len                     False      none   ok   2933   684      127   0.792   0.016     0.143   0.013
+truthfulqa            vote CoT_Len                     False  balanced   ok   2933   684      127   0.801   0.015     0.210   0.013
+truthfulqa            vote CoT_Len                      True      none   ok   2933   684      127   0.794   0.016     0.143   0.013
+truthfulqa            vote CoT_Len                      True  balanced   ok   2933   684      127   0.801   0.015     0.211   0.014
+truthfulqa            vote SC-10                           -         -   ok      0   684      127   0.741   0.019     0.162   0.027
+truthfulqa            vote SC-10-Last                      -         -   ok      0   684      127   0.596   0.021     0.165   0.025
+truthfulqa            vote Sum-Loss                        -         -   ok      0   684      127   0.792   0.017     0.039   0.014
+truthfulqa            vote Mean-Loss                       -         -   ok      0   684      127   0.749   0.020     0.380   0.021
+truthfulqa            vote Sum-Ent                         -         -   ok      0   684      127   0.791   0.017     0.036   0.013
+truthfulqa            vote Mean-Ent                        -         -   ok      0   684      127   0.750   0.020     0.373   0.019
+truthfulqa            vote Mean-Prob                       -         -   ok      0   684      127   0.728   0.022     0.086   0.012
+truthfulqa            vote SC-Budget                       -         -   ok      0   684      127   0.746   0.022     0.168   0.025
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu_pro               run CoT_Len                     False      none   ok   3108   511      130   0.588   0.022     0.159   0.020
+mmlu_pro               run CoT_Len                     False  balanced   ok   3108   511      130   0.587   0.022     0.252   0.019
+mmlu_pro               run CoT_Len                      True      none   ok   3108   511      130   0.588   0.022     0.159   0.021
+mmlu_pro               run CoT_Len                      True  balanced   ok   3108   511      130   0.587   0.022     0.252   0.019
+mmlu_pro               run SC-10                           -         -   ok      0   511      130   0.737   0.021     0.239   0.031
+mmlu_pro               run SC-10-Last                      -         -   ok      0   511      130   0.604   0.022     0.234   0.041
+mmlu_pro               run Sum-Loss                        -         -   ok      0   511      130   0.683   0.020     0.085   0.018
+mmlu_pro               run Mean-Loss                       -         -   ok      0   511      130   0.831   0.014     0.279   0.016
+mmlu_pro               run Sum-Ent                         -         -   ok      0   511      130   0.684   0.020     0.094   0.018
+mmlu_pro               run Mean-Ent                        -         -   ok      0   511      130   0.830   0.014     0.290   0.016
+mmlu_pro               run Mean-Prob                       -         -   ok      0   511      130   0.812   0.015     0.151   0.012
+mmlu_pro               run SC-Budget                       -         -   ok      0   511      130   0.804   0.020     0.302   0.030
+mmlu_pro              vote CoT_Len                     False      none   ok   3106   511      118   0.576   0.022     0.143   0.019
+mmlu_pro              vote CoT_Len                     False  balanced   ok   3106   511      118   0.571   0.022     0.277   0.020
+mmlu_pro              vote CoT_Len                      True      none   ok   3106   511      118   0.576   0.022     0.146   0.019
+mmlu_pro              vote CoT_Len                      True  balanced   ok   3106   511      118   0.572   0.022     0.277   0.020
+mmlu_pro              vote SC-10                           -         -   ok      0   511      118   0.712   0.028     0.190   0.036
+mmlu_pro              vote SC-10-Last                      -         -   ok      0   511      118   0.590   0.020     0.210   0.029
+mmlu_pro              vote Sum-Loss                        -         -   ok      0   511      118   0.669   0.022     0.088   0.016
+mmlu_pro              vote Mean-Loss                       -         -   ok      0   511      118   0.805   0.017     0.303   0.019
+mmlu_pro              vote Sum-Ent                         -         -   ok      0   511      118   0.670   0.022     0.098   0.017
+mmlu_pro              vote Mean-Ent                        -         -   ok      0   511      118   0.803   0.017     0.313   0.018
+mmlu_pro              vote Mean-Prob                       -         -   ok      0   511      118   0.787   0.017     0.127   0.013
+mmlu_pro              vote SC-Budget                       -         -   ok      0   511      118   0.782   0.026     0.249   0.033
+-----------------------------------------------------------------------------------------------------------------------------------
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+aime                   run CoT_Len                     False      none   ok   3491   128        2   0.730   0.187     0.313   0.015
+aime                   run CoT_Len                     False  balanced   ok   3491   128        2   0.710   0.192     0.765   0.015
+aime                   run CoT_Len                      True      none   ok   3491   128        2   0.730   0.187     0.313   0.015
+aime                   run CoT_Len                      True  balanced   ok   3491   128        2   0.710   0.192     0.765   0.015
+aime                   run SC-10                           -         -   ok      0   126        2   0.643   0.257     0.214   0.032
+aime                   run SC-10-Last                      -         -   ok      0   128        2   0.724   0.172     0.009   0.011
+aime                   run Sum-Loss                        -         -   ok      0   128        2   0.976   0.019     0.413   0.027
+aime                   run Mean-Loss                       -         -   ok      0   128        2   0.996   0.005     0.375   0.049
+aime                   run Sum-Ent                         -         -   ok      0   128        2   0.956   0.027     0.418   0.024
+aime                   run Mean-Ent                        -         -   ok      0   128        2   0.996   0.005     0.384   0.048
+aime                   run Mean-Prob                       -         -   ok      0   128        2   0.992   0.008     0.075   0.009
+aime                   run SC-Budget                       -         -   ok      0   128        2   0.704   0.204     0.024   0.011
+aime                  vote CoT_Len                     False      none   ok   3491   126        2   0.750   0.188     0.269   0.012
+aime                  vote CoT_Len                     False  balanced   ok   3491   126        2   0.730   0.196     0.748   0.013
+aime                  vote CoT_Len                      True      none   ok   3491   126        2   0.750   0.188     0.269   0.012
+aime                  vote CoT_Len                      True  balanced   ok   3491   126        2   0.730   0.196     0.748   0.013
+aime                  vote SC-10                           -         -   ok      0   126        2   0.643   0.257     0.214   0.032
+aime                  vote SC-10-Last                      -         -   ok      0   126        2   0.728   0.183     0.010   0.009
+aime                  vote Sum-Loss                        -         -   ok      0   126        2   0.980   0.018     0.405   0.029
+aime                  vote Mean-Loss                       -         -   ok      0   126        2   0.996   0.005     0.372   0.055
+aime                  vote Sum-Ent                         -         -   ok      0   126        2   0.964   0.027     0.416   0.028
+aime                  vote Mean-Ent                        -         -   ok      0   126        2   0.996   0.005     0.381   0.053
+aime                  vote Mean-Prob                       -         -   ok      0   126        2   0.992   0.008     0.075   0.006
+aime                  vote SC-Budget                       -         -   ok      0   126        2   0.708   0.217     0.023   0.011
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+averaged over every held out dataset:
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    CoT_Len       False     balanced    0.695       0.033 0.402   0.007
+   run    CoT_Len       False         none    0.699       0.032 0.163   0.006
+   run    CoT_Len        True     balanced    0.696       0.033 0.403   0.007
+   run    CoT_Len        True         none    0.701       0.032 0.164   0.006
+   run   Mean-Ent           -            -    0.756       0.024 0.299   0.011
+   run  Mean-Loss           -            -    0.748       0.024 0.294   0.011
+   run  Mean-Prob           -            -    0.737       0.024 0.111   0.006
+   run      SC-10           -            -    0.718       0.041 0.171   0.012
+   run SC-10-Last           -            -    0.597       0.026 0.143   0.014
+   run  SC-Budget           -            -    0.759       0.034 0.141   0.010
+   run    Sum-Ent           -            -    0.756       0.024 0.150   0.008
+   run   Sum-Loss           -            -    0.755       0.024 0.148   0.008
+  vote    CoT_Len       False     balanced    0.690       0.034 0.411   0.006
+  vote    CoT_Len       False         none    0.698       0.033 0.145   0.006
+  vote    CoT_Len        True     balanced    0.691       0.034 0.411   0.006
+  vote    CoT_Len        True         none    0.700       0.033 0.146   0.005
+  vote   Mean-Ent           -            -    0.746       0.024 0.310   0.011
+  vote  Mean-Loss           -            -    0.738       0.024 0.308   0.012
+  vote  Mean-Prob           -            -    0.729       0.024 0.099   0.005
+  vote      SC-10           -            -    0.695       0.042 0.145   0.011
+  vote SC-10-Last           -            -    0.585       0.028 0.114   0.009
+  vote  SC-Budget           -            -    0.745       0.037 0.117   0.010
+  vote    Sum-Ent           -            -    0.747       0.024 0.156   0.008
+  vote   Sum-Loss           -            -    0.746       0.024 0.154   0.008
+
+
+averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, gsm8k, mmlu, truthfulqa, mmlu_pro):
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    CoT_Len       False     balanced    0.721       0.013 0.304   0.009
+   run    CoT_Len       False         none    0.722       0.013 0.136   0.008
+   run    CoT_Len        True     balanced    0.722       0.013 0.305   0.009
+   run    CoT_Len        True         none    0.724       0.013 0.137   0.009
+   run   Mean-Ent           -            -    0.799       0.011 0.277   0.009
+   run  Mean-Loss           -            -    0.792       0.011 0.274   0.010
+   run  Mean-Prob           -            -    0.774       0.012 0.126   0.008
+   run      SC-10           -            -    0.751       0.015 0.174   0.013
+   run SC-10-Last           -            -    0.592       0.011 0.196   0.019
+   run  SC-Budget           -            -    0.785       0.013 0.192   0.014
+   run    Sum-Ent           -            -    0.776       0.011 0.076   0.008
+   run   Sum-Loss           -            -    0.774       0.011 0.075   0.008
+  vote    CoT_Len       False     balanced    0.709       0.013 0.320   0.008
+  vote    CoT_Len       False         none    0.713       0.013 0.123   0.007
+  vote    CoT_Len        True     balanced    0.711       0.013 0.320   0.008
+  vote    CoT_Len        True         none    0.716       0.013 0.124   0.007
+  vote   Mean-Ent           -            -    0.785       0.012 0.293   0.009
+  vote  Mean-Loss           -            -    0.778       0.012 0.293   0.010
+  vote  Mean-Prob           -            -    0.763       0.012 0.108   0.007
+  vote      SC-10           -            -    0.719       0.016 0.137   0.013
+  vote SC-10-Last           -            -    0.575       0.012 0.155   0.013
+  vote  SC-Budget           -            -    0.765       0.015 0.158   0.013
+  vote    Sum-Ent           -            -    0.762       0.012 0.085   0.008
+  vote   Sum-Loss           -            -    0.760       0.012 0.085   0.008
+
+
+held out as a domain: multiple choice knowledge
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: mmlu,mmlu_pro
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+mmlu,mmlu_pro          run CoT_Len                     False      none   ok   2563  1056      211   0.664   0.017     0.120   0.013
+mmlu,mmlu_pro          run CoT_Len                     False  balanced   ok   2563  1056      211   0.665   0.017     0.252   0.013
+mmlu,mmlu_pro          run CoT_Len                      True      none   ok   2563  1056      211   0.667   0.017     0.120   0.013
+mmlu,mmlu_pro          run CoT_Len                      True  balanced   ok   2563  1056      211   0.666   0.017     0.252   0.013
+mmlu,mmlu_pro          run SC-10                           -         -   ok      0  1056      211   0.745   0.018     0.211   0.023
+mmlu,mmlu_pro          run SC-10-Last                      -         -   ok      0  1056      211   0.581   0.013     0.185   0.013
+mmlu,mmlu_pro          run Sum-Loss                        -         -   ok      0  1056      211   0.734   0.014     0.071   0.010
+mmlu,mmlu_pro          run Mean-Loss                       -         -   ok      0  1056      211   0.825   0.015     0.292   0.019
+mmlu,mmlu_pro          run Sum-Ent                         -         -   ok      0  1056      211   0.734   0.014     0.070   0.009
+mmlu,mmlu_pro          run Mean-Ent                        -         -   ok      0  1056      211   0.826   0.015     0.293   0.021
+mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0  1056      211   0.807   0.016     0.114   0.013
+mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0  1056      211   0.799   0.019     0.272   0.024
+mmlu,mmlu_pro         vote CoT_Len                     False      none   ok   2561  1056      196   0.664   0.017     0.115   0.013
+mmlu,mmlu_pro         vote CoT_Len                     False  balanced   ok   2561  1056      196   0.663   0.017     0.272   0.013
+mmlu,mmlu_pro         vote CoT_Len                      True      none   ok   2561  1056      196   0.665   0.017     0.116   0.013
+mmlu,mmlu_pro         vote CoT_Len                      True  balanced   ok   2561  1056      196   0.664   0.017     0.272   0.013
+mmlu,mmlu_pro         vote SC-10                           -         -   ok      0  1056      196   0.722   0.016     0.171   0.020
+mmlu,mmlu_pro         vote SC-10-Last                      -         -   ok      0  1056      196   0.570   0.013     0.171   0.013
+mmlu,mmlu_pro         vote Sum-Loss                        -         -   ok      0  1056      196   0.726   0.014     0.064   0.009
+mmlu,mmlu_pro         vote Mean-Loss                       -         -   ok      0  1056      196   0.810   0.014     0.307   0.018
+mmlu,mmlu_pro         vote Sum-Ent                         -         -   ok      0  1056      196   0.726   0.014     0.063   0.009
+mmlu,mmlu_pro         vote Mean-Ent                        -         -   ok      0  1056      196   0.810   0.014     0.308   0.020
+mmlu,mmlu_pro         vote Mean-Prob                       -         -   ok      0  1056      196   0.792   0.014     0.100   0.012
+mmlu,mmlu_pro         vote SC-Budget                       -         -   ok      0  1056      196   0.781   0.016     0.234   0.022
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+held out as a domain: mathematics
+
+===================================================================================================================================
+== ablation, features: CoT_Len, held out: gsm8k,math500,aime
+===================================================================================================================================
+held out            target method                     scaled    weight  fit  train  test minority     ROC   ROCsd       ECE   ECEsd
+-----------------------------------------------------------------------------------------------------------------------------------
+gsm8k,math500,aime     run CoT_Len                     False      none   ok   1909  1710       49   0.757   0.023     0.190   0.004
+gsm8k,math500,aime     run CoT_Len                     False  balanced   ok   1909  1710       49   0.756   0.023     0.465   0.004
+gsm8k,math500,aime     run CoT_Len                      True      none   ok   1909  1710       49   0.758   0.023     0.190   0.004
+gsm8k,math500,aime     run CoT_Len                      True  balanced   ok   1909  1710       49   0.756   0.023     0.465   0.004
+gsm8k,math500,aime     run SC-10                           -         -   ok      0  1708       49   0.721   0.037     0.071   0.010
+gsm8k,math500,aime     run SC-10-Last                      -         -   ok      0  1710       49   0.583   0.029     0.020   0.003
+gsm8k,math500,aime     run Sum-Loss                        -         -   ok      0  1710       49   0.765   0.024     0.119   0.006
+gsm8k,math500,aime     run Mean-Loss                       -         -   ok      0  1710       49   0.807   0.031     0.282   0.010
+gsm8k,math500,aime     run Sum-Ent                         -         -   ok      0  1710       49   0.768   0.024     0.123   0.006
+gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0  1710       49   0.818   0.029     0.287   0.008
+gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0  1710       49   0.813   0.032     0.053   0.004
+gsm8k,math500,aime     run SC-Budget                       -         -   ok      0  1710       49   0.796   0.035     0.011   0.005
+gsm8k,math500,aime    vote CoT_Len                     False      none   ok   1909  1708       43   0.768   0.025     0.174   0.005
+gsm8k,math500,aime    vote CoT_Len                     False  balanced   ok   1909  1708       43   0.761   0.026     0.469   0.005
+gsm8k,math500,aime    vote CoT_Len                      True      none   ok   1909  1708       43   0.770   0.025     0.174   0.005
+gsm8k,math500,aime    vote CoT_Len                      True  balanced   ok   1909  1708       43   0.763   0.026     0.469   0.005
+gsm8k,math500,aime    vote SC-10                           -         -   ok      0  1708       43   0.705   0.039     0.079   0.009
+gsm8k,math500,aime    vote SC-10-Last                      -         -   ok      0  1708       43   0.587   0.032     0.016   0.004
+gsm8k,math500,aime    vote Sum-Loss                        -         -   ok      0  1708       43   0.763   0.027     0.121   0.008
+gsm8k,math500,aime    vote Mean-Loss                       -         -   ok      0  1708       43   0.801   0.030     0.286   0.012
+gsm8k,math500,aime    vote Sum-Ent                         -         -   ok      0  1708       43   0.768   0.026     0.128   0.007
+gsm8k,math500,aime    vote Mean-Ent                        -         -   ok      0  1708       43   0.816   0.028     0.290   0.008
+gsm8k,math500,aime    vote Mean-Prob                       -         -   ok      0  1708       43   0.814   0.031     0.054   0.003
+gsm8k,math500,aime    vote SC-Budget                       -         -   ok      0  1708       43   0.784   0.033     0.007   0.004
+-----------------------------------------------------------------------------------------------------------------------------------
+
+
+MAIN AVERAGE, over these 4 held out groups: multiple choice knowledge, mathematics, gpqa, truthfulqa
+every benchmark counted exactly once, the domains held out together,
+and only groups carrying at least 30 of the rarer class
+
+target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run    CoT_Len       False     balanced    0.724       0.014 0.318   0.010
+   run    CoT_Len       False         none    0.724       0.014 0.157   0.009
+   run    CoT_Len        True     balanced    0.724       0.014 0.319   0.010
+   run    CoT_Len        True         none    0.725       0.014 0.157   0.009
+   run   Mean-Ent           -            -    0.781       0.014 0.281   0.011
+   run  Mean-Loss           -            -    0.772       0.014 0.276   0.011
+   run  Mean-Prob           -            -    0.755       0.015 0.127   0.009
+   run      SC-10           -            -    0.747       0.015 0.184   0.013
+   run SC-10-Last           -            -    0.599       0.013 0.197   0.021
+   run  SC-Budget           -            -    0.782       0.014 0.185   0.013
+   run    Sum-Ent           -            -    0.764       0.013 0.080   0.009
+   run   Sum-Loss           -            -    0.762       0.013 0.079   0.009
+  vote    CoT_Len       False     balanced    0.715       0.014 0.334   0.009
+  vote    CoT_Len       False         none    0.715       0.013 0.141   0.008
+  vote    CoT_Len        True     balanced    0.716       0.013 0.334   0.009
+  vote    CoT_Len        True         none    0.717       0.013 0.141   0.008
+  vote   Mean-Ent           -            -    0.766       0.015 0.298   0.011
+  vote  Mean-Loss           -            -    0.757       0.015 0.296   0.011
+  vote  Mean-Prob           -            -    0.743       0.015 0.108   0.008
+  vote      SC-10           -            -    0.714       0.016 0.146   0.012
+  vote SC-10-Last           -            -    0.579       0.014 0.150   0.015
+  vote  SC-Budget           -            -    0.760       0.015 0.148   0.013
+  vote    Sum-Ent           -            -    0.751       0.013 0.089   0.009
+  vote   Sum-Loss           -            -    0.748       0.013 0.090   0.009
