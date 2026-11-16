@@ -50,8 +50,6 @@ class budget_matched_self_consistency_logger(logger):
             log.question = a_row["Question"]
             log.prompt = a_row["Prompt"]
             log.target = a_row["Target"]
-            log.compared_final_answer = a_row["Compared_Final_Answer"]
-            log.accuracy = a_row["Accuracy"]
 
             log.compared_final_answer_nv5 = a_row["Compared_Final_Answer_nv5"]
             log.self_consistency_nv5 = a_row["Self_Consistency_nv5"]
@@ -77,10 +75,8 @@ class budget_matched_self_consistency_logger(logger):
             for _, s_row in s_subset.iterrows():
                 log_detail = budget_matched_self_consistency_log_detail_entity()
                 log_detail.index = s_row["Index"]
-                log_detail.prompt = s_row["Prompt"]
                 log_detail.completion = s_row["Completion"]
                 log_detail.token_count = s_row["Token_Count"]
-                log_detail.original_final_answer = s_row["Original_Final_Answer"]
                 log_detail.final_answer = s_row["Final_Answer"]
                 log_detail.compared_final_answer = s_row["Compared_Final_Answer"]
                 log_detail.accuracy = s_row["Accuracy"]

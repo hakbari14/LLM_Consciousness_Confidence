@@ -6,7 +6,9 @@ from transformers import AutoTokenizer
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_logger import budget_matched_self_consistency_logger
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_entity import budget_matched_self_consistency_log_entity
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_detail_entity import budget_matched_self_consistency_log_detail_entity
+from src.diffusion_decision_model.budget_matched_selfconsistency_evaluator import budget_matched_selfconsistency_evaluator
 from src.datasets.dataset_handler import dataset_handler
+from typing import (List,Dict)
 import pandas as pd
 import torch
 import traceback
@@ -112,6 +114,12 @@ class budget_matched_self_consistency(ABC):
         accuracy_nv25 = round(df["Accuracy_nv25"].mean() * 100, 2)
 
         print(f"Records = {len(df)}, Accuracy_nv5 = {accuracy_nv5}, Accuracy_nv10 = {accuracy_nv10}, Accuracy_nv15 = {accuracy_nv15}, Accuracy_nv20 = {accuracy_nv20}, Accuracy_nv25 = {accuracy_nv25}") 
+
+    def plot_auroc_ece(self, run_number: int) -> None:
+        logger = self.create_logger(run_number)
+        log_list = logger.load_logs_list()
+        results: Dict[str, List[float]] = budget_matched_selfconsistency_evaluator.run(entities=log_list, min_n=5, max_n=120, num_runs=10, n_bins=10, seed=42)
+        budget_matched_selfconsistency_evaluator.plot_results(results, logger.get_log_file_name())
 
     def calculate_mjority_vote(self, consistency_list: list[budget_matched_self_consistency_log_detail_entity]) -> tuple[str, bool, float]: 
         vote_count = {}
