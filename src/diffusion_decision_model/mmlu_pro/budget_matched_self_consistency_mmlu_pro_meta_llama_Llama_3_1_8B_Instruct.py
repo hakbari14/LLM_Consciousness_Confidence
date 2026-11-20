@@ -6,13 +6,13 @@ from src.datasets.dataset_config import dataset_config
 
 class budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct(budget_matched_self_consistency): 
 
-    def __init__(self, modelname) -> None:
-        super().__init__(modelname)
+    def __init__(self) -> None:
+        super().__init__()
         
 
     def get_dataset(self) -> mmlu_pro_dataset_meta_llama_Llama_3_1_8B_Instruct:
         if self.dataset is None:
-            config = dataset_config(self.modelname)
+            config = dataset_config(self.get_model_name())
             config.set_max_test_dataset_size_per_category(40)
             self.dataset = mmlu_pro_dataset_meta_llama_Llama_3_1_8B_Instruct(config)
         return self.dataset
@@ -20,10 +20,20 @@ class budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct(
     def get_max_new_tokens(self) -> int:
         return 5000
 
+    def get_model_name(self) -> str:
+        return 'meta-llama/Llama-3.1-8B-Instruct'
+
+    def get_benchmark_name(self) -> str:
+        return 'mmlu_pro'
+
+    def get_benchmark_name(self) -> str:
+        return 'mmlu_pro'
+
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/mmlu_pro/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_mmlu_pro.csv')
 
-t = budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct(modelname='/home/hr_akbari/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659')
-t.run(from_run_number=2, to_run_number=3)
-t.calculate_accracy(run_number=2)
+if __name__ == "__main__":
+    t = budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct()
+    t.run(from_run_number=2, to_run_number=3)
+    t.calculate_accracy(run_number=2)
 

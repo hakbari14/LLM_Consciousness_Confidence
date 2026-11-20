@@ -4,24 +4,31 @@ from src.datasets.math.gsm8k.gsm8k_dataset_deepSeek_r1_distill_qwen_1_5B import 
 from src.datasets.dataset_config import dataset_config
 
 
-class budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B(budget_matched_self_consistency): 
+class budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_1_5B(budget_matched_self_consistency): 
 
-    def __init__(self, modelname) -> None:
-        super().__init__(modelname)
+    def __init__(self) -> None:
+        super().__init__()
         
 
     def get_dataset(self) -> gsm8k_dataset_deepSeek_r1_distill_qwen_1_5B:
         if self.dataset is None:
-            config = dataset_config(self.modelname)
+            config = dataset_config(self.get_model_name())
             self.dataset = gsm8k_dataset_deepSeek_r1_distill_qwen_1_5B(config)
         return self.dataset
 
     def get_max_new_tokens(self) -> int:
         return 5000
 
+    def get_model_name(self) -> str:
+        return 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
+
+    def get_benchmark_name(self) -> str:
+        return 'gsm8k'
+
     def create_logger(self, run_number) -> budget_matched_self_consistency_logger:
         return budget_matched_self_consistency_logger(log_file_name = f'logs/diffusion_decision_model/gsm8k/{self.get_modelname_dir()}/run_{run_number}/budget_matched_self_consistency_gsm8k.csv')
 
-t = budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B(modelname='deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B')
-t.run(from_run_number=2, to_run_number=3)
-t.calculate_accracy(run_number=2)
+if __name__ == "__main__":
+    t = budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_1_5B()
+    t.run(from_run_number=2, to_run_number=3)
+    t.calculate_accracy(run_number=2)

@@ -1,6 +1,50 @@
 
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_entity import budget_matched_self_consistency_log_entity
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_detail_entity import  budget_matched_self_consistency_log_detail_entity
+from src.diffusion_decision_model.budget_matched_self_consistency import budget_matched_self_consistency
+
+from src.diffusion_decision_model.aime.budget_matched_self_consistency_aime_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_aime_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.aime.budget_matched_self_consistency_aime_mistral_7B_Instruct import budget_matched_self_consistency_aime_mistral_7B_Instruct
+from src.diffusion_decision_model.aime.budget_matched_self_consistency_aime_qwen3_8B import budget_matched_self_consistency_aime_qwen3_8B
+from src.diffusion_decision_model.aime.budget_matched_self_consistency_aime_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_aime_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.aime.budget_matched_self_consistency_aime_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_aime_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.gpqa.budget_matched_self_consistency_gpqa_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_gpqa_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.gpqa.budget_matched_self_consistency_gpqa_mistral_7B_Instruct import budget_matched_self_consistency_gpqa_mistral_7B_Instruct
+from src.diffusion_decision_model.gpqa.budget_matched_self_consistency_gpqa_qwen3_8B import budget_matched_self_consistency_gpqa_qwen3_8B
+from src.diffusion_decision_model.gpqa.budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.gpqa.budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_gpqa_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.gsm8k.budget_matched_self_consistency_gsm8k_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_gsm8k_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.gsm8k.budget_matched_self_consistency_gsm8k_mistral_7B_Instruct import budget_matched_self_consistency_gsm8k_mistral_7B_Instruct
+from src.diffusion_decision_model.gsm8k.budget_matched_self_consistency_gsm8k_qwen3_8B import budget_matched_self_consistency_gsm8k_qwen3_8B
+from src.diffusion_decision_model.gsm8k.budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.gsm8k.budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_gsm8k_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.math500.budget_matched_self_consistency_math500_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_math500_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.math500.budget_matched_self_consistency_math500_mistral_7B_Instruct import budget_matched_self_consistency_math500_mistral_7B_Instruct
+from src.diffusion_decision_model.math500.budget_matched_self_consistency_math500_qwen3_8B import budget_matched_self_consistency_math500_qwen3_8B
+from src.diffusion_decision_model.math500.budget_matched_self_consistency_math500_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_math500_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.math500.budget_matched_self_consistency_math500_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_math500_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.mmlu.budget_matched_self_consistency_mmlu_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_mmlu_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.mmlu.budget_matched_self_consistency_mmlu_mistral_7B_Instruct import budget_matched_self_consistency_mmlu_mistral_7B_Instruct
+from src.diffusion_decision_model.mmlu.budget_matched_self_consistency_mmlu_qwen3_8B import budget_matched_self_consistency_mmlu_qwen3_8B
+from src.diffusion_decision_model.mmlu.budget_matched_self_consistency_mmlu_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_mmlu_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.mmlu.budget_matched_self_consistency_mmlu_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_mmlu_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.mmlu_pro.budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_mmlu_pro_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.mmlu_pro.budget_matched_self_consistency_mmlu_pro_mistral_7B_Instruct import budget_matched_self_consistency_mmlu_pro_mistral_7B_Instruct
+from src.diffusion_decision_model.mmlu_pro.budget_matched_self_consistency_mmlu_pro_qwen3_8B import budget_matched_self_consistency_mmlu_pro_qwen3_8B
+from src.diffusion_decision_model.mmlu_pro.budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.mmlu_pro.budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_mmlu_pro_deepSeek_r1_distill_qwen_7B
+
+from src.diffusion_decision_model.truthfulqa.budget_matched_self_consistency_truthfulqa_meta_llama_Llama_3_1_8B_Instruct import budget_matched_self_consistency_truthfulqa_meta_llama_Llama_3_1_8B_Instruct
+from src.diffusion_decision_model.truthfulqa.budget_matched_self_consistency_truthfulqa_mistral_7B_Instruct import budget_matched_self_consistency_truthfulqa_mistral_7B_Instruct
+from src.diffusion_decision_model.truthfulqa.budget_matched_self_consistency_truthfulqa_qwen3_8B import budget_matched_self_consistency_truthfulqa_qwen3_8B
+from src.diffusion_decision_model.truthfulqa.budget_matched_self_consistency_truthfulqa_deepSeek_r1_distill_qwen_1_5B import budget_matched_self_consistency_truthfulqa_deepSeek_r1_distill_qwen_1_5B
+from src.diffusion_decision_model.truthfulqa.budget_matched_self_consistency_truthfulqa_deepSeek_r1_distill_qwen_7B import budget_matched_self_consistency_truthfulqa_deepSeek_r1_distill_qwen_7B
+
 
 from typing import (
     List,
@@ -12,9 +56,50 @@ from numpy.typing import NDArray
 from sklearn.metrics import roc_auc_score
 import numpy as np
 import matplotlib.pyplot as plt
-import os
+
+from pathlib import Path
+from typing import Dict, List
+import pandas as pd
+import traceback
+from tqdm import tqdm
+
 
 class budget_matched_selfconsistency_evaluator:
+
+    @staticmethod
+    def plot_auroc_ece(run_number: int) -> None:
+        all_results: List[Dict] = []
+
+        subclasses = budget_matched_self_consistency.__subclasses__()
+        for subclass in tqdm(subclasses, desc="Processing subclasses", unit="class"):
+            try:
+                instance = subclass()
+                logger = instance.create_logger(run_number = run_number)
+                log_list = logger.load_logs_list()
+
+                results: Dict[str, List[float]] = budget_matched_selfconsistency_evaluator.run(entities=log_list, min_n=5, max_n=120, num_runs=10, n_bins=10, seed=42)
+                budget_matched_selfconsistency_evaluator.plot_results(results, logger.get_log_file_name())
+
+                model_name: str = instance.get_model_name()
+                benchmark_name: str = instance.get_benchmark_name()
+
+                for n, auroc, ece in zip(results["N"], results["AUROC_mean"], results["ECE_mean"], strict=True):
+                    all_results.append({
+                        "Model_Name": model_name,
+                        "Benchmark_Name": benchmark_name,
+                        "N": n,
+                        "AUROC": auroc,
+                        "ECE": ece,
+                    })
+
+            except Exception as e:
+                print(f"Error in subclass {subclass.__name__}: {e}")
+                traceback.print_exc()
+                continue
+
+        df = pd.DataFrame(all_results)
+        output_path = Path(f"logs/diffusion_decision_model/auroc_ece_results_run_{run_number}.csv")
+        df.to_csv(output_path, index=False)
 
     @staticmethod
     def filter_entities(entities: List[budget_matched_self_consistency_log_entity], min_samples: int = 128) -> List[Tuple[budget_matched_self_consistency_log_entity, List[budget_matched_self_consistency_log_detail_entity]]]:
@@ -156,8 +241,6 @@ class budget_matched_selfconsistency_evaluator:
 
         filtered_entities = (budget_matched_selfconsistency_evaluator.filter_entities(entities=entities, min_samples = max_n))
 
-        print(f"Total entities: {len(entities)}")
-        print(f"Filtered entities: {len(filtered_entities)}")
         if len(filtered_entities) < 2:
             raise ValueError(
                 "Not enough valid entities for evaluation."
@@ -211,12 +294,6 @@ class budget_matched_selfconsistency_evaluator:
             results["AUROC_std"].append(auroc_std)
             results["ECE_mean"].append(ece_mean)
             results["ECE_std"].append(ece_std)
-
-            print(
-                f"N={n:3d} | "
-                f"AUROC={auroc_mean:.4f} ± {auroc_std:.4f} | "
-                f"ECE={ece_mean:.4f} ± {ece_std:.4f}"
-            )
 
         return results
 
@@ -301,3 +378,5 @@ class budget_matched_selfconsistency_evaluator:
 
         plt.close()
 
+
+budget_matched_selfconsistency_evaluator.plot_auroc_ece(run_number = 2)

@@ -6,7 +6,6 @@ from transformers import AutoTokenizer
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_logger import budget_matched_self_consistency_logger
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_entity import budget_matched_self_consistency_log_entity
 from src.logger.diffusion_decision_model.budget_matched_self_consistency.budget_matched_self_consistency_log_detail_entity import budget_matched_self_consistency_log_detail_entity
-from src.diffusion_decision_model.budget_matched_selfconsistency_evaluator import budget_matched_selfconsistency_evaluator
 from src.datasets.dataset_handler import dataset_handler
 from typing import (List,Dict)
 import pandas as pd
@@ -22,20 +21,15 @@ logging.basicConfig(
 
 class budget_matched_self_consistency(ABC): 
 
-    def __init__(self, modelname: str) -> None:
-        self.modelname = modelname
-
-        if self.modelname is None:
-            raise Exception('modelname is required')
-        
+    def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dataset = None
 
     def run(self, from_run_number: int , to_run_number: int, number_of_outputs: int = 125) -> None:
-        self.model = LLM(model=self.modelname, tensor_parallel_size=1, trust_remote_code=True,)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.modelname)
+        self.model = LLM(model=self.get_modelname_path(), tensor_parallel_size=1, trust_remote_code=True,)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.get_modelname_path())
         
-        print(f"{'*' * 100}  {self.modelname}  {'*' * 100}")
+        print(f"{'*' * 100}  {self.get_model_name()}  {'*' * 100}")
         for run_number in range(from_run_number,to_run_number):
             print(f"{'*' * 100}  Run Number {run_number}  {'*' * 100}")
 
@@ -115,12 +109,6 @@ class budget_matched_self_consistency(ABC):
 
         print(f"Records = {len(df)}, Accuracy_nv5 = {accuracy_nv5}, Accuracy_nv10 = {accuracy_nv10}, Accuracy_nv15 = {accuracy_nv15}, Accuracy_nv20 = {accuracy_nv20}, Accuracy_nv25 = {accuracy_nv25}") 
 
-    def plot_auroc_ece(self, run_number: int) -> None:
-        logger = self.create_logger(run_number)
-        log_list = logger.load_logs_list()
-        results: Dict[str, List[float]] = budget_matched_selfconsistency_evaluator.run(entities=log_list, min_n=5, max_n=120, num_runs=10, n_bins=10, seed=42)
-        budget_matched_selfconsistency_evaluator.plot_results(results, logger.get_log_file_name())
-
     def calculate_mjority_vote(self, consistency_list: list[budget_matched_self_consistency_log_detail_entity]) -> tuple[str, bool, float]: 
         vote_count = {}
         for log_detail in consistency_list:
@@ -143,7 +131,13 @@ class budget_matched_self_consistency(ABC):
         return None, None, None
 
     def get_modelname_dir(self) -> str:
-        return self.modelname.replace('/', '-').lower()
+        return self.get_model_name().replace('/', '-').lower()
+
+    def get_modelname_path(self) -> str:
+        if self.get_model_name() == 'meta-llama/Llama-3.1-8B-Instruct': 
+            return '/home/hr_akbari/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659'
+        
+        return self.get_model_name()
 
     @abstractmethod
     def get_dataset(self) -> dataset_handler:
@@ -155,4 +149,12 @@ class budget_matched_self_consistency(ABC):
     
     @abstractmethod
     def get_max_new_tokens(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_model_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_benchmark_name(self) -> str:
         pass
