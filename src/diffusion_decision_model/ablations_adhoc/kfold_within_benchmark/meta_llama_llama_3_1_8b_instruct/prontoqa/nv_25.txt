@@ -1,0 +1,56 @@
+5 fold cross validation inside prontoqa, meta_llama_llama_3_1_8b_instruct, nv 25
+459 samples, 7 answered wrong, so about 1.4 wrong answers in each fold
+0 more were stopped by the token limit and are left out
+FEWER THAN 30 WRONG ANSWERS: a fold may hold none, and the ROC below is noise
+regression: unscaled features, no class weight, as in the paper's tables
+pooled: the five folds' predictions put together and measured once
+CoT-EIG: each evidence's agreement, the change in agreement, its mean token probability, and that
+mean over the whole completion's.  EIG-SC: the agreement and its change.  EIG-Prob: the two probability ones alone.
+
+== ROC, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG          1.000   1.000   1.000   1.000   1.000    1.000  0.000   1.000
+EIG-SC           1.000   1.000   1.000   1.000   1.000    1.000  0.000   1.000
+EIG-Prob         0.967   0.495   0.589   0.294   0.522    0.573  0.220   0.509
+SC-10            0.973   0.209   0.589   0.753   0.750    0.655  0.254   0.673
+SC-10-Last       0.896   0.995   0.692   0.683   0.933    0.840  0.128   0.796
+Sum-Loss         0.923   0.945   0.594   0.739   0.622    0.765  0.147   0.743
+Mean-Loss        0.813   0.846   0.406   0.911   0.378    0.671  0.230   0.660
+Sum-Ent          0.923   0.945   0.656   0.667   0.656    0.769  0.135   0.743
+Mean-Ent         0.769   0.846   0.439   0.844   0.500    0.680  0.175   0.659
+Mean-Prob        0.714   0.813   0.450   0.906   0.422    0.661  0.194   0.656
+SC-Budget          nan     nan     nan     nan     nan      nan    nan     nan
+SC-10-Agree      1.000   1.000   0.997   1.000   1.000    0.999  0.001   0.999
+SC-Budget-Agree     nan     nan     nan     nan     nan      nan    nan     nan
+
+== ECE, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG          0.002   0.002   0.011   0.006   0.002    0.004  0.004   0.003
+EIG-SC           0.002   0.002   0.011   0.006   0.002    0.004  0.004   0.003
+EIG-Prob         0.022   0.025   0.028   0.031   0.024    0.026  0.003   0.015
+SC-10            0.144   0.140   0.146   0.138   0.138    0.141  0.003   0.148
+SC-10-Last       0.031   0.064   0.071   0.111   0.061    0.067  0.026   0.064
+Sum-Loss         0.245   0.244   0.304   0.267   0.285    0.269  0.023   0.254
+Mean-Loss        0.358   0.241   0.271   0.227   0.330    0.285  0.051   0.256
+Sum-Ent          0.246   0.222   0.280   0.259   0.261    0.254  0.019   0.225
+Mean-Ent         0.335   0.261   0.244   0.227   0.281    0.270  0.037   0.238
+Mean-Prob        0.077   0.083   0.082   0.066   0.087    0.079  0.007   0.076
+SC-Budget          nan     nan     nan     nan     nan      nan    nan     nan
+SC-10-Agree      0.152   0.125   0.135   0.150   0.153    0.143  0.011   0.150
+SC-Budget-Agree     nan     nan     nan     nan     nan      nan    nan     nan
+
+== ROC when the folds are drawn again, 10 seeds (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
+method          mean of folds  lowest  highest    pooled  lowest  highest
+CoT-EIG                 1.000   0.998    1.000     1.000   0.999    1.000
+EIG-SC                  1.000   0.998    1.000     1.000   1.000    1.000
+EIG-Prob                0.545   0.508    0.585     0.495   0.438    0.549
+SC-10                   0.669   0.560    0.751     0.673   0.673    0.673
+SC-10-Last              0.800   0.728    0.855     0.796   0.796    0.796
+Sum-Loss                0.735   0.693    0.774     0.743   0.743    0.743
+Mean-Loss               0.649   0.574    0.725     0.660   0.660    0.660
+Sum-Ent                 0.736   0.700    0.778     0.743   0.743    0.743
+Mean-Ent                0.648   0.583    0.722     0.659   0.659    0.659
+Mean-Prob               0.648   0.575    0.726     0.656   0.656    0.656
+SC-Budget                 nan     nan      nan       nan     nan      nan
+SC-10-Agree             1.000   0.998    1.000     0.999   0.999    0.999
+SC-Budget-Agree            nan     nan      nan       nan     nan      nan

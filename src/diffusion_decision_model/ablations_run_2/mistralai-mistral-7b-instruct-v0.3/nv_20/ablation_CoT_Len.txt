@@ -26,6 +26,8 @@ random split           run Sum-Ent                         -         -   ok     
 random split           run Mean-Ent                        -         -   ok      0   775      363   0.550   0.024     0.237   0.019
 random split           run Mean-Prob                       -         -   ok      0   775      363   0.552   0.024     0.383   0.020
 random split           run SC-Budget                       -         -   ok      0   775      363   0.792   0.015     0.111   0.017
+random split           run SC-10-Agree                     -         -   ok      0   775      363   0.859   0.014     0.060   0.012
+random split           run SC-Budget-Agree                 -         -   ok      0   775      363   0.866   0.013     0.081   0.013
 random split          vote CoT_Len                     False      none   ok   3100   775      351   0.771   0.010     0.038   0.009
 random split          vote CoT_Len                     False  balanced   ok   3100   775      351   0.771   0.010     0.050   0.008
 random split          vote CoT_Len                      True      none   ok   3100   775      351   0.771   0.010     0.039   0.010
@@ -38,6 +40,8 @@ random split          vote Sum-Ent                         -         -   ok     
 random split          vote Mean-Ent                        -         -   ok      0   775      351   0.540   0.020     0.184   0.019
 random split          vote Mean-Prob                       -         -   ok      0   775      351   0.535   0.020     0.306   0.019
 random split          vote SC-Budget                       -         -   ok      0   775      351   0.793   0.014     0.071   0.012
+random split          vote SC-10-Agree                     -         -   ok      0   775      351   0.776   0.014     0.085   0.017
+random split          vote SC-Budget-Agree                 -         -   ok      0   775      351   0.784   0.014     0.135   0.014
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -57,6 +61,8 @@ gpqa                   run Sum-Ent                         -         -   ok     
 gpqa                   run Mean-Ent                        -         -   ok      0   158       42   0.415   0.046     0.328   0.036
 gpqa                   run Mean-Prob                       -         -   ok      0   158       42   0.420   0.044     0.586   0.039
 gpqa                   run SC-Budget                       -         -   ok      0   158       42   0.554   0.052     0.290   0.032
+gpqa                   run SC-10-Agree                     -         -   ok      0   158       42   0.548   0.044     0.267   0.037
+gpqa                   run SC-Budget-Agree                 -         -   ok      0   158       42   0.587   0.045     0.239   0.028
 gpqa                  vote CoT_Len                     False      none   ok   3717   158       53   0.521   0.048     0.184   0.035
 gpqa                  vote CoT_Len                     False  balanced   ok   3717   158       53   0.520   0.048     0.179   0.033
 gpqa                  vote CoT_Len                      True      none   ok   3717   158       53   0.520   0.047     0.184   0.034
@@ -69,6 +75,8 @@ gpqa                  vote Sum-Ent                         -         -   ok     
 gpqa                  vote Mean-Ent                        -         -   ok      0   158       53   0.476   0.050     0.243   0.040
 gpqa                  vote Mean-Prob                       -         -   ok      0   158       53   0.473   0.049     0.515   0.041
 gpqa                  vote SC-Budget                       -         -   ok      0   158       53   0.533   0.042     0.265   0.036
+gpqa                  vote SC-10-Agree                     -         -   ok      0   158       53   0.532   0.047     0.237   0.037
+gpqa                  vote SC-Budget-Agree                 -         -   ok      0   158       53   0.499   0.053     0.208   0.031
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -88,6 +96,8 @@ math500                run Sum-Ent                         -         -   ok     
 math500                run Mean-Ent                        -         -   ok      0   454       74   0.595   0.036     0.405   0.044
 math500                run Mean-Prob                       -         -   ok      0   454       74   0.590   0.036     0.710   0.022
 math500                run SC-Budget                       -         -   ok      0   454       74   0.791   0.032     0.042   0.012
+math500                run SC-10-Agree                     -         -   ok      0   454       74   0.902   0.021     0.054   0.022
+math500                run SC-Budget-Agree                 -         -   ok      0   454       74   0.866   0.024     0.120   0.025
 math500               vote CoT_Len                     False      none   ok   3421   454      107   0.797   0.022     0.063   0.014
 math500               vote CoT_Len                     False  balanced   ok   3421   454      107   0.797   0.022     0.044   0.015
 math500               vote CoT_Len                      True      none   ok   3421   454      107   0.798   0.022     0.058   0.015
@@ -100,6 +110,8 @@ math500               vote Sum-Ent                         -         -   ok     
 math500               vote Mean-Ent                        -         -   ok      0   454      107   0.520   0.029     0.332   0.041
 math500               vote Mean-Prob                       -         -   ok      0   454      107   0.500   0.029     0.637   0.021
 math500               vote SC-Budget                       -         -   ok      0   454      107   0.862   0.023     0.087   0.016
+math500               vote SC-10-Agree                     -         -   ok      0   454      107   0.734   0.039     0.094   0.028
+math500               vote SC-Budget-Agree                 -         -   ok      0   454      107   0.698   0.042     0.156   0.025
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -119,6 +131,8 @@ gsm8k                  run Sum-Ent                         -         -   ok     
 gsm8k                  run Mean-Ent                        -         -   ok      0  1273      531   0.695   0.012     0.076   0.015
 gsm8k                  run Mean-Prob                       -         -   ok      0  1273      531   0.703   0.012     0.316   0.014
 gsm8k                  run SC-Budget                       -         -   ok      0  1273      531   0.816   0.011     0.036   0.010
+gsm8k                  run SC-10-Agree                     -         -   ok      0  1273      531   0.932   0.006     0.129   0.011
+gsm8k                  run SC-Budget-Agree                 -         -   ok      0  1273      531   0.947   0.007     0.136   0.009
 gsm8k                 vote CoT_Len                     False      none   ok   2602  1273      319   0.745   0.014     0.172   0.011
 gsm8k                 vote CoT_Len                     False  balanced   ok   2602  1273      319   0.745   0.014     0.130   0.011
 gsm8k                 vote CoT_Len                      True      none   ok   2602  1273      319   0.745   0.014     0.172   0.011
@@ -131,6 +145,8 @@ gsm8k                 vote Sum-Ent                         -         -   ok     
 gsm8k                 vote Mean-Ent                        -         -   ok      0  1273      319   0.624   0.022     0.101   0.015
 gsm8k                 vote Mean-Prob                       -         -   ok      0  1273      319   0.633   0.022     0.150   0.011
 gsm8k                 vote SC-Budget                       -         -   ok      0  1273      319   0.846   0.011     0.183   0.011
+gsm8k                 vote SC-10-Agree                     -         -   ok      0  1273      319   0.763   0.016     0.223   0.012
+gsm8k                 vote SC-Budget-Agree                 -         -   ok      0  1273      319   0.777   0.014     0.295   0.012
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -150,6 +166,8 @@ mmlu                   run Sum-Ent                         -         -   ok     
 mmlu                   run Mean-Ent                        -         -   ok      0   546      196   0.495   0.032     0.155   0.021
 mmlu                   run Mean-Prob                       -         -   ok      0   546      196   0.485   0.032     0.176   0.019
 mmlu                   run SC-Budget                       -         -   ok      0   546      196   0.757   0.023     0.152   0.020
+mmlu                   run SC-10-Agree                     -         -   ok      0   546      196   0.775   0.024     0.153   0.024
+mmlu                   run SC-Budget-Agree                 -         -   ok      0   546      196   0.803   0.022     0.111   0.017
 mmlu                  vote CoT_Len                     False      none   ok   3329   546      187   0.703   0.025     0.056   0.017
 mmlu                  vote CoT_Len                     False  balanced   ok   3329   546      187   0.702   0.025     0.060   0.015
 mmlu                  vote CoT_Len                      True      none   ok   3329   546      187   0.703   0.025     0.056   0.017
@@ -162,6 +180,8 @@ mmlu                  vote Sum-Ent                         -         -   ok     
 mmlu                  vote Mean-Ent                        -         -   ok      0   546      187   0.479   0.030     0.164   0.022
 mmlu                  vote Mean-Prob                       -         -   ok      0   546      187   0.475   0.030     0.160   0.023
 mmlu                  vote SC-Budget                       -         -   ok      0   546      187   0.797   0.017     0.134   0.021
+mmlu                  vote SC-10-Agree                     -         -   ok      0   546      187   0.748   0.021     0.150   0.022
+mmlu                  vote SC-Budget-Agree                 -         -   ok      0   546      187   0.764   0.021     0.148   0.020
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -181,6 +201,8 @@ truthfulqa             run Sum-Ent                         -         -   ok     
 truthfulqa             run Mean-Ent                        -         -   ok      0   678      251   0.546   0.025     0.132   0.027
 truthfulqa             run Mean-Prob                       -         -   ok      0   678      251   0.541   0.024     0.162   0.017
 truthfulqa             run SC-Budget                       -         -   ok      0   678      251   0.754   0.017     0.207   0.015
+truthfulqa             run SC-10-Agree                     -         -   ok      0   678      251   0.789   0.019     0.144   0.019
+truthfulqa             run SC-Budget-Agree                 -         -   ok      0   678      251   0.802   0.018     0.150   0.018
 truthfulqa            vote CoT_Len                     False      none   ok   3197   678      228   0.588   0.019     0.119   0.016
 truthfulqa            vote CoT_Len                     False  balanced   ok   3197   678      228   0.588   0.019     0.111   0.016
 truthfulqa            vote CoT_Len                      True      none   ok   3197   678      228   0.588   0.019     0.121   0.016
@@ -193,6 +215,8 @@ truthfulqa            vote Sum-Ent                         -         -   ok     
 truthfulqa            vote Mean-Ent                        -         -   ok      0   678      228   0.548   0.021     0.160   0.030
 truthfulqa            vote Mean-Prob                       -         -   ok      0   678      228   0.539   0.020     0.128   0.017
 truthfulqa            vote SC-Budget                       -         -   ok      0   678      228   0.742   0.019     0.170   0.016
+truthfulqa            vote SC-10-Agree                     -         -   ok      0   678      228   0.735   0.018     0.176   0.023
+truthfulqa            vote SC-Budget-Agree                 -         -   ok      0   678      228   0.765   0.017     0.170   0.016
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -212,6 +236,8 @@ mmlu_pro               run Sum-Ent                         -         -   ok     
 mmlu_pro               run Mean-Ent                        -         -   ok      0   500      179   0.505   0.029     0.208   0.023
 mmlu_pro               run Mean-Prob                       -         -   ok      0   500      179   0.512   0.030     0.477   0.022
 mmlu_pro               run SC-Budget                       -         -   ok      0   500      179   0.675   0.024     0.260   0.023
+mmlu_pro               run SC-10-Agree                     -         -   ok      0   500      179   0.737   0.021     0.159   0.026
+mmlu_pro               run SC-Budget-Agree                 -         -   ok      0   500      179   0.730   0.022     0.154   0.022
 mmlu_pro              vote CoT_Len                     False      none   ok   3375   500      196   0.629   0.027     0.159   0.017
 mmlu_pro              vote CoT_Len                     False  balanced   ok   3375   500      196   0.629   0.027     0.132   0.017
 mmlu_pro              vote CoT_Len                      True      none   ok   3375   500      196   0.629   0.027     0.159   0.017
@@ -224,6 +250,8 @@ mmlu_pro              vote Sum-Ent                         -         -   ok     
 mmlu_pro              vote Mean-Ent                        -         -   ok      0   500      196   0.488   0.023     0.201   0.021
 mmlu_pro              vote Mean-Prob                       -         -   ok      0   500      196   0.495   0.024     0.443   0.022
 mmlu_pro              vote SC-Budget                       -         -   ok      0   500      196   0.683   0.025     0.226   0.022
+mmlu_pro              vote SC-10-Agree                     -         -   ok      0   500      196   0.661   0.026     0.181   0.022
+mmlu_pro              vote SC-Budget-Agree                 -         -   ok      0   500      196   0.663   0.027     0.184   0.021
 -----------------------------------------------------------------------------------------------------------------------------------
 
 ===================================================================================================================================
@@ -243,6 +271,8 @@ aime                   run Sum-Ent                         -         -   ok     
 aime                   run Mean-Ent                        -         -   ok      0   266        0     nan     nan     0.563   0.021
 aime                   run Mean-Prob                       -         -   ok      0   266        0     nan     nan     0.864   0.002
 aime                   run SC-Budget                       -         -   ok      0   266        0     nan     nan     0.089   0.005
+aime                   run SC-10-Agree                     -         -   ok      0   266        0     nan     nan     0.131   0.013
+aime                   run SC-Budget-Agree                 -         -   ok      0   266        0     nan     nan     0.047   0.006
 aime                  vote CoT_Len                     False      none   ok   3609   266        2   0.422   0.093     0.060   0.006
 aime                  vote CoT_Len                     False  balanced   ok   3609   266        2   0.420   0.097     0.046   0.005
 aime                  vote CoT_Len                      True      none   ok   3609   266        2   0.417   0.088     0.060   0.006
@@ -255,65 +285,75 @@ aime                  vote Sum-Ent                         -         -   ok     
 aime                  vote Mean-Ent                        -         -   ok      0   266        2   0.790   0.161     0.556   0.023
 aime                  vote Mean-Prob                       -         -   ok      0   266        2   0.729   0.208     0.857   0.005
 aime                  vote SC-Budget                       -         -   ok      0   266        2   0.742   0.027     0.081   0.006
+aime                  vote SC-10-Agree                     -         -   ok      0   266        2   0.420   0.011     0.127   0.013
+aime                  vote SC-Budget-Agree                 -         -   ok      0   266        2   0.599   0.192     0.041   0.010
 -----------------------------------------------------------------------------------------------------------------------------------
 
 
 averaged over every held out dataset:
 
-target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
-   run    CoT_Len       False     balanced    0.661       0.013 0.087   0.007
-   run    CoT_Len       False         none    0.661       0.013 0.090   0.006
-   run    CoT_Len        True     balanced    0.661       0.013 0.087   0.007
-   run    CoT_Len        True         none    0.661       0.013 0.089   0.006
-   run   Mean-Ent           -            -    0.542       0.013 0.267   0.011
-   run  Mean-Loss           -            -    0.533       0.013 0.270   0.013
-   run  Mean-Prob           -            -    0.542       0.013 0.470   0.008
-   run      SC-10           -            -    0.718       0.012 0.184   0.010
-   run SC-10-Last           -            -    0.561       0.016 0.391   0.015
-   run  SC-Budget           -            -    0.724       0.012 0.154   0.007
-   run    Sum-Ent           -            -    0.675       0.012 0.390   0.012
-   run   Sum-Loss           -            -    0.670       0.012 0.389   0.013
-  vote    CoT_Len       False     balanced    0.629       0.017 0.100   0.007
-  vote    CoT_Len       False         none    0.629       0.016 0.116   0.007
-  vote    CoT_Len        True     balanced    0.629       0.017 0.099   0.007
-  vote    CoT_Len        True         none    0.628       0.016 0.116   0.007
-  vote   Mean-Ent           -            -    0.561       0.025 0.251   0.011
-  vote  Mean-Loss           -            -    0.562       0.019 0.245   0.013
-  vote  Mean-Prob           -            -    0.549       0.032 0.413   0.008
-  vote      SC-10           -            -    0.686       0.009 0.187   0.010
-  vote SC-10-Last           -            -    0.581       0.023 0.338   0.016
-  vote  SC-Budget           -            -    0.744       0.009 0.164   0.008
-  vote    Sum-Ent           -            -    0.662       0.017 0.343   0.013
-  vote   Sum-Loss           -            -    0.662       0.014 0.342   0.014
+target          method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run         CoT_Len       False     balanced    0.661       0.013 0.087   0.007
+   run         CoT_Len       False         none    0.661       0.013 0.090   0.006
+   run         CoT_Len        True     balanced    0.661       0.013 0.087   0.007
+   run         CoT_Len        True         none    0.661       0.013 0.089   0.006
+   run        Mean-Ent           -            -    0.542       0.013 0.267   0.011
+   run       Mean-Loss           -            -    0.533       0.013 0.270   0.013
+   run       Mean-Prob           -            -    0.542       0.013 0.470   0.008
+   run           SC-10           -            -    0.718       0.012 0.184   0.010
+   run     SC-10-Agree           -            -    0.780       0.010 0.148   0.009
+   run      SC-10-Last           -            -    0.561       0.016 0.391   0.015
+   run       SC-Budget           -            -    0.724       0.012 0.154   0.007
+   run SC-Budget-Agree           -            -    0.789       0.010 0.137   0.007
+   run         Sum-Ent           -            -    0.675       0.012 0.390   0.012
+   run        Sum-Loss           -            -    0.670       0.012 0.389   0.013
+  vote         CoT_Len       False     balanced    0.629       0.017 0.100   0.007
+  vote         CoT_Len       False         none    0.629       0.016 0.116   0.007
+  vote         CoT_Len        True     balanced    0.629       0.017 0.099   0.007
+  vote         CoT_Len        True         none    0.628       0.016 0.116   0.007
+  vote        Mean-Ent           -            -    0.561       0.025 0.251   0.011
+  vote       Mean-Loss           -            -    0.562       0.019 0.245   0.013
+  vote       Mean-Prob           -            -    0.549       0.032 0.413   0.008
+  vote           SC-10           -            -    0.686       0.009 0.187   0.010
+  vote     SC-10-Agree           -            -    0.656       0.011 0.170   0.009
+  vote      SC-10-Last           -            -    0.581       0.023 0.338   0.016
+  vote       SC-Budget           -            -    0.744       0.009 0.164   0.008
+  vote SC-Budget-Agree           -            -    0.681       0.030 0.172   0.008
+  vote         Sum-Ent           -            -    0.662       0.017 0.343   0.013
+  vote        Sum-Loss           -            -    0.662       0.014 0.342   0.014
 
 
 averaged over the held out datasets carrying at least 30 of the rarer class (gpqa, math500, gsm8k, mmlu, truthfulqa, mmlu_pro):
 
-target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
-   run    CoT_Len       False     balanced    0.661       0.013 0.094   0.008
-   run    CoT_Len       False         none    0.661       0.013 0.096   0.007
-   run    CoT_Len        True     balanced    0.661       0.013 0.093   0.008
-   run    CoT_Len        True         none    0.661       0.013 0.095   0.007
-   run   Mean-Ent           -            -    0.542       0.013 0.217   0.012
-   run  Mean-Loss           -            -    0.533       0.013 0.220   0.014
-   run  Mean-Prob           -            -    0.542       0.013 0.404   0.010
-   run      SC-10           -            -    0.718       0.012 0.177   0.012
-   run SC-10-Last           -            -    0.561       0.016 0.369   0.017
-   run  SC-Budget           -            -    0.724       0.012 0.165   0.008
-   run    Sum-Ent           -            -    0.675       0.012 0.339   0.014
-   run   Sum-Loss           -            -    0.670       0.012 0.336   0.014
-  vote    CoT_Len       False     balanced    0.663       0.011 0.109   0.008
-  vote    CoT_Len       False         none    0.664       0.011 0.126   0.008
-  vote    CoT_Len        True     balanced    0.664       0.011 0.108   0.008
-  vote    CoT_Len        True         none    0.664       0.011 0.125   0.008
-  vote   Mean-Ent           -            -    0.523       0.013 0.200   0.012
-  vote  Mean-Loss           -            -    0.513       0.012 0.193   0.014
-  vote  Mean-Prob           -            -    0.519       0.013 0.339   0.010
-  vote      SC-10           -            -    0.737       0.011 0.181   0.012
-  vote SC-10-Last           -            -    0.551       0.016 0.309   0.018
-  vote  SC-Budget           -            -    0.744       0.010 0.177   0.009
-  vote    Sum-Ent           -            -    0.637       0.011 0.286   0.015
-  vote   Sum-Loss           -            -    0.632       0.011 0.281   0.015
+target          method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run         CoT_Len       False     balanced    0.661       0.013 0.094   0.008
+   run         CoT_Len       False         none    0.661       0.013 0.096   0.007
+   run         CoT_Len        True     balanced    0.661       0.013 0.093   0.008
+   run         CoT_Len        True         none    0.661       0.013 0.095   0.007
+   run        Mean-Ent           -            -    0.542       0.013 0.217   0.012
+   run       Mean-Loss           -            -    0.533       0.013 0.220   0.014
+   run       Mean-Prob           -            -    0.542       0.013 0.404   0.010
+   run           SC-10           -            -    0.718       0.012 0.177   0.012
+   run     SC-10-Agree           -            -    0.780       0.010 0.151   0.010
+   run      SC-10-Last           -            -    0.561       0.016 0.369   0.017
+   run       SC-Budget           -            -    0.724       0.012 0.165   0.008
+   run SC-Budget-Agree           -            -    0.789       0.010 0.152   0.009
+   run         Sum-Ent           -            -    0.675       0.012 0.339   0.014
+   run        Sum-Loss           -            -    0.670       0.012 0.336   0.014
+  vote         CoT_Len       False     balanced    0.663       0.011 0.109   0.008
+  vote         CoT_Len       False         none    0.664       0.011 0.126   0.008
+  vote         CoT_Len        True     balanced    0.664       0.011 0.108   0.008
+  vote         CoT_Len        True         none    0.664       0.011 0.125   0.008
+  vote        Mean-Ent           -            -    0.523       0.013 0.200   0.012
+  vote       Mean-Loss           -            -    0.513       0.012 0.193   0.014
+  vote       Mean-Prob           -            -    0.519       0.013 0.339   0.010
+  vote           SC-10           -            -    0.737       0.011 0.181   0.012
+  vote     SC-10-Agree           -            -    0.696       0.012 0.177   0.010
+  vote      SC-10-Last           -            -    0.551       0.016 0.309   0.018
+  vote       SC-Budget           -            -    0.744       0.010 0.177   0.009
+  vote SC-Budget-Agree           -            -    0.694       0.013 0.194   0.009
+  vote         Sum-Ent           -            -    0.637       0.011 0.286   0.015
+  vote        Sum-Loss           -            -    0.632       0.011 0.281   0.015
 
 
 held out as a domain: multiple choice knowledge
@@ -335,6 +375,8 @@ mmlu,mmlu_pro          run Sum-Ent                         -         -   ok     
 mmlu,mmlu_pro          run Mean-Ent                        -         -   ok      0  1046      517   0.468   0.016     0.159   0.015
 mmlu,mmlu_pro          run Mean-Prob                       -         -   ok      0  1046      517   0.469   0.016     0.320   0.016
 mmlu,mmlu_pro          run SC-Budget                       -         -   ok      0  1046      517   0.743   0.016     0.196   0.016
+mmlu,mmlu_pro          run SC-10-Agree                     -         -   ok      0  1046      517   0.779   0.017     0.150   0.017
+mmlu,mmlu_pro          run SC-Budget-Agree                 -         -   ok      0  1046      517   0.787   0.015     0.123   0.013
 mmlu,mmlu_pro         vote CoT_Len                     False      none   ok   2829  1046      491   0.700   0.017     0.095   0.011
 mmlu,mmlu_pro         vote CoT_Len                     False  balanced   ok   2829  1046      491   0.700   0.017     0.071   0.012
 mmlu,mmlu_pro         vote CoT_Len                      True      none   ok   2829  1046      491   0.700   0.017     0.095   0.010
@@ -347,6 +389,8 @@ mmlu,mmlu_pro         vote Sum-Ent                         -         -   ok     
 mmlu,mmlu_pro         vote Mean-Ent                        -         -   ok      0  1046      491   0.456   0.016     0.164   0.015
 mmlu,mmlu_pro         vote Mean-Prob                       -         -   ok      0  1046      491   0.459   0.016     0.295   0.014
 mmlu,mmlu_pro         vote SC-Budget                       -         -   ok      0  1046      491   0.765   0.015     0.171   0.014
+mmlu,mmlu_pro         vote SC-10-Agree                     -         -   ok      0  1046      491   0.733   0.017     0.169   0.015
+mmlu,mmlu_pro         vote SC-Budget-Agree                 -         -   ok      0  1046      491   0.736   0.015     0.158   0.014
 -----------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -369,6 +413,8 @@ gsm8k,math500,aime     run Sum-Ent                         -         -   ok     
 gsm8k,math500,aime     run Mean-Ent                        -         -   ok      0  1993      816   0.755   0.008     0.230   0.028
 gsm8k,math500,aime     run Mean-Prob                       -         -   ok      0  1993      816   0.750   0.009     0.479   0.011
 gsm8k,math500,aime     run SC-Budget                       -         -   ok      0  1993      816   0.883   0.007     0.036   0.007
+gsm8k,math500,aime     run SC-10-Agree                     -         -   ok      0  1993      816   0.951   0.005     0.100   0.010
+gsm8k,math500,aime     run SC-Budget-Agree                 -         -   ok      0  1993      816   0.957   0.004     0.124   0.007
 gsm8k,math500,aime    vote CoT_Len                     False      none   ok   1882  1993      930   0.850   0.010     0.112   0.010
 gsm8k,math500,aime    vote CoT_Len                     False  balanced   ok   1882  1993      930   0.852   0.009     0.146   0.011
 gsm8k,math500,aime    vote CoT_Len                      True      none   ok   1882  1993      930   0.853   0.009     0.113   0.009
@@ -381,6 +427,8 @@ gsm8k,math500,aime    vote Sum-Ent                         -         -   ok     
 gsm8k,math500,aime    vote Mean-Ent                        -         -   ok      0  1993      930   0.716   0.012     0.106   0.027
 gsm8k,math500,aime    vote Mean-Prob                       -         -   ok      0  1993      930   0.704   0.013     0.355   0.012
 gsm8k,math500,aime    vote SC-Budget                       -         -   ok      0  1993      930   0.919   0.006     0.130   0.008
+gsm8k,math500,aime    vote SC-10-Agree                     -         -   ok      0  1993      930   0.827   0.009     0.166   0.010
+gsm8k,math500,aime    vote SC-Budget-Agree                 -         -   ok      0  1993      930   0.851   0.008     0.230   0.010
 -----------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -388,28 +436,32 @@ MAIN AVERAGE, over these 4 held out groups: multiple choice knowledge, mathemati
 every benchmark counted exactly once, the domains held out together,
 and only groups carrying at least 30 of the rarer class
 
-target     method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
-   run    CoT_Len       False     balanced    0.680       0.016 0.091   0.009
-   run    CoT_Len       False         none    0.680       0.016 0.088   0.009
-   run    CoT_Len        True     balanced    0.681       0.016 0.094   0.009
-   run    CoT_Len        True         none    0.681       0.016 0.085   0.009
-   run   Mean-Ent           -            -    0.546       0.014 0.212   0.014
-   run  Mean-Loss           -            -    0.538       0.014 0.219   0.015
-   run  Mean-Prob           -            -    0.545       0.014 0.387   0.012
-   run      SC-10           -            -    0.729       0.013 0.195   0.014
-   run SC-10-Last           -            -    0.585       0.020 0.362   0.020
-   run  SC-Budget           -            -    0.734       0.015 0.182   0.010
-   run    Sum-Ent           -            -    0.684       0.013 0.311   0.015
-   run   Sum-Loss           -            -    0.678       0.014 0.310   0.014
-  vote    CoT_Len       False     balanced    0.665       0.014 0.127   0.010
-  vote    CoT_Len       False         none    0.665       0.014 0.127   0.010
-  vote    CoT_Len        True     balanced    0.665       0.014 0.126   0.010
-  vote    CoT_Len        True         none    0.665       0.014 0.128   0.010
-  vote   Mean-Ent           -            -    0.549       0.015 0.168   0.015
-  vote  Mean-Loss           -            -    0.538       0.014 0.164   0.016
-  vote  Mean-Prob           -            -    0.544       0.014 0.323   0.012
-  vote      SC-10           -            -    0.734       0.013 0.190   0.014
-  vote SC-10-Last           -            -    0.594       0.019 0.324   0.022
-  vote  SC-Budget           -            -    0.740       0.012 0.184   0.011
-  vote    Sum-Ent           -            -    0.646       0.013 0.266   0.016
-  vote   Sum-Loss           -            -    0.642       0.013 0.264   0.016
+target          method standardize class_weight  roc_auc  roc_auc_sd   ece  ece_sd
+   run         CoT_Len       False     balanced    0.680       0.016 0.091   0.009
+   run         CoT_Len       False         none    0.680       0.016 0.088   0.009
+   run         CoT_Len        True     balanced    0.681       0.016 0.094   0.009
+   run         CoT_Len        True         none    0.681       0.016 0.085   0.009
+   run        Mean-Ent           -            -    0.546       0.014 0.212   0.014
+   run       Mean-Loss           -            -    0.538       0.014 0.219   0.015
+   run       Mean-Prob           -            -    0.545       0.014 0.387   0.012
+   run           SC-10           -            -    0.729       0.013 0.195   0.014
+   run     SC-10-Agree           -            -    0.767       0.013 0.165   0.011
+   run      SC-10-Last           -            -    0.585       0.020 0.362   0.020
+   run       SC-Budget           -            -    0.734       0.015 0.182   0.010
+   run SC-Budget-Agree           -            -    0.783       0.013 0.159   0.009
+   run         Sum-Ent           -            -    0.684       0.013 0.311   0.015
+   run        Sum-Loss           -            -    0.678       0.014 0.310   0.014
+  vote         CoT_Len       False     balanced    0.665       0.014 0.127   0.010
+  vote         CoT_Len       False         none    0.665       0.014 0.127   0.010
+  vote         CoT_Len        True     balanced    0.665       0.014 0.126   0.010
+  vote         CoT_Len        True         none    0.665       0.014 0.128   0.010
+  vote        Mean-Ent           -            -    0.549       0.015 0.168   0.015
+  vote       Mean-Loss           -            -    0.538       0.014 0.164   0.016
+  vote       Mean-Prob           -            -    0.544       0.014 0.323   0.012
+  vote           SC-10           -            -    0.734       0.013 0.190   0.014
+  vote     SC-10-Agree           -            -    0.707       0.014 0.187   0.012
+  vote      SC-10-Last           -            -    0.594       0.019 0.324   0.022
+  vote       SC-Budget           -            -    0.740       0.012 0.184   0.011
+  vote SC-Budget-Agree           -            -    0.713       0.014 0.192   0.010
+  vote         Sum-Ent           -            -    0.646       0.013 0.266   0.016
+  vote        Sum-Loss           -            -    0.642       0.013 0.264   0.016

@@ -112,7 +112,9 @@ if __name__ == '__main__':
     # benchmark has logs for it, and a mistake otherwise.
     log_directory = diffusion_decision_model_training(evidence_counts[0]).log_directory
     dataset = next((name for name in names if name in os.listdir(log_directory)), 'gsm8k')
-    logged_models = sorted(os.listdir(f'{log_directory}/{dataset}'))
+    # Folders are read under the names the trainer knows them by (Llama's was renamed).
+    known_as = {folder: name for name, folder in diffusion_decision_model_training.MODEL_DIRECTORY_ALIASES.items()}
+    logged_models = sorted(known_as.get(folder, folder) for folder in os.listdir(f'{log_directory}/{dataset}'))
     for name in names:
         if name != dataset and name not in logged_models:
             raise Exception(f'{name} is neither a benchmark nor a model with a {dataset} log')

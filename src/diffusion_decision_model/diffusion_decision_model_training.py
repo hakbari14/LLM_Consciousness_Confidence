@@ -85,8 +85,12 @@ class diffusion_decision_model_training:
     #   Sum-Ent / Mean-Ent: its summed / per token entropy; Mean-Prob: the arithmetic
     #   mean of its token probabilities; SC-Budget: the vote share given as many
     #   samples as ours.
+    #   The vote shares speak for the most common answer, which is not always the one
+    #   graded.  SC-10-Agree / SC-Budget-Agree: the share of the same samples that gave
+    #   the run's own answer, the vote share's counterpart for the run's answer.
     BASELINE_NAMES = ['SC-10', 'SC-10-Last', 'Sum-Loss', 'Mean-Loss',
-                      'Sum-Ent', 'Mean-Ent', 'Mean-Prob', 'SC-Budget']
+                      'Sum-Ent', 'Mean-Ent', 'Mean-Prob', 'SC-Budget',
+                      'SC-10-Agree', 'SC-Budget-Agree']
 
     METRICS = ['roc_auc', 'ece']
 
@@ -108,7 +112,9 @@ class diffusion_decision_model_training:
     # the ones it has a log for.  countdown is left out: its logs were written before
     # the token probability of each evidence was logged, so they can no longer be read,
     # and it was only ever trained on (the models make three or four mistakes on it).
-    BENCHMARKS = ['gpqa', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime', 'prontoqa']
+    # prontoqa is left out too: only two of the five models have it, so it would make
+    # their averages incomparable with the rest.  The k-fold test still reads it.
+    BENCHMARKS = ['gpqa', 'math500', 'gsm8k', 'mmlu', 'truthfulqa', 'mmlu_pro', 'aime']
 
     # The generation stops a response at one of these many tokens.  A response that
     # long never reached its final answer, and whatever was read from the cut text was
@@ -127,7 +133,7 @@ class diffusion_decision_model_training:
 
         self.number_of_evidence = number_of_evidence
         self.modelname_dir = modelname_dir
-        self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence/logs/diffusion_decision_model'
+        self.log_directory = '/home/hr_akbari/research/LLM_Consciousness_Confidence.old/logs/diffusion_decision_model'
         self.datasets = [dataset for dataset in self.BENCHMARKS if os.path.exists(self.log_file_name(dataset, RUN_NUMBER))]
         self.dataset_groups = {name: [dataset for dataset in group if dataset in self.datasets]
                                for name, group in self.DATASET_GROUPS.items()}
@@ -138,8 +144,16 @@ class diffusion_decision_model_training:
 
     # ------------------------------------------------------------------ loading
 
+    # The generation renamed Llama's folder; prontoqa still has it under the old name.
+    MODEL_DIRECTORY_ALIASES = {'meta_llama_llama_3_1_8b_instruct': 'meta-llama-llama-3.1-8b-instruct'}
+
+    def model_directory(self, dataset: str) -> str:
+        directory = f'{self.log_directory}/{dataset}/{self.modelname_dir}'
+        alias = f'{self.log_directory}/{dataset}/{self.MODEL_DIRECTORY_ALIASES.get(self.modelname_dir)}'
+        return directory if os.path.isdir(directory) or not os.path.isdir(alias) else alias
+
     def log_file_name(self, dataset: str, run_number: int) -> str:
-        return (f'{self.log_directory}/{dataset}/{self.modelname_dir}/run_{run_number}'
+        return (f'{self.model_directory(dataset)}/run_{run_number}'
                 f'/diffusion_decision_model_{dataset}_nv_{self.number_of_evidence}.csv')
 
     def load_logs(self, dataset: str, run_number: int) -> list:
@@ -152,24 +166,30 @@ class diffusion_decision_model_training:
 
         return self.log_cache[key]
 
-    def load_budget_confidence(self, dataset: str, run_number: int) -> dict:
-        """{question: the budget run's vote share for this evidence count}.  Empty when not run yet.
+    def load_budget(self, dataset: str, run_number: int) -> dict:
+        """{question: (vote share, [answers])} of the budget run at this evidence count.  Empty when not run yet.
 
         The budget run samples answers from the bare question, five per evidence step,
-        and logs the share of them that gave the most common answer.  Matched on the
+        and logs the share of them that gave the most common answer.  The answers are
+        the same samples' own, in the order the vote took them.  Matched on the
         question text, because on mmlu and mmlu_pro the two runs gave the same question
         different Sample_IDs.
         """
         key = (dataset, run_number)
         if key not in self.budget_cache:
-            path = (f'{self.log_directory}/{dataset}/{self.modelname_dir}/run_{run_number}'
+            path = (f'{self.model_directory(dataset)}/run_{run_number}'
                     f'/budget_matched_self_consistency_{dataset}.csv')
             column = f'Self_Consistency_nv{self.number_of_evidence}'
             self.budget_cache[key] = {}
             if os.path.exists(path):
-                budget = pd.read_csv(path, dtype=str, usecols=['Question', column])
-                self.budget_cache[key] = {question.strip(): to_float(confidence)
-                                          for question, confidence in zip(budget['Question'], budget[column])}
+                budget = pd.read_csv(path, dtype=str, usecols=['Sample_ID', 'Question', column])
+                samples = pd.read_csv(path.replace('.csv', '_samples.csv'), dtype=str,
+                                      usecols=['Parent_ID', 'Compared_Final_Answer'])
+                answers = samples.groupby('Parent_ID', sort=False)['Compared_Final_Answer'].apply(list)
+                used = 5 * self.number_of_evidence
+                self.budget_cache[key] = {question.strip(): (to_float(confidence), answers.get(sample_id, [])[:used])
+                                          for sample_id, question, confidence
+                                          in zip(budget['Sample_ID'], budget['Question'], budget[column])}
 
         return self.budget_cache[key]
 
@@ -252,7 +272,7 @@ class diffusion_decision_model_training:
         return [1.0 if is_true(log.accuracy) else 0.0,
                 float('nan') if vote in MISSING else (1.0 if vote == 'true' else 0.0)]
 
-    def sample_baselines(self, log, budget_confidence: dict) -> list:
+    def sample_baselines(self, log, budget: dict) -> list:
         """The confidences that need no training, in BASELINE_NAMES order.
 
         The published measures are turned so larger means more likely correct, which
@@ -264,6 +284,14 @@ class diffusion_decision_model_training:
                                    (log.self_consistency_completion_confidence, log.self_consistency_completion_final_answer)]:
             vote_shares.append(to_float(confidence) if is_present(answer) else float('nan'))
 
+        # A rollout's accuracy is whether it reached the run's answer; a budget sample's
+        # answer is compared with the run's directly.  An unreadable one counts against.
+        answer = str(log.compared_final_answer).strip()
+        first_step = min(log.evidence_list, key = lambda evidence: int(evidence.index))
+        rollouts_agree = [is_true(rollout.accuracy) for rollout in first_step.consistency_list]
+        budget_vote_share, budget_answers = budget.get(str(log.question).strip(), (float('nan'), []))
+        budget_agree = [str(budget_answer).strip() == answer for budget_answer in budget_answers]
+
         loss = to_float(log.completion_loss)
         tokens = to_float(log.token_count)
         return vote_shares + [
@@ -272,7 +300,9 @@ class diffusion_decision_model_training:
             -to_float(log.entropy),
             -to_float(log.mean_entropy),
             to_float(log.length_normalized_sequence_probability),
-            budget_confidence.get(str(log.question).strip(), float('nan')),
+            budget_vote_share,
+            mean_or_nan(rollouts_agree),
+            mean_or_nan(budget_agree),
             ]
 
     def build_matrix(self, datasets: list, from_run_number: int, to_run_number: int,
@@ -284,7 +314,7 @@ class diffusion_decision_model_training:
         rows, labels, baselines = [], [], []
         for dataset in datasets:
             for run_number in range(from_run_number, to_run_number):
-                budget_confidence = self.load_budget_confidence(dataset, run_number)
+                budget = self.load_budget(dataset, run_number)
                 for log in self.load_logs(dataset, run_number):
                     if len(log.evidence_list) != self.number_of_evidence or self.is_cut_off(log):
                         continue
@@ -295,7 +325,7 @@ class diffusion_decision_model_training:
 
                     rows.append(row)
                     labels.append(self.sample_labels(log))
-                    baselines.append(self.sample_baselines(log, budget_confidence))
+                    baselines.append(self.sample_baselines(log, budget))
 
         X = np.array(rows, dtype=float)
         labels = np.array(labels, dtype=float)

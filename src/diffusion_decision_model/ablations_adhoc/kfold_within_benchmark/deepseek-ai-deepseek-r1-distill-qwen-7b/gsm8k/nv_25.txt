@@ -4,7 +4,7 @@
 regression: unscaled features, no class weight, as in the paper's tables
 pooled: the five folds' predictions put together and measured once
 CoT-EIG: each evidence's agreement, the change in agreement, its mean token probability, and that
-mean over the whole completion's.  EIG-SC: the agreement alone.  EIG-Prob: the two probability ones alone.
+mean over the whole completion's.  EIG-SC: the agreement and its change.  EIG-Prob: the two probability ones alone.
 
 == ROC, folds drawn with seed 42
 method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
@@ -19,6 +19,8 @@ Sum-Ent          0.825   0.732   0.736   0.848   0.735    0.776  0.051   0.775
 Mean-Ent         0.811   0.656   0.709   0.687   0.657    0.704  0.057   0.704
 Mean-Prob        0.800   0.644   0.702   0.676   0.631    0.691  0.060   0.690
 SC-Budget        0.908   0.908   0.903   0.880   0.937    0.907  0.018   0.908
+SC-10-Agree      0.914   0.922   0.903   0.964   0.980    0.937  0.030   0.937
+SC-Budget-Agree   0.935   0.975   0.947   0.979   0.984    0.964  0.019   0.965
 
 == ECE, folds drawn with seed 42
 method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
@@ -33,6 +35,8 @@ Sum-Ent          0.078   0.222   0.143   0.113   0.081    0.128  0.053   0.108
 Mean-Ent         0.234   0.253   0.239   0.244   0.240    0.242  0.006   0.235
 Mean-Prob        0.082   0.061   0.073   0.061   0.060    0.067  0.009   0.055
 SC-Budget        0.027   0.041   0.046   0.037   0.056    0.041  0.009   0.029
+SC-10-Agree      0.056   0.073   0.062   0.037   0.032    0.052  0.015   0.053
+SC-Budget-Agree   0.036   0.039   0.021   0.027   0.037    0.032  0.007   0.024
 
 == ROC when the folds are drawn again, 10 seeds (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
 method          mean of folds  lowest  highest    pooled  lowest  highest
@@ -47,3 +51,5 @@ Sum-Ent                 0.774   0.772    0.777     0.775   0.775    0.775
 Mean-Ent                0.704   0.703    0.706     0.704   0.704    0.704
 Mean-Prob               0.691   0.689    0.693     0.690   0.690    0.690
 SC-Budget               0.908   0.907    0.909     0.908   0.908    0.908
+SC-10-Agree             0.937   0.936    0.938     0.937   0.937    0.937
+SC-Budget-Agree          0.965   0.964    0.966     0.965   0.965    0.965

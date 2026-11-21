@@ -14,8 +14,11 @@ plots.ABLATIONS = 'src/diffusion_decision_model/ablations_run_2'
 plots.OURS, plots.OURS_TOTAL = 'CoT-EIG', 'EIG-SC'
 plots.FEATURE_SET_BARS = [('CoT-EIG', 'CoT-EIG'), ('EIG-SC', 'EIG-SC'), ('EIG-Prob', 'EIG-Prob'),
                           ('CoT_Len', 'CoT_Len'), ('Logit_Feat', 'Logit_Feat'), ('LastRep', 'LastRep')]
-plots.COLOURS.update({'CoT-EIG': '#1c5cab', 'EIG-SC': '#5598e7', 'EIG-Prob': '#9ec5f4'})
-plots.MARKERS.update({'CoT-EIG': 'o', 'EIG-SC': 's', 'EIG-Prob': 'p'})
+plots.UNTRAINED = plots.UNTRAINED + ['SC-10-Agree', 'SC-Budget-Agree']
+plots.BASELINES = plots.UNTRAINED + plots.TRAINED
+plots.COLOURS.update({'CoT-EIG': '#1c5cab', 'EIG-SC': '#5598e7', 'EIG-Prob': '#9ec5f4',
+                      'SC-10-Agree': '#f5a05a', 'SC-Budget-Agree': '#6e1010'})
+plots.MARKERS.update({'CoT-EIG': 'o', 'EIG-SC': 's', 'EIG-Prob': 'p', 'SC-10-Agree': 'H', 'SC-Budget-Agree': '8'})
 plots.HOLD_OUTS = [hold_out for hold_out in plots.HOLD_OUTS if hold_out[0] != 'countdown']
 
 MODELS = ['qwen-qwen3-8b', 'deepseek-ai-deepseek-r1-distill-qwen-7b', 'meta_llama_llama_3_1_8b_instruct',
