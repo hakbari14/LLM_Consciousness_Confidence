@@ -33,7 +33,7 @@ if __name__ == '__main__':
     X_train, y_train, _ = training.build_matrix(train_datasets, 1, 2, training.TARGET_RUN, training.FULL)
     X_test, y_test, _ = training.build_matrix([HELD_OUT], 1, 2, training.TARGET_RUN, training.FULL)
     X_train_filled, X_test_filled = training.fill_and_scale(X_train, X_test, False)
-    model, converged = training.fit_logistic(X_train_filled, y_train, None)
+    model, converged = training.fit_classifier(X_train_filled, y_train, None)
     probability = model.predict_proba(X_test_filled)[:, 1]
 
     names = feature_names(EVIDENCE_COUNT)

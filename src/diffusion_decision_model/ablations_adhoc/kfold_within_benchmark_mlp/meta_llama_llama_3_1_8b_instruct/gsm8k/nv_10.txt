@@ -1,0 +1,55 @@
+5 fold cross validation inside gsm8k, meta_llama_llama_3_1_8b_instruct, nv 10
+1277 samples, 169 answered wrong, so about 33.8 wrong answers in each fold
+0 more were stopped by the token limit and are left out
+classifier: MLP, size and weight decay searched on the training folds
+pooled: the five folds' predictions put together and measured once
+CoT-EIG: each evidence's agreement, the change in agreement, its mean token probability, and that
+mean over the whole completion's.  EIG-SC: the agreement and its change.  EIG-Prob: the two probability ones alone.
+
+== ROC, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG          0.937   0.976   0.875   0.892   0.885    0.913  0.038   0.912
+EIG-SC           0.938   0.971   0.893   0.928   0.880    0.922  0.033   0.915
+EIG-Prob         0.680   0.689   0.583   0.597   0.549    0.620  0.055   0.620
+SC-10            0.844   0.889   0.834   0.866   0.878    0.862  0.020   0.861
+SC-10-Last       0.700   0.645   0.675   0.670   0.671    0.672  0.017   0.672
+Sum-Loss         0.797   0.789   0.758   0.827   0.810    0.796  0.023   0.796
+Mean-Loss        0.667   0.634   0.641   0.759   0.614    0.663  0.051   0.663
+Sum-Ent          0.806   0.803   0.755   0.837   0.823    0.805  0.028   0.806
+Mean-Ent         0.686   0.669   0.646   0.790   0.651    0.688  0.053   0.687
+Mean-Prob        0.649   0.656   0.630   0.765   0.636    0.667  0.050   0.667
+SC-Budget        0.869   0.914   0.867   0.904   0.881    0.887  0.019   0.887
+SC-10-Agree      0.934   0.965   0.920   0.955   0.925    0.940  0.017   0.939
+SC-Budget-Agree   0.950   0.974   0.930   0.968   0.933    0.951  0.018   0.951
+
+== ECE, folds drawn with seed 42
+method          fold 1  fold 2  fold 3  fold 4  fold 5     mean     sd  pooled
+CoT-EIG          0.030   0.028   0.034   0.039   0.044    0.035  0.006   0.030
+EIG-SC           0.027   0.026   0.027   0.026   0.037    0.029  0.004   0.017
+EIG-Prob         0.048   0.050   0.063   0.076   0.086    0.065  0.015   0.060
+SC-10            0.093   0.098   0.088   0.107   0.068    0.091  0.013   0.084
+SC-10-Last       0.056   0.088   0.044   0.067   0.055    0.062  0.015   0.052
+Sum-Loss         0.075   0.097   0.041   0.076   0.087    0.075  0.019   0.037
+Mean-Loss        0.171   0.239   0.208   0.138   0.218    0.195  0.036   0.162
+Sum-Ent          0.051   0.080   0.029   0.062   0.070    0.058  0.018   0.042
+Mean-Ent         0.154   0.234   0.199   0.147   0.225    0.192  0.036   0.159
+Mean-Prob        0.055   0.043   0.061   0.077   0.052    0.058  0.011   0.041
+SC-Budget        0.054   0.060   0.064   0.038   0.060    0.055  0.009   0.043
+SC-10-Agree      0.154   0.158   0.123   0.154   0.129    0.144  0.015   0.132
+SC-Budget-Agree   0.093   0.104   0.100   0.113   0.090    0.100  0.008   0.093
+
+== ROC when the folds are drawn again, 10 seeds (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
+method          mean of folds  lowest  highest    pooled  lowest  highest
+CoT-EIG                 0.917   0.905    0.927     0.916   0.904    0.926
+EIG-SC                  0.921   0.914    0.926     0.915   0.909    0.923
+EIG-Prob                0.627   0.598    0.646     0.620   0.583    0.643
+SC-10                   0.862   0.860    0.863     0.861   0.861    0.861
+SC-10-Last              0.673   0.672    0.673     0.672   0.672    0.672
+Sum-Loss                0.796   0.792    0.798     0.796   0.796    0.796
+Mean-Loss               0.664   0.661    0.665     0.663   0.663    0.663
+Sum-Ent                 0.805   0.802    0.807     0.806   0.806    0.806
+Mean-Ent                0.688   0.685    0.689     0.687   0.687    0.687
+Mean-Prob               0.668   0.666    0.669     0.667   0.667    0.667
+SC-Budget               0.887   0.884    0.889     0.887   0.887    0.887
+SC-10-Agree             0.939   0.938    0.940     0.939   0.939    0.939
+SC-Budget-Agree          0.951   0.950    0.952     0.951   0.951    0.951

@@ -8,9 +8,11 @@ import sys
 import warnings
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import make_pipeline
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 from sklearn.exceptions import ConvergenceWarning
 
@@ -43,8 +45,12 @@ def mean_or_nan(values) -> float:
     return float(np.mean(values)) if values else float('nan')
 
 
+# The classifier fitted on the features: the logistic regression, or with 'mlp' on the
+# command line a small neural network, whose tables then go to their own folder.
+CLASSIFIER = 'mlp' if 'mlp' in sys.argv[1:] else 'logistic'
+
 # Where the sweep writes its tables.
-OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_run_2'
+OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_run_2' + ('_mlp' if CLASSIFIER == 'mlp' else '')
 
 # The logs written after the rollout prompt fix live in run_2.
 RUN_NUMBER = 2
@@ -93,6 +99,15 @@ class diffusion_decision_model_training:
                       'SC-10-Agree', 'SC-Budget-Agree']
 
     METRICS = ['roc_auc', 'ece']
+
+    # (standardize, class weight) of each fit in an ablation.  The network scales its
+    # own inputs and takes no weight, so it is fitted once.
+    SWITCHES = ([(True, None)] if CLASSIFIER == 'mlp' else
+                [(False, None), (False, 'balanced'), (True, None), (True, 'balanced')])
+
+    # The networks the search chooses between: width and depth, and weight decay.
+    MLP_GRID = {'mlpclassifier__hidden_layer_sizes': [(16,), (64,), (64, 32)],
+                'mlpclassifier__alpha': [1e-4, 1e-2, 1e-1]}
 
     # Far more than the unscaled features have needed; a fit that reaches it is reported.
     MAX_ITER = 10000
@@ -362,14 +377,25 @@ class diffusion_decision_model_training:
 
         return X_train, X_test
 
-    def fit_logistic(self, X_train, y_train, class_weight):
+    def fit_classifier(self, X_train, y_train, class_weight):
         """Fit, silencing the convergence warning and reporting it instead."""
-        model = LogisticRegression(max_iter = self.MAX_ITER, random_state = 42, class_weight = class_weight)
+        if CLASSIFIER == 'mlp':
+            # A network needs scaled inputs whatever the switch says, and takes no class
+            # weight.  Its size and weight decay are chosen by a 3-fold search on the
+            # training rows alone, scored by ROC, so nothing held out is seen.  No early
+            # stopping: with few wrong answers its held back accuracy hardly moves and
+            # stops training before the network has learned anything.
+            network = make_pipeline(StandardScaler(), MLPClassifier(max_iter = self.MAX_ITER, random_state = 42))
+            model = GridSearchCV(network, self.MLP_GRID, scoring = 'roc_auc', cv = 3)
+        else:
+            model = LogisticRegression(max_iter = self.MAX_ITER, random_state = 42, class_weight = class_weight)
+
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category = ConvergenceWarning)
             model.fit(X_train, y_train)
 
-        return model, bool(np.all(np.asarray(model.n_iter_) < self.MAX_ITER))
+        fitted = model.best_estimator_[-1] if CLASSIFIER == 'mlp' else model
+        return model, bool(np.all(np.asarray(fitted.n_iter_) < self.MAX_ITER))
 
     # ------------------------------------------------------------------ metrics
 
@@ -464,7 +490,7 @@ class diffusion_decision_model_training:
             # the held out samples to see how much the number rests on which
             # problems the benchmark happens to contain.
             X_train, X_test = self.fill_and_scale(X_train, X_test, standardize)
-            model, converged = self.fit_logistic(X_train, y_train, class_weight)
+            model, converged = self.fit_classifier(X_train, y_train, class_weight)
             probability = model.predict_proba(X_test)[:, 1]
 
             measurements = [self.measure(y_test, probability)]
@@ -478,7 +504,7 @@ class diffusion_decision_model_training:
                 X_train, X_test, y_train, y_test, _, baselines_test = train_test_split(
                     X, y, baselines, test_size=0.2, random_state=seed, stratify=y)
                 X_train, X_test = self.fill_and_scale(X_train, X_test, standardize)
-                model, ok = self.fit_logistic(X_train, y_train, class_weight)
+                model, ok = self.fit_classifier(X_train, y_train, class_weight)
                 converged = converged and ok
                 measurements.append(self.measure(y_test, model.predict_proba(X_test)[:, 1]))
 
@@ -519,10 +545,9 @@ class diffusion_decision_model_training:
         results = []
         for target in [self.TARGET_RUN, self.TARGET_VOTE]:
             trained = []
-            for standardize in [False, True]:
-                for class_weight in [None, 'balanced']:
-                    trained.append(self.evaluate(test_datasets, from_run_number, to_run_number,
-                                                 standardize, class_weight, target, feature_set, seeds))
+            for standardize, class_weight in self.SWITCHES:
+                trained.append(self.evaluate(test_datasets, from_run_number, to_run_number,
+                                             standardize, class_weight, target, feature_set, seeds))
 
             # The untrained rows do not depend on the switches; take them from the first.
             results.extend(trained)
@@ -712,7 +737,7 @@ if __name__ == '__main__':
     # command line to run only those, which is how a new set or a new model's logs are
     # filled in without rewriting the files the others own.
     for name in sys.argv[1:]:
-        if name not in diffusion_decision_model_training.FEATURE_SETS and name not in MODELS and not name.isdigit():
+        if name not in diffusion_decision_model_training.FEATURE_SETS + MODELS + ['mlp'] and not name.isdigit():
             raise Exception(f'unknown feature set, model or evidence count {name}')
     FEATURE_SETS_TO_RUN = ([name for name in sys.argv[1:] if name in diffusion_decision_model_training.FEATURE_SETS]
                            or diffusion_decision_model_training.FEATURE_SETS)

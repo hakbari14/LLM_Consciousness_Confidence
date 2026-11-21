@@ -12,6 +12,7 @@ The tables go to ablations_adhoc/kfold_within_benchmark/, not to ablations/.
     python -m src.diffusion_decision_model.kfold_within_benchmark              # gsm8k, nv 5, every model that has a log
     python -m src.diffusion_decision_model.kfold_within_benchmark gsm8k 5 10 15 20 25
     python -m src.diffusion_decision_model.kfold_within_benchmark gsm8k 5 qwen-qwen3-0.6b
+    python -m src.diffusion_decision_model.kfold_within_benchmark gsm8k 5 mlp     # the network instead, to kfold_within_benchmark_mlp/
 """
 
 import os
@@ -20,9 +21,9 @@ import warnings
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 
-from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training, RUN_NUMBER
+from src.diffusion_decision_model.diffusion_decision_model_training import diffusion_decision_model_training, RUN_NUMBER, CLASSIFIER
 
-OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_adhoc/kfold_within_benchmark'
+OUT_DIRECTORY = 'src/diffusion_decision_model/ablations_adhoc/kfold_within_benchmark' + ('_mlp' if CLASSIFIER == 'mlp' else '')
 FOLDS = 5
 
 def measure(trainer, y, confidence) -> dict:
@@ -35,7 +36,7 @@ def cross_validate(trainer, features: dict, y, baselines, seed: int):
     """({method: [one measurement per fold]}, {method: the measurement of all folds' predictions together}).
 
     The folds keep the benchmark's share of wrong answers, so every fold has some.
-    The regression is the paper's: unscaled features, no class weight.
+    The regression is the paper's: unscaled features, no class weight (the network scales its own).
     """
     methods = list(features) + trainer.BASELINE_NAMES
     per_fold = {method: [] for method in methods}
@@ -44,7 +45,7 @@ def cross_validate(trainer, features: dict, y, baselines, seed: int):
     for train, test in StratifiedKFold(FOLDS, shuffle=True, random_state=seed).split(y, y):
         for method, X in features.items():
             X_train, X_test = trainer.fill_and_scale(X[train], X[test], standardize=False)
-            model, _ = trainer.fit_logistic(X_train, y[train], class_weight=None)
+            model, _ = trainer.fit_classifier(X_train, y[train], class_weight=None)
             out_of_fold[method][test] = model.predict_proba(X_test)[:, 1]
         for column, method in enumerate(trainer.BASELINE_NAMES):
             out_of_fold[method][test] = baselines[test, column]
@@ -76,7 +77,8 @@ def report(trainer, dataset: str) -> str:
              f'{cut_off} more were stopped by the token limit and are left out',
              *([f'FEWER THAN {trainer.MINORITY_FLOOR} WRONG ANSWERS: a fold may hold none, and the ROC below is noise']
                if wrong < trainer.MINORITY_FLOOR else []),
-             'regression: unscaled features, no class weight, as in the paper\'s tables',
+             ('classifier: MLP, size and weight decay searched on the training folds' if CLASSIFIER == 'mlp' else
+              'regression: unscaled features, no class weight, as in the paper\'s tables'),
              'pooled: the five folds\' predictions put together and measured once',
              'CoT-EIG: each evidence\'s agreement, the change in agreement, its mean token probability, and that',
              'mean over the whole completion\'s.  EIG-SC: the agreement and its change.  EIG-Prob: the two probability ones alone.']
@@ -106,7 +108,7 @@ def report(trainer, dataset: str) -> str:
 
 if __name__ == '__main__':
     evidence_counts = [int(argument) for argument in sys.argv[1:] if argument.isdigit()] or [5]
-    names = [argument for argument in sys.argv[1:] if not argument.isdigit()]
+    names = [argument for argument in sys.argv[1:] if not argument.isdigit() and argument != 'mlp']
 
     # A name is a benchmark if the generation has a log folder for it, a model if that
     # benchmark has logs for it, and a mistake otherwise.
